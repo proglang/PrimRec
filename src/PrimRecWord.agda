@@ -31,7 +31,7 @@ module Nats where
   eval Z        v*           = 0
   eval S        (x ∷ v*)     = suc x
   eval (π i)    v*           = lookup v* i
-  eval (C h g*) v*           = eval h (eval* g* v*)
+  eval (C f g*) v*           = eval f (eval* g* v*)
   eval (P g h)  (zero ∷ v*)  = eval g v*
   eval (P g h)  (suc x ∷ v*) = eval h ((eval (P g h) (x ∷ v*)) ∷ (x ∷ v*))
 
@@ -52,7 +52,7 @@ module Words where
   eval Z        v*               = []ᴸ
   eval (S x)    (xs ∷ v*)        = x ∷ᴸ xs
   eval (π i)    v*               = lookup v* i
-  eval (C h g*) v*               = eval h (eval* g* v*)
+  eval (C f g*) v*               = eval f (eval* g* v*)
   eval (P g h)  ([]ᴸ ∷ v*)       = eval g v*
   eval (P g h)  ((x ∷ᴸ xs) ∷ v*) = eval (h x) (eval (P g h) (xs ∷ v*) ∷ xs ∷ v*)
 
@@ -79,7 +79,7 @@ module Trees where
 
   eval (σ a) v* = con a v*
   eval (π i) v* = lookup v* i
-  eval (C h g*) v* = eval h (eval* g* v*)
+  eval (C f g*) v* = eval f (eval* g* v*)
   eval {r = r} (P h) (con a xs ∷ v*) = eval (h a) ((map (λ x → eval (P h) (x ∷ v*)) xs ++ xs) ++ v* )
 
   eval* [] v* = []
@@ -177,7 +177,7 @@ module HetTrees where
 
   eval (σ a)      a* = con a a*
   eval (π i)      a* = alookup a* i
-  eval (C g h)    a* = eval g (eval* h a*)
+  eval (C f g*)    a* = eval f (eval* g* a*)
   eval (P {s₀ = s₀} res h) (con a xs ∷ᴬ a*) =
     eval (h s₀ a refl) ((mapᴬ (λ {s} → λ x → eval (P{s₀ = s} res h) (x ∷ᴬ a*)) xs ++ᴬ xs) ++ᴬ a*)
 
@@ -195,7 +195,7 @@ module NatsToWords where
   ⟦ Nats.Z ⟧ = Words.Z
   ⟦ Nats.S ⟧ = Words.S tt
   ⟦ Nats.π i ⟧ = Words.π i
-  ⟦ Nats.C g h ⟧ = Words.C ⟦ g ⟧ (map ⟦_⟧ h)
+  ⟦ Nats.C f g* ⟧ = Words.C ⟦ f ⟧ (map ⟦_⟧ g*)
   ⟦ Nats.P g h ⟧ = Words.P ⟦ g ⟧ (λ{ tt → ⟦ h ⟧})
 
   ⟦_⟧ⱽ : ℕ → List ⊤
@@ -208,7 +208,7 @@ module NatsToWords where
   sound Nats.Z v* = refl
   sound Nats.S (x ∷ []) = refl
   sound (Nats.π i) v* = sym (lookup-map i ⟦_⟧ⱽ v*)
-  sound (Nats.C h g*) v* rewrite sound h (Nats.eval* g* v*) | sound* g* v* = refl
+  sound (Nats.C f g*) v* rewrite sound f (Nats.eval* g* v*) | sound* g* v* = refl
   sound (Nats.P g h) (zero ∷ v*) = sound g v*
   sound (Nats.P g h) (suc x ∷ v*) = trans (sound h (Nats.eval (Nats.P g h) (x ∷ v*) ∷ x ∷ v*))
                                           (cong (Words.eval ⟦ h ⟧) 
