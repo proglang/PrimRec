@@ -212,7 +212,8 @@ module NatsToWords where
   sound (Nats.P g h) (zero ∷ v*) = sound g v*
   sound (Nats.P g h) (suc x ∷ v*) = trans (sound h (Nats.eval (Nats.P g h) (x ∷ v*) ∷ x ∷ v*))
                                           (cong (Words.eval ⟦ h ⟧) 
-                                                (cong (λ q → q ∷ ⟦ x ⟧ⱽ ∷ map ⟦_⟧ⱽ v*) (sound (Nats.P g h) (x ∷ v*))))
+                                                (cong (_∷ ⟦ x ⟧ⱽ ∷ map ⟦_⟧ⱽ v*)
+                                                      (sound (Nats.P g h) (x ∷ v*))))
 
   sound* [] v* = refl
   sound* (p ∷ p*) v* rewrite sound p v* | sound* p* v* = refl
@@ -246,7 +247,7 @@ module WordsToTrees where
   sound (Words.P g h) ([]ᴸ ∷ v*) = sound g v*
   sound (Words.P g h) ((x ∷ᴸ x₁) ∷ v*) = trans (sound (h x) (Words.eval (Words.P g h) (x₁ ∷ v*) ∷ x₁ ∷ v*))
                                               (cong (Trees.eval ⟦ h x ⟧)
-                                                    (cong (λ q → q ∷ ⟦ x₁ ⟧ⱽ ∷ map ⟦_⟧ⱽ v*)
+                                                    (cong (_∷ ⟦ x₁ ⟧ⱽ ∷ map ⟦_⟧ⱽ v*)
                                                           (sound (Words.P g h) (x₁ ∷ v*))))
 
   sound* [] v* = refl
