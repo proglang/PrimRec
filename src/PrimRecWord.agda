@@ -4,23 +4,58 @@ open import Relation.Binary.PropositionalEquality
   using (_≡_; _≢_; refl; sym; trans; cong; cong₂; subst)
 open import Data.Maybe using (Maybe; nothing; just)
 open import Data.Nat using (ℕ; suc; zero; _*_; _+_)
-open import Data.Fin using (Fin)
+open import Data.Fin using (Fin; suc; zero)
 open import Data.Unit using (⊤; tt)
 open import Data.Product using (_×_; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
 open import Data.Vec using (Vec; []; _∷_; _++_; lookup; map; toList)
 open import Data.Vec.Properties using (lookup-map)
 open import Data.List using (List) renaming ([] to []ᴸ; _∷_ to _∷ᴸ_; _++_ to _++ᴸ_; length to lengthᴸ; map to mapᴸ)
+open import Function using (_∘_)
 
 variable
-  A : Set                       -- alphabet
+  A S : Set                       -- alphabet
   m n : ℕ
 
+repeat : ∀ {ℓ} {A : Set ℓ} → (n : ℕ) → A → Vec A n
+repeat zero a = []
+repeat (suc n) a = a ∷ repeat n a
+
+++-map : ∀ {ℓ₁ ℓ₂} {m n}{X : Set ℓ₁}{Y : Set ℓ₂} → (f : X → Y)(v* : Vec X m)(w* : Vec X n) → (map f v* ++ map f w*) ≡ map f (v* ++ w*)
+++-map f [] w* = refl
+++-map f (v ∷ v*) w* = cong (f v ∷_) (++-map f v* w*)
+
+∘-map : ∀ {ℓ₁ ℓ₂ ℓ₃} {n} {X : Set ℓ₁}{Y : Set ℓ₂}{Z : Set ℓ₃} (f : Y → Z) (g : X → Y) (v* : Vec X n) → map f (map g v*) ≡ map (f ∘ g) v*
+∘-map f g [] = refl
+∘-map f g (v ∷ v*) = cong ((f ∘ g) v ∷_) (∘-map f g v*)
+
+asType : ∀ {A B : Set} → A → A ≡ B → B
+asType a refl = a
+
+
+module asList where
+
+  data HList (F : S → Set) : List S → Set where
+    []ᴴ  : HList F []ᴸ
+    _∷ᴴ_ : ∀ {s ss} → F s → HList F ss → HList F (s ∷ᴸ ss)
+
+
+  hlookup : ∀ {ss : Vec S n}{F : S → Set} (a* : HList F (toList ss)) → (i : Fin n) → F (lookup ss i)
+  hlookup {ss = s ∷ ss} (a ∷ᴴ a*) Fin.zero = a
+  hlookup {ss = s ∷ ss} (a ∷ᴴ a*) (Fin.suc i) = hlookup a* i
+
+  _++ᴴ_ : ∀ {F : S → Set}{ss₁ ss₂ : List S} → HList F ss₁ → HList F ss₂ → HList F (ss₁ ++ᴸ ss₂)
+  []ᴴ ++ᴴ ys = ys
+  (x ∷ᴴ xs) ++ᴴ ys = x ∷ᴴ (xs ++ᴴ ys)
+
+  mapᴴ : ∀ {F : S → Set}{ss : List S} {res : S → S} → (∀ {s} → F s → F (res s)) → HList F ss → HList F (mapᴸ res ss)
+  mapᴴ f []ᴴ = []ᴴ
+  mapᴴ f (x ∷ᴴ a*) = f x ∷ᴴ mapᴴ f a*
 
 
 module Nats where
   data PRN : ℕ → Set where
     Z : PRN n
-    S : PRN (suc zero)
+    σ : PRN (suc zero)
     π : (i : Fin n) → PRN n
     C : PRN m → Vec (PRN n) m → PRN n
     P : (g : PRN n) → (h : PRN (suc (suc n))) → PRN (suc n)
@@ -29,7 +64,7 @@ module Nats where
   eval* : Vec (PRN n) m → Vec ℕ n → Vec ℕ m
 
   eval Z        v*           = 0
-  eval S        (x ∷ v*)     = suc x
+  eval σ        (x ∷ v*)     = suc x
   eval (π i)    v*           = lookup v* i
   eval (C f g*) v*           = eval f (eval* g* v*)
   eval (P g h)  (zero ∷ v*)  = eval g v*
@@ -41,7 +76,7 @@ module Nats where
 module Words where
   data PRW (A : Set) : ℕ → Set where
     Z : PRW A n
-    S : (a : A) → PRW A (suc zero)
+    σ : (a : A) → PRW A (suc zero)
     π : (i : Fin n) → PRW A n
     C : PRW A m → Vec (PRW A n) m → PRW A n
     P : (g : PRW A n) → (h : A → PRW A (suc (suc n))) → PRW A (suc n)
@@ -50,7 +85,7 @@ module Words where
   eval* : Vec (PRW A n) m → Vec (List A) n → Vec (List A) m
 
   eval Z        v*               = []ᴸ
-  eval (S x)    (xs ∷ v*)        = x ∷ᴸ xs
+  eval (σ x)    (xs ∷ v*)        = x ∷ᴸ xs
   eval (π i)    v*               = lookup v* i
   eval (C f g*) v*               = eval f (eval* g* v*)
   eval (P g h)  ([]ᴸ ∷ v*)       = eval g v*
@@ -116,73 +151,138 @@ module Trees where
 
   -- numbers as trees
   data Nums : Set where
-    Z S : Nums
+    `Z `S : Nums
 
   rankNums : Rank Nums
-  rankNums Z = 0
-  rankNums S = 1
+  rankNums `Z = 0
+  rankNums `S = 1
 
   `zero : Alg rankNums
-  `zero = con Z []
+  `zero = con `Z []
 
   `one  : Alg rankNums
-  `one  = con S (`zero ∷ [])
+  `one  = con `S (`zero ∷ [])
 
-module HetTrees where
+module HTrees where
 
-  variable
-    S : Set                     -- sorts
+  data HVec (F : S → Set) : ∀ {n} → Vec S n → Set where
+    []ᴴ  : HVec F []
+    _∷ᴴ_ : ∀ {n s ss} → F s → HVec F {n} ss → HVec F (s ∷ ss)
 
-  module revise-to where
-    Rank : Set → Set
-    Rank A = A → ℕ
+  hlookup : ∀ {ss : Vec S n}{F : S → Set} (a* : HVec F ss) → (i : Fin n) → F (lookup ss i)
+  hlookup {ss = s ∷ ss} (a ∷ᴴ a*) Fin.zero = a
+  hlookup {ss = s ∷ ss} (a ∷ᴴ a*) (Fin.suc i) = hlookup a* i
 
-    HRank : Set → (A : Set) → (Rank A) → Set
-    HRank S A r = (a : A) → Vec S (r a) × S
+  _++ᴴ_ : ∀ {F : S → Set}{n₁ n₂}{ss₁ : Vec S n₁}{ss₂ : Vec S n₂} → HVec F ss₁ → HVec F ss₂ → HVec F (ss₁ ++ ss₂)
+  []ᴴ ++ᴴ ys = ys
+  (x ∷ᴴ xs) ++ᴴ ys = x ∷ᴴ (xs ++ᴴ ys)
 
-  Rank : Set → Set → Set
-  Rank S A = A → List S × S     -- List should be Vec...
+  mapᴴ : ∀ {F : S → Set}{n}{ss : Vec S n} {res : S → S} → (∀ {s} → F s → F (res s)) → HVec F ss → HVec F (map res ss)
+  mapᴴ f []ᴴ = []ᴴ
+  mapᴴ f (x ∷ᴴ a*) = f x ∷ᴴ mapᴴ f a*
 
-  data Args (F : S → Set) : List S → Set where
-    []ᴬ  : Args F []ᴸ
-    _∷ᴬ_ : ∀ {s ss} → F s → Args F ss → Args F (s ∷ᴸ ss)
+  toHVec : {S : Set} (v : Vec S n) → HVec (λ x → S) v
+  toHVec [] = []ᴴ
+  toHVec (x ∷ v) = x ∷ᴴ toHVec v
 
-  alookup : ∀ {ss : Vec S n}{F : S → Set} (a* : Args F (toList ss)) → (i : Fin n) → F (lookup ss i)
-  alookup {ss = s ∷ ss} (a ∷ᴬ a*) Fin.zero = a
-  alookup {ss = s ∷ ss} (a ∷ᴬ a*) (Fin.suc i) = alookup a* i
 
-  _++ᴬ_ : ∀ {F : S → Set}{ss₁ ss₂ : List S} → Args F ss₁ → Args F ss₂ → Args F (ss₁ ++ᴸ ss₂)
-  []ᴬ ++ᴬ ys = ys
-  (x ∷ᴬ xs) ++ᴬ ys = x ∷ᴬ (xs ++ᴬ ys)
+  Rank : Set → Set
+  Rank A = A → ℕ
 
-  mapᴬ : ∀ {F : S → Set}{ss : List S} {res : S → S} → (∀ {s} → F s → F (res s)) → Args F ss → Args F (mapᴸ res ss)
-  mapᴬ f []ᴬ = []ᴬ
-  mapᴬ f (x ∷ᴬ a*) = f x ∷ᴬ mapᴬ f a*
+  HRank : Set → (A : Set) → (Rank A) → Set
+  HRank S A r = (a : A) → Vec S (r a) × S
+  
+  data Alg {r : Rank A} (hr : HRank S A r) : S → Set where
+    con : (a : A) → HVec (Alg hr) (proj₁ (hr a)) → Alg hr (proj₂ (hr a))
 
-  data Alg (r : Rank S A) : S → Set where
-    con : (a : A) → Args (Alg r) (proj₁ (r a)) → Alg r (proj₂ (r a))
-
-  data PR (r : Rank S A) : List S × S → Set where
-    σ : (a : A) → PR r (r a)
-    π   : ∀ {ss : Vec S n} → (i : Fin n) → PR r ⟨ toList ss , lookup ss i ⟩
-    C   : ∀ {s ss′} {ss} → PR r ⟨ ss , s ⟩ → Args (λ s → PR r ⟨ ss′ , s ⟩) ss → PR r ⟨ ss′ , s ⟩
-    P   : ∀ {s₀ ss}
+  data PR {r} (hr : HRank S A r) : (n : ℕ) → Vec S n × S → Set where
+    σ : (a : A) → PR hr (r a) (hr a)
+    π : ∀ {ss : Vec S n} → (i : Fin n) → PR hr n ⟨ ss , lookup ss i ⟩
+    C : ∀ {s m} {ss′ : Vec S m} {ss : Vec S n}
+      → PR hr n ⟨ ss , s ⟩
+      → HVec (λ s → PR hr m ⟨ ss′ , s ⟩) ss
+      → PR hr m ⟨ ss′ , s ⟩
+    P : ∀ {s₀}{n}{ss : Vec S n}
       → (res : S → S)
-      → (h : (s : S) (a : A) → proj₂ (r a) ≡ s → PR r ⟨ (mapᴸ res (proj₁ (r a)) ++ᴸ (proj₁ (r a))) ++ᴸ ss , res s ⟩)
-      → PR r ⟨ s₀ ∷ᴸ ss , res s₀ ⟩
+      → (h : (s : S) (a : A) → proj₂ (hr a) ≡ s → PR hr ((r a + r a) + n) ⟨ (map res (proj₁ (hr a)) ++ (proj₁ (hr a))) ++ ss , res s ⟩)
+      → PR hr (suc n) ⟨ s₀ ∷ ss , res s₀ ⟩
 
   {-# TERMINATING #-}
-  eval : ∀ {r : Rank S A} {s* s} → PR r ⟨ s* , s ⟩ → Args (Alg r) s* → Alg r s
-  eval* : ∀ {r : Rank S A} {s*} {ss} → Args (λ s → PR r ⟨ s* , s ⟩) ss → Args (Alg r) s* → Args (Alg r) ss
+  eval : ∀ {r : Rank A}{hr : HRank S A r} {n} {s* : Vec S n} {s} → PR hr n ⟨ s* , s ⟩ → HVec (Alg hr) s* → Alg hr s
+  eval* : ∀ {r : Rank A}{hr : HRank S A r} {n} {s* : Vec S n} {m} {ss : Vec S m} → HVec (λ s → PR hr n ⟨ s* , s ⟩) ss → HVec (Alg hr) s* → HVec (Alg hr) ss
 
-  eval (σ a)      a* = con a a*
-  eval (π i)      a* = alookup a* i
-  eval (C f g*)    a* = eval f (eval* g* a*)
-  eval (P {s₀ = s₀} res h) (con a xs ∷ᴬ a*) =
-    eval (h s₀ a refl) ((mapᴬ (λ {s} → λ x → eval (P{s₀ = s} res h) (x ∷ᴬ a*)) xs ++ᴬ xs) ++ᴬ a*)
+  eval (σ a) v* = con a v*
+  eval (π i) v* = hlookup v* i
+  eval (C f g*) v* = eval f (eval* g* v*)
+  eval (P {s₀ = s₀} res h) (con a x* ∷ᴴ v*) = eval (h s₀ a refl) ((mapᴴ (λ {s} → λ x → eval (P{s₀ = s} res h) (x ∷ᴴ v*)) x* ++ᴴ x*) ++ᴴ v*)
 
-  eval* []ᴬ       a* = []ᴬ
-  eval* (p ∷ᴬ p*) a* = (eval p a*) ∷ᴬ (eval* p* a*)
+  eval* []ᴴ v* = []ᴴ
+  eval* (p ∷ᴴ p*) v* = eval p v* ∷ᴴ eval* p* v*
+
+
+module HTrees2 where
+
+  data HVec : ∀ {n} → Vec Set n → Set where
+    []ᴴ  : HVec []
+    _∷ᴴ_ : ∀ {n A}{V : Vec Set n} → A → HVec V → HVec (A ∷ V)
+
+  hlookup : ∀ {ss : Vec Set n} (a* : HVec ss) → (i : Fin n) → lookup ss i
+  hlookup {ss = s ∷ ss} (a ∷ᴴ a*) Fin.zero = a
+  hlookup {ss = s ∷ ss} (a ∷ᴴ a*) (Fin.suc i) = hlookup a* i
+
+  _++ᴴ_ : ∀{n₁ n₂}{ss₁ : Vec Set n₁}{ss₂ : Vec Set n₂} → HVec ss₁ → HVec ss₂ → HVec (ss₁ ++ ss₂)
+  []ᴴ ++ᴴ ys = ys
+  (x ∷ᴴ xs) ++ᴴ ys = x ∷ᴴ (xs ++ᴴ ys)
+
+  mapᴴ : ∀{n}{ss rss : Vec Set n} → (∀ {i : Fin n} → lookup ss i → lookup rss i) → HVec ss → HVec rss
+  mapᴴ{rss = []} f []ᴴ = []ᴴ
+  mapᴴ{rss = A ∷ V} f (a ∷ᴴ a*) = f {zero} a ∷ᴴ mapᴴ (λ{i} → f{suc i}) a*
+
+  toHVec : (v : Vec S n) → HVec (repeat n S)
+  toHVec [] = []ᴴ
+  toHVec (x ∷ x*) = x ∷ᴴ toHVec x*
+
+  Rank : Set → Set
+  Rank A = A → ℕ
+
+  HRank : Set → (A : Set) → (Rank A) → Set
+  HRank S A r = (a : A) → Vec S (r a) × S
+  
+  data Alg {r : Rank A} (hr : HRank S A r) : S → Set where
+    con : (a : A) → HVec (map (Alg hr) (proj₁ (hr a))) → Alg hr (proj₂ (hr a))
+
+  data PR {r} (hr : HRank S A r) : (n : ℕ) → Vec S n × S → Set where
+    σ : (a : A) → PR hr (r a) (hr a)
+    π : ∀ {ss : Vec S n} → (i : Fin n) → PR hr n ⟨ ss , lookup ss i ⟩
+    C : ∀ {s m} {ss′ : Vec S m} {ss : Vec S n}
+      → PR hr n ⟨ ss , s ⟩
+      → HVec (map (λ s → PR hr m ⟨ ss′ , s ⟩) ss)
+      → PR hr m ⟨ ss′ , s ⟩
+    P : ∀ {s₀}{n}{ss : Vec S n}
+      → (res : S → S)
+      → (h : (s : S) (a : A) → proj₂ (hr a) ≡ s → PR hr ((r a + r a) + n) ⟨ (map res (proj₁ (hr a)) ++ (proj₁ (hr a))) ++ ss , res s ⟩)
+      → PR hr (suc n) ⟨ s₀ ∷ ss , res s₀ ⟩
+
+  {-# TERMINATING #-}
+  eval  : ∀ {r : Rank A}{hr : HRank S A r} {n} {s* : Vec S n} {s} → PR hr n ⟨ s* , s ⟩ → HVec (map (Alg hr) s*) → Alg hr s
+  eval* : ∀ {r : Rank A}{hr : HRank S A r} {n} {s* : Vec S n} {m} {ss : Vec S m} → HVec (map (λ s → PR hr n ⟨ s* , s ⟩) ss) → HVec (map (Alg hr) s*) → HVec (map (Alg hr) ss)
+
+  eval (σ a) v* = con a v*
+  eval{hr = hr}{s* = s*} (π i) v* rewrite sym (lookup-map i (Alg hr) s*) = hlookup v* i
+  eval (C f g*) v* = eval f (eval* g* v*)
+  eval{hr = hr} (P {s₀ = s₀}{ss = ss} res h) (con a x* ∷ᴴ v*)
+    with x* ++ᴴ v*
+  ... | arg₂ rewrite ++-map (Alg hr) (proj₁ (hr a)) ss
+    with mapᴴ {rss = (map (Alg hr ∘ res) (proj₁ (hr a)))} (λ{i} → λ x → asType (eval (P {s₀ = lookup (proj₁ (hr a)) i} res h) (asType x (lookup-map i (Alg hr) (proj₁ (hr a))) ∷ᴴ v*)) (sym (lookup-map i (Alg hr ∘ res) (proj₁ (hr a))))) x*
+  ... | arg₁ rewrite sym (∘-map (Alg hr) res (proj₁ (hr a)))
+    with arg₁ ++ᴴ arg₂
+  ... | arg₀ rewrite (++-map (Alg hr) (map res (proj₁ (hr a))) (proj₁ (hr a) ++ ss)) = eval (h s₀ a refl) {!arg₀!}
+  --  eval (h s₀ a refl) ((mapᴴ (λ {s} → λ x → eval (P{s₀ = s} res h) (x ∷ᴴ v*)) x* ++ᴴ x*) ++ᴴ v*)
+
+  eval*{ss = []} []ᴴ v* = []ᴴ
+  eval*{ss = _ ∷ _} (p ∷ᴴ p*) v* = eval p v* ∷ᴴ eval* p* v*
+
+
 
 -- results
 
@@ -193,7 +293,7 @@ module NatsToWords where
   {-# TERMINATING #-}
   ⟦_⟧ : Nats.PRN n → Words.PRW ⊤ n
   ⟦ Nats.Z ⟧ = Words.Z
-  ⟦ Nats.S ⟧ = Words.S tt
+  ⟦ Nats.σ ⟧ = Words.σ tt
   ⟦ Nats.π i ⟧ = Words.π i
   ⟦ Nats.C f g* ⟧ = Words.C ⟦ f ⟧ (map ⟦_⟧ g*)
   ⟦ Nats.P g h ⟧ = Words.P ⟦ g ⟧ (λ{ tt → ⟦ h ⟧})
@@ -206,7 +306,7 @@ module NatsToWords where
   sound* : ∀ {m n} p* v* → map{n = m} ⟦_⟧ⱽ (Nats.eval* {n = n}{m = m} p* v*) ≡ Words.eval* (map ⟦_⟧ p*) (map ⟦_⟧ⱽ v*)
 
   sound Nats.Z v* = refl
-  sound Nats.S (x ∷ []) = refl
+  sound Nats.σ (x ∷ []) = refl
   sound (Nats.π i) v* = sym (lookup-map i ⟦_⟧ⱽ v*)
   sound (Nats.C f g*) v* rewrite sound f (Nats.eval* g* v*) | sound* g* v* = refl
   sound (Nats.P g h) (zero ∷ v*) = sound g v*
@@ -228,7 +328,7 @@ module WordsToTrees where
   {-# TERMINATING #-}
   ⟦_⟧ : Words.PRW A n → Trees.PRR{Maybe A} (make-r{A}) n
   ⟦ Words.Z ⟧ = Trees.C (Trees.σ nothing) []
-  ⟦ Words.S a ⟧ = Trees.σ (just a)
+  ⟦ Words.σ a ⟧ = Trees.σ (just a)
   ⟦ Words.π i ⟧ = Trees.π i
   ⟦ Words.C f g* ⟧ = Trees.C ⟦ f ⟧ (map ⟦_⟧ g*)
   ⟦ Words.P g h ⟧ = Trees.P λ{ nothing → ⟦ g ⟧ ; (just a) → ⟦ h a ⟧}
@@ -241,7 +341,7 @@ module WordsToTrees where
   sound* : ∀ {m n A} p* v* → map{n = m} ⟦_⟧ⱽ (Words.eval* {A = A}{n = n}{m = m} p* v*) ≡ Trees.eval* (map ⟦_⟧ p*) (map ⟦_⟧ⱽ v*)
 
   sound Words.Z v* = refl
-  sound (Words.S a) (x ∷ []) = refl
+  sound (Words.σ a) (x ∷ []) = refl
   sound (Words.π i) v* = sym (lookup-map i ⟦_⟧ⱽ v*)
   sound (Words.C f g*) v* rewrite sound f (Words.eval* g* v*) | sound* g* v* = refl
   sound (Words.P g h) ([]ᴸ ∷ v*) = sound g v*
@@ -255,16 +355,13 @@ module WordsToTrees where
 
 module TreesToHetTrees where
 
-  repeat : ℕ → A → List A
-  repeat zero a = []ᴸ
-  repeat (suc n) a = a ∷ᴸ repeat n a
-
   -- pr on heterogeneous trees simulates pr on trees
-  make-r : Trees.Rank A → HetTrees.Rank ⊤ A
+  make-r : (r : Trees.Rank A) → HTrees.HRank ⊤ A r
   make-r r = λ a → ⟨ repeat (r a) tt , tt ⟩
 
-  ⟦_⟧ : ∀ {r : Trees.Rank A}{n} → Trees.PRR r n → HetTrees.PR (make-r r) ⟨ repeat n tt , tt ⟩
-  ⟦ Trees.σ a ⟧ = HetTrees.σ a
-  ⟦ Trees.π i ⟧ = {!HetTrees.π i!}
-  ⟦ Trees.C f g* ⟧ = HetTrees.C ⟦ f ⟧ {!!}
-  ⟦ Trees.P h ⟧ = {!!}
+  ⟦_⟧ : ∀ {r : Trees.Rank A}{n} → Trees.PRR r n → HTrees.PR (make-r r) n ⟨ repeat n tt , tt ⟩
+  ⟦ Trees.σ a ⟧ = HTrees.σ a
+  ⟦ Trees.π i ⟧ = HTrees.π i
+  ⟦_⟧ {r = r}{n} (Trees.C{m = m} f g*) = HTrees.C ⟦ f ⟧ {!mapᴴ ? (toHVec g*)!}
+  -- HTrees.C ⟦ f ⟧ {!toHVec (map ⟦_⟧ g*)!}
+  ⟦ Trees.P h ⟧ = HTrees.P (λ{ tt → tt }) λ{ s a refl → {! ⟦ h a ⟧!}}
