@@ -1,7 +1,9 @@
 module PrimRecWord where
 
-open import Relation.Binary.PropositionalEquality
+import Relation.Binary.PropositionalEquality as Eq
+open Eq
   using (_≡_; _≢_; refl; sym; trans; cong; cong₂; subst)
+open Eq.≡-Reasoning using (begin_; _≡⟨⟩_; step-≡˘; step-≡; _∎)
 open import Data.Maybe using (Maybe; nothing; just)
 open import Data.Nat using (ℕ; suc; zero; _*_; _+_)
 open import Data.Fin using (Fin; suc; zero)
@@ -20,6 +22,14 @@ variable
 repeat : ∀ {ℓ} {A : Set ℓ} → (n : ℕ) → A → Vec A n
 repeat zero a = []
 repeat (suc n) a = a ∷ repeat n a
+
+++-repeat : ∀ {m} {n} {ℓ} {A : Set ℓ} (x : A) → repeat (m + n) x ≡ repeat m x ++ repeat n x
+++-repeat {zero} x = refl
+++-repeat {suc m} x = cong (x ∷_) (++-repeat {m} x)
+
+map-repeat : ∀ {ℓ₁ ℓ₂} {A : Set ℓ₁} {B : Set ℓ₂} → ∀ n (x : A) (f : A → B) → repeat n (f x) ≡ map f (repeat n x)
+map-repeat zero x f = refl
+map-repeat (suc n) x f rewrite map-repeat n x f = refl
 
 ++-map : ∀ {ℓ₁ ℓ₂} {m n}{X : Set ℓ₁}{Y : Set ℓ₂} → (f : X → Y)(v* : Vec X m)(w* : Vec X n) → (map f v* ++ map f w*) ≡ map f (v* ++ w*)
 ++-map f [] w* = refl
@@ -480,11 +490,66 @@ module WordsToTrees where
 module TreesToHetTrees where
 
   -- pr on heterogeneous trees simulates pr on trees
-  make-r : (r : Trees.Rank A) → HTrees2.HRank ⊤ A r
-  make-r r = λ a → ⟨ repeat (r a) tt , tt ⟩
+  make-sig : ∀ n → Vec ⊤ n × ⊤
+  make-sig n = ⟨ repeat n tt , tt ⟩
 
-  ⟦_⟧ : ∀ {r : Trees.Rank A}{n} → Trees.PRR r n → HTrees2.PR (make-r r) n ⟨ repeat n tt , tt ⟩
+  make-r : (r : Trees.Rank A) → HTrees2.HRank ⊤ A r
+  make-r r = λ a → make-sig (r a)
+
+  ⟦_⟧ : ∀ {r : Trees.Rank A}{n}
+    → Trees.PRR r n
+    → HTrees2.PR (make-r r) n (make-sig n)
+  ⟦_⟧* : ∀ {r : Trees.Rank A}{m}{n}
+    → Vec (Trees.PRR r n) m
+    → HTrees2.HVec {m} (repeat m (HTrees2.PR (make-r r) n (make-sig n)))
+
   ⟦ Trees.σ a ⟧ = HTrees2.σ a
   ⟦ Trees.π i ⟧ = HTrees2.π i
-  ⟦_⟧ {r = r}{n} (Trees.C{m = m} f g*) = HTrees2.C ⟦ f ⟧ (HTrees2.mapᴴ (λ {i} → λ x → {!⟦ lookup g* i ⟧!}) (HTrees2.toHVec g*))
-  ⟦ Trees.P h ⟧ = HTrees2.P (λ{ tt → tt }) λ{ s a refl → {! ⟦ h a ⟧!}}
+  ⟦_⟧ {r = r}{n} (Trees.C{m = m} f g*) = HTrees2.C ⟦ f ⟧ (subst Function.id (cong HTrees2.HVec (map-repeat m tt (λ _ → HTrees2.PR (make-r r) n (make-sig n)))) ⟦ g* ⟧*)
+  -- (HTrees2.mapᴴ (λ {i} → λ x → subst Function.id (sym (lookup-map i (λ s → HTrees2.PR (make-r r) n ⟨ repeat n tt , s ⟩) (repeat m tt))) ⟦ lookup g* i ⟧) (HTrees2.toHVec g*))
+  ⟦_⟧ {r = r}{suc n} (Trees.P h) = HTrees2.P (λ{ tt → tt }) λ{ s a refl → subst (λ ss → HTrees2.PR (make-r r) (r a + r a + n) ⟨ ss , tt ⟩) (eq-repeat a)  ⟦ h a ⟧}
+    where
+      eq-repeat : ∀ a → repeat (r a + r a + n) tt ≡ (map (λ { tt → tt }) (proj₁ (make-r r a)) ++ proj₁ (make-r r a)) ++ repeat n tt
+      eq-repeat a = begin
+                      repeat (r a + r a + n) tt
+                    ≡⟨ ++-repeat {r a + r a} {n} tt ⟩
+                      repeat (r a + r a) tt ++ repeat n tt
+                    ≡⟨ cong (_++ repeat n tt) (++-repeat {r a}{r a} tt) ⟩
+                      (repeat (r a) tt ++ repeat (r a) tt) ++ repeat n tt
+                    ≡⟨ cong (_++ repeat n tt) (cong (_++ repeat (r a) tt) (map-repeat (r a) tt (λ _ → tt))) ⟩
+                      (map (λ { tt → tt }) (proj₁ (make-r r a)) ++ proj₁ (make-r r a)) ++ repeat n tt
+                    ∎
+
+  ⟦ [] ⟧* = HTrees2.[]ᴴ
+  ⟦ p ∷ p* ⟧* = ⟦ p ⟧ HTrees2.∷ᴴ ⟦ p* ⟧*
+
+  ⟦_⟧ⱽ  : ∀ {A} {r : Trees.Rank A} → Trees.Alg r → HTrees2.Alg (make-r r) tt
+  ⟦_⟧ⱽ* : ∀ {n} {A} {r : Trees.Rank A} → Vec (Trees.Alg r) n → HTrees2.Alg* (make-r r) (proj₁ (make-sig n))
+
+  ⟦ Trees.con a x* ⟧ⱽ = HTrees2.con a ⟦ x* ⟧ⱽ*
+  ⟦ [] ⟧ⱽ* = HTrees2.[]
+  ⟦ x ∷ v* ⟧ⱽ* = ⟦ x ⟧ⱽ HTrees2.∷ ⟦ v* ⟧ⱽ*
+
+  lookup-alookup : {r : Trees.Rank A} (i : Fin n) (v* : Vec (Trees.Alg r) n)
+    → lookup (map ⟦_⟧ⱽ v*) i ≡ HTrees2.alookup ⟦ v* ⟧ⱽ* i
+  lookup-alookup zero (x ∷ v*) = refl
+  lookup-alookup (suc i) (x ∷ v*) = lookup-alookup i v*
+
+  sound : ∀ {A}{r : Trees.Rank A} (p : Trees.PRR r n) v*
+    → ⟦ Trees.eval {A = A} p v* ⟧ⱽ ≡ HTrees2.eval ⟦ p ⟧ ⟦ v* ⟧ⱽ*
+  sound* : ∀ {A}{r : Trees.Rank A} (p* : Vec (Trees.PRR r n) m) v*
+    → ⟦ Trees.eval* p* v* ⟧ⱽ* ≡ HTrees2.eval* (subst HTrees2.HVec (map-repeat m tt (λ s → HTrees2.PR (make-r r) n ⟨ proj₁ (make-sig n) , s ⟩)) ⟦ p* ⟧*) ⟦ v* ⟧ⱽ*
+
+  sound (Trees.σ a) v* = refl
+  sound (Trees.π i) v* = begin
+                           ⟦ lookup v* i ⟧ⱽ
+                         ≡˘⟨ lookup-map i ⟦_⟧ⱽ v* ⟩
+                           lookup (map ⟦_⟧ⱽ v*) i
+                         ≡⟨ lookup-alookup i v* ⟩
+                           HTrees2.alookup ⟦ v* ⟧ⱽ* i
+                         ∎
+  sound (Trees.C f g*) v* = {!!}
+  sound (Trees.P h) v* = {!!}
+
+  sound* [] v* = refl
+  sound* (p ∷ p*) v* rewrite sound* p* v* = {!!}
