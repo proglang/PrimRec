@@ -29,7 +29,7 @@ HRank S A r = (a : A) → Vec S (r a) × Vec S 1
 
 data PR {r} (hr : HRank S A r) : {m n : ℕ} → Vec S m × Vec S n → Set where
   `0 : ∀ {ssin : Vec S m} → PR hr ⟨ ssin , [] ⟩
-  ♯  : ∀ {o} {ssm : Vec S m} {ssn : Vec S n} {sso : Vec S o}
+  ♯  : ∀ {ssm : Vec S m} {ssn : Vec S n} {sso : Vec S o}
     → (g : PR hr ⟨ ssm , ssn ⟩) (f : PR hr ⟨ ssm , sso ⟩)
     → PR hr ⟨ ssm , ssn ++ sso ⟩
 
@@ -39,7 +39,7 @@ data PR {r} (hr : HRank S A r) : {m n : ℕ} → Vec S m × Vec S n → Set wher
     → (i : Fin m)
     → PR hr ⟨ ssin , lookup ssin i ∷ [] ⟩
 
-  C  : ∀ {o} {ssm : Vec S m} {ssn : Vec S n} {sso : Vec S o}
+  C  : ∀ {ssm : Vec S m} {ssn : Vec S n} {sso : Vec S o}
     → (f : PR hr ⟨ sso , ssn ⟩)
     → (g : PR hr ⟨ ssm , sso ⟩)
     → PR hr ⟨ ssm , ssn ⟩
