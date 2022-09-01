@@ -14,79 +14,13 @@ open import Data.Vec.Properties using (lookup-map)
 open import Data.List using (List) renaming ([] to []ᴸ; _∷_ to _∷ᴸ_; _++_ to _++ᴸ_; length to lengthᴸ; map to mapᴸ)
 open import Function using (_∘_)
 
-variable
-  A : Set                       -- alphabet
-  S : Set                       -- sorts for many-sorted
-  m n o : ℕ
-
-repeat : ∀ {ℓ} {A : Set ℓ} → (n : ℕ) → A → Vec A n
-repeat zero a = []
-repeat (suc n) a = a ∷ repeat n a
-
-++-repeat : ∀ {m} {n} {ℓ} {A : Set ℓ} (x : A) → repeat (m + n) x ≡ repeat m x ++ repeat n x
-++-repeat {zero} x = refl
-++-repeat {suc m} x = cong (x ∷_) (++-repeat {m} x)
-
-map-repeat : ∀ {ℓ₁ ℓ₂} {A : Set ℓ₁} {B : Set ℓ₂} → ∀ n (x : A) (f : A → B) → repeat n (f x) ≡ map f (repeat n x)
-map-repeat zero x f = refl
-map-repeat (suc n) x f rewrite map-repeat n x f = refl
-
-++-map : ∀ {ℓ₁ ℓ₂} {m n}{X : Set ℓ₁}{Y : Set ℓ₂} → (f : X → Y)(v* : Vec X m)(w* : Vec X n) → (map f v* ++ map f w*) ≡ map f (v* ++ w*)
-++-map f [] w* = refl
-++-map f (v ∷ v*) w* = cong (f v ∷_) (++-map f v* w*)
-
-∘-map : ∀ {ℓ₁ ℓ₂ ℓ₃} {n} {X : Set ℓ₁}{Y : Set ℓ₂}{Z : Set ℓ₃} (f : Y → Z) (g : X → Y) (v* : Vec X n) → map f (map g v*) ≡ map (f ∘ g) v*
-∘-map f g [] = refl
-∘-map f g (v ∷ v*) = cong ((f ∘ g) v ∷_) (∘-map f g v*)
-
-asType : ∀ {A B : Set} → A → A ≡ B → B
-asType a refl = a
-
-
-module asList where
-
-  data HList (F : S → Set) : List S → Set where
-    []ᴴ  : HList F []ᴸ
-    _∷ᴴ_ : ∀ {s ss} → F s → HList F ss → HList F (s ∷ᴸ ss)
-
-
-  hlookup : ∀ {ss : Vec S n}{F : S → Set} (a* : HList F (toList ss)) → (i : Fin n) → F (lookup ss i)
-  hlookup {ss = s ∷ ss} (a ∷ᴴ a*) Fin.zero = a
-  hlookup {ss = s ∷ ss} (a ∷ᴴ a*) (Fin.suc i) = hlookup a* i
-
-  _++ᴴ_ : ∀ {F : S → Set}{ss₁ ss₂ : List S} → HList F ss₁ → HList F ss₂ → HList F (ss₁ ++ᴸ ss₂)
-  []ᴴ ++ᴴ ys = ys
-  (x ∷ᴴ xs) ++ᴴ ys = x ∷ᴴ (xs ++ᴴ ys)
-
-  mapᴴ : ∀ {F : S → Set}{ss : List S} {res : S → S} → (∀ {s} → F s → F (res s)) → HList F ss → HList F (mapᴸ res ss)
-  mapᴴ f []ᴴ = []ᴴ
-  mapᴴ f (x ∷ᴴ a*) = f x ∷ᴴ mapᴴ f a*
-
+open import Utils
 
 ----------------------------------------------------------------------
 -- primitive recursion on ℕ
 ----------------------------------------------------------------------
 
-module Nats where
-  data PRN : ℕ → Set where
-    Z : PRN n
-    σ : PRN (suc zero)
-    π : (i : Fin n) → PRN n
-    C : PRN m → Vec (PRN n) m → PRN n
-    P : (g : PRN n) → (h : PRN (suc (suc n))) → PRN (suc n)
-
-  eval  : PRN n → Vec ℕ n → ℕ
-  eval* : Vec (PRN n) m → Vec ℕ n → Vec ℕ m
-
-  eval Z        v*           = 0
-  eval σ        (x ∷ v*)     = suc x
-  eval (π i)    v*           = lookup v* i
-  eval (C f g*) v*           = eval f (eval* g* v*)
-  eval (P g h)  (zero ∷ v*)  = eval g v*
-  eval (P g h)  (suc x ∷ v*) = eval h ((eval (P g h) (x ∷ v*)) ∷ (x ∷ v*))
-
-  eval* []       v*          = []
-  eval* (p ∷ p*) v*          = eval p v*  ∷ eval* p* v*
+import PR-Nat as Nats
 
 -- vector-valued pr on ℕ
 -- PR m n encodes functions ℕᵐ → ℕⁿ
@@ -116,8 +50,8 @@ module Nats-NatsVec where
   open Nats
   open NatsVec
 
-  ⟦_⟧ : Nats.PRN m → NatsVec.PR m 1
-  ⟦_⟧* : Vec (PRN m) n → NatsVec.PR m n
+  ⟦_⟧ : Nats.PR m → NatsVec.PR m 1
+  ⟦_⟧* : Vec (Nats.PR m) n → NatsVec.PR m n
 
   ⟦ Z ⟧ = C PR.Z `0
   ⟦ σ ⟧ = PR.σ
@@ -128,8 +62,8 @@ module Nats-NatsVec where
   ⟦ [] ⟧* = `0
   ⟦ f ∷ f* ⟧* = ♯ ⟦ f ⟧ ⟦ f* ⟧*
 
-  sound : (p : Nats.PRN m) (v* : Vec ℕ m) → ∀ {r : Vec ℕ o} → Nats.eval p v* ∷ r ≡ NatsVec.eval ⟦ p ⟧ v* ++ r
-  sound* : (f* : Vec (Nats.PRN m) n) (v* : Vec ℕ m) → Nats.eval* f* v* ≡ NatsVec.eval ⟦ f* ⟧* v*
+  sound : (p : Nats.PR m) (v* : Vec ℕ m) → ∀ {r : Vec ℕ o} → Nats.eval p v* ∷ r ≡ NatsVec.eval ⟦ p ⟧ v* ++ r
+  sound* : (f* : Vec (Nats.PR m) n) (v* : Vec ℕ m) → Nats.eval* f* v* ≡ NatsVec.eval ⟦ f* ⟧* v*
 
   sound Z v* = refl
   sound σ (x ∷ []) = refl
@@ -425,7 +359,7 @@ module NatsToWords where
   -- pr on words simulates pr on natural numbers
 
   {-# TERMINATING #-}
-  ⟦_⟧ : Nats.PRN n → Words.PRW ⊤ n
+  ⟦_⟧ : Nats.PR n → Words.PRW ⊤ n
   ⟦ Nats.Z ⟧ = Words.Z
   ⟦ Nats.σ ⟧ = Words.σ tt
   ⟦ Nats.π i ⟧ = Words.π i
