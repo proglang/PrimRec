@@ -16,13 +16,19 @@ open import Utils
 import PR-NatsVec as NV
 open import PR-CC as CC
 
+-- type translation
+
 T⟦_⟧ᵀ : ℕ → Ty
 T⟦ zero ⟧ᵀ = `𝟙
 T⟦ suc m ⟧ᵀ = `ℕ `× T⟦ m ⟧ᵀ
 
+-- value translation
+
 T⟦_⟧ⱽ : Vec ℕ m → ⟦ T⟦ m ⟧ᵀ ⟧ᵀ
 T⟦ [] ⟧ⱽ = tt
 T⟦ x ∷ v ⟧ⱽ = ⟨ x , T⟦ v ⟧ⱽ ⟩
+
+-- some type isomorphisms
 
 identˡ : `𝟙 `× T →ᴾ T
 identˡ = π₂
@@ -43,6 +49,8 @@ iso-+ (suc n) o = C (`# π₁ (C (iso-+ n o) π₂)) assocˡ
 ilookup : (i : Fin m) → T⟦ m ⟧ᵀ →ᴾ `ℕ
 ilookup zero = π₁
 ilookup (suc i) = C (ilookup i) π₂
+
+-- expression translation
 
 T⟦_⟧ : NV.PR m n → T⟦ m ⟧ᵀ →ᴾ T⟦ n ⟧ᵀ
 T⟦ NV.`0 ⟧ = `0
