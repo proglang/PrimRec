@@ -13,12 +13,18 @@ open import Utils
 
 open import PR-Nat
 
+----------------------------------------------------------------------
+-- addition
+
 addP : PR 2
 addP = P (π zero) (C σ [ π zero ])
 
 addP=+ : ∀ m n → eval addP [ m , n ] ≡ m + n
 addP=+ zero n = refl
 addP=+ (suc m) n = cong suc (addP=+ m n)
+
+----------------------------------------------------------------------
+-- multiplication
 
 mulP : PR 2
 mulP = P Z (C addP [ π (suc (suc zero)) , π zero ])
@@ -29,12 +35,18 @@ mulP=* (suc m) n
   rewrite mulP=* m n
         | addP=+ n (m * n) = refl
 
+----------------------------------------------------------------------
+-- predecessor
+
 predP : PR 1
 predP = P Z (π (suc zero))
 
 predP=∸1 : ∀ m → eval predP [ m ] ≡ m ∸ 1
 predP=∸1 zero = refl
 predP=∸1 (suc m) = refl
+
+----------------------------------------------------------------------
+-- subtraction (monus)
 
 subP : PR 2
 subP = C (P (π zero) (C predP [ π zero ])) [ π (suc zero) , π zero ]
@@ -51,3 +63,18 @@ subP=∸ m (suc n)
   rewrite subP=∸ m n
         | predP=∸1 (m ∸ n) = m∸n∸1≡m∸sucn m n
 
+----------------------------------------------------------------------
+-- factorial
+
+facP : PR 1
+facP = P (C σ [ Z ]) (C mulP [ π zero , C σ [ π (suc zero) ] ])
+
+fac : ℕ → ℕ
+fac zero = 1
+fac (suc n) = fac n * suc n
+
+facP=fac : ∀ m → eval facP [ m ] ≡ fac m
+facP=fac zero = refl
+facP=fac (suc m)
+  rewrite facP=fac m
+        | mulP=* (fac m) (suc m) = refl
