@@ -3,7 +3,7 @@ module System-T where
 open import Data.Fin using (Fin; suc; zero; fromℕ; opposite; raise)
 open import Data.Nat using (ℕ; suc; zero; _∸_; _+_)
 open import Data.Nat.Properties using (+-suc; +-identityʳ; +-comm)
-open import Data.Vec using (Vec; []; _∷_; _++_; lookup; map; toList; head; init)
+open import Data.Vec using (Vec; []; _∷_; _++_; lookup; map; toList; head; init) 
 
 import Relation.Binary.PropositionalEquality as Eq
 open Eq using (_≡_; refl; cong; sym)
@@ -174,14 +174,38 @@ eqPrSTn .(suc _) (P pr pr₁) v = {!   !}
 
 -------------------------------
 data Ty : Set where
-    TNat : Ty
+    TyNat : Ty
     _⇒_ : Ty → Ty → Ty
 
 
 Ctx : ℕ → Set 
 Ctx n  = Vec (Ty) n
 
--- data Exp : {n : ℕ} → Ctx n → Ty → Set where
--- data Exp : ℕ → Ty → Set where
---     Var : Fin n → Exp n TNat
---     Lam : {t : Ty} → Exp (suc n) t → Exp n (TNat ⇒ t)  
+
+data DBI : ∀ {n : ℕ} -> Ctx n  -> Ty -> Set where
+    ZDB : ∀ {t ts} → DBI (t ∷ ts) t
+    SDB : ∀ {t ts t'} → DBI (ts) t → DBI (t' ∷ ts) t
+
+data Exp' : ∀ {n : ℕ} -> Ctx n  -> Ty -> Set where
+    Var' : ∀ {n : ℕ} {ctx : Ctx n} {ty} → DBI ctx ty → Exp' ctx ty
+    Lam'  : ∀ {n : ℕ} {ctx : Ctx n} { tyA tyB} → Exp' (tyA ∷ ctx) tyB → Exp' ctx  (tyA ⇒ tyB)
+    CZero' :   ∀ {n : ℕ} {ctx : Ctx n} → Exp' ctx TyNat
+    Suc' : ∀ {n : ℕ} {ctx : Ctx n} → Exp' ctx (TyNat ⇒ TyNat)
+
+
+ℕtoTy : ℕ → Ty
+ℕtoTy zero = TyNat
+ℕtoTy (suc n) = TyNat ⇒  (ℕtoTy n)
+ 
+ℕtoCtx : (n : ℕ) → Ctx n
+ℕtoCtx n = repeat n TyNat
+
+-- finToDBI : ∀ {n : ℕ} → (Fin n) → DBI (ℕtoCtx n) TyNat
+-- finToDBI zero = ZDB {TyNat} {ℕtoCtx (1)}
+-- finToDBI (suc f) = {!   !}
+
+embedd : ∀ {n m} → Exp n m → Exp' {n} (ℕtoCtx n) (ℕtoTy m) 
+embedd {n} {.zero} (Var x) = Var' {!   !}
+embedd {n} {.(suc _)} (Lam exp) = Lam' (embedd exp)
+embedd {n} {.zero} CZero = CZero'
+embedd {n} {.1} Suc = Suc'
