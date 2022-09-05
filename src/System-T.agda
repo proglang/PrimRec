@@ -13,7 +13,7 @@ open Eq.≡-Reasoning using (begin_; _≡⟨⟩_; step-≡; _∎)
 
 open import PR-Nat
 open import Utils
-
+open import HVec
 
 
 -- size of context and number of arguments
@@ -182,9 +182,13 @@ Ctx : ℕ → Set
 Ctx n  = Vec (Ty) n
 
 
-data DBI : ∀ {n : ℕ} -> Ctx n  -> Ty -> Set where
-    ZDB : ∀ {n : ℕ} {ts : Ctx n}  {t} → DBI (t ∷ ts) t
-    SDB : ∀ {n : ℕ} {ts : Ctx n} {t t' : Ty} → DBI (ts) t → DBI (t' ∷ ts) t
+DBI : ∀ {n : ℕ} -> Ctx n  -> Ty -> Set
+DBI = HIndex
+
+
+-- data DBI : ∀ {n : ℕ} -> Ctx n  -> Ty -> Set where
+--     ZDB : ∀ {n : ℕ} {ts : Ctx n}  {t} → DBI (t ∷ ts) t
+--     SDB : ∀ {n : ℕ} {ts : Ctx n} {t t' : Ty} → DBI (ts) t → DBI (t' ∷ ts) t
 
 data Exp' : ∀ {n : ℕ} -> Ctx n  -> Ty -> Set where
     Var' : ∀ {n : ℕ} {ctx : Ctx n} {ty} → DBI ctx ty → Exp' ctx ty
@@ -200,12 +204,26 @@ data Exp' : ∀ {n : ℕ} -> Ctx n  -> Ty -> Set where
 ℕtoCtx : (n : ℕ) → Ctx n
 ℕtoCtx n = repeat n TyNat
 
+-- finToDBI : ∀ {n : ℕ} → (Fin n) → DBI (ℕtoCtx n) TyNat
+-- finToDBI zero = ZDB
+-- finToDBI (suc f) = SDB (finToDBI f)
+
 finToDBI : ∀ {n : ℕ} → (Fin n) → DBI (ℕtoCtx n) TyNat
-finToDBI zero = ZDB
-finToDBI (suc f) = SDB (finToDBI f)
+finToDBI zero = ZI
+finToDBI (suc f) = SI (finToDBI f)
 
 embedd : ∀ {n m} → Exp n m → Exp' {n} (ℕtoCtx n) (ℕtoTy m) 
 embedd (Var x) = Var' (finToDBI x)
 embedd (Lam exp) = Lam' (embedd exp)
 embedd CZero = CZero'
 embedd Suc = Suc'
+
+evalTy : Ty → Set
+evalTy TyNat = ℕ
+evalTy (tyA ⇒ tyB) = (evalTy tyA) → (evalTy tyB)
+
+evalExp' : ∀ {n : ℕ} {ctx : Ctx n} {ty : Ty}  → Exp' ctx ty → HVec evalTy ctx → (evalTy ty)
+evalExp' (Var' x) ctx = lkupH x ctx
+evalExp' (Lam' exp) ctx = λ x → evalExp' exp (x ∷ᴴ ctx)
+evalExp' CZero' ctx = 0
+evalExp' Suc' ctx = λ x → suc x
