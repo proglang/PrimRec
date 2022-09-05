@@ -2,7 +2,7 @@ module HVec where
 
 open import Data.Fin using (Fin; suc; zero)
 open import Data.List using (List) renaming ([] to []ᴸ; _∷_ to _∷ᴸ_; _++_ to _++ᴸ_; length to lengthᴸ; map to mapᴸ)
-open import Data.Vec using (Vec) renaming ([] to []ⱽ; _∷_ to _∷ⱽ_) --  _++_; lookup; map; toList; head)
+open import Data.Vec using (Vec ;replicate) renaming ([] to []ⱽ; _∷_ to _∷ⱽ_ ) --  _++_; lookup; map; toList; head)
 open import Data.Nat using (ℕ; suc; zero; _*_; _+_)
 
 
@@ -25,6 +25,28 @@ lkupH : ∀ {n : ℕ} {xs : Vec S n} {F : S → Set} {x} →   HIndex xs x → H
 lkupH ZI (x ∷ᴴ xs) = x
 lkupH (SI i) (x ∷ᴴ xs) = lkupH i xs
 
+
+id : A → A 
+id x = x
+
+-- fromVec : ∀ {n : ℕ} {S : Set} → Vec S n →  HVec id (replicate S) 
+-- fromVec xs = ?
+
+toHVec : {S : Set} (v : Vec S n) → HVec (λ x → S) v
+toHVec []ⱽ = []ᴴ
+toHVec (x ∷ⱽ v) = x ∷ᴴ toHVec v
+
+
+
+
+-- toHVec' : {n : ℕ} {S : Set} (v : Vec S n) → HVec  (λ x → {!   !}) (repeat {! n  !} {!S   !})
+-- toHVec' []ⱽ = []ᴴ
+-- toHVec' (x ∷ⱽ v) = x ∷ᴴ toHVec v
+
+
+
+-- fromVec : ∀ {n : ℕ} {S : Set} → Vec ℕ n →  HVec id (replicate ℕ) 
+-- fromVec xs = ?
 
 -- hlookup : ∀ {ss : Vec S n}{F : S → Set} (a* : HList F (toList ss)) → (i : Fin n) → F (lookup ss i)
 -- hlookup {ss = s ∷ ss} (a ∷ᴴ a*) Fin.zero = a

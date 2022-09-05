@@ -227,3 +227,66 @@ evalExp' (Var' x) ctx = lkupH x ctx
 evalExp' (Lam' exp) ctx = λ x → evalExp' exp (x ∷ᴴ ctx)
 evalExp' CZero' ctx = 0
 evalExp' Suc' ctx = λ x → suc x
+
+
+
+countArgs : Ty → ℕ
+countArgs TyNat = 0
+countArgs (tyA ⇒ tyB) = suc (countArgs tyB)
+
+getArgs : (ty : Ty) -> Vec Ty (countArgs ty) 
+getArgs TyNat = []
+getArgs (ty ⇒ tyB) = ty ∷ getArgs tyB
+
+init' : ∀  {n : ℕ} {A : Set} → Vec A n → Vec A (n ∸ 1 )
+init' [] = []
+init' [ x ] = []
+init' (x ∷ y ∷ vs) = x ∷ init (y ∷ vs)
+
+
+uncurryH : ∀ {ty : Ty} → evalTy ty → HVec evalTy ( (getArgs ty))  → ℕ
+uncurryH {TyNat} exp hxs = exp
+uncurryH {tyA ⇒ tyB} f (x ∷ᴴ hxs) = uncurryH (f x) hxs
+-- ty ∷ (countArgs tyB) 
+
+
+toHVec' : ∀  {n} → (v : Vec ℕ n) → HVec (evalTy) (repeat n TyNat )
+toHVec' [] = []ᴴ
+toHVec' (x ∷ v) = x ∷ᴴ toHVec' v
+
+
+evalExp'' : ∀ {n : ℕ} {ctx : Ctx n} {ty : Ty}  → Exp' ctx ty → HVec evalTy ctx → HVec evalTy (getArgs ty) → ℕ
+evalExp'' exp ctx = uncurryH (evalExp' exp ctx)
+
+
+helper' : ∀ (m : ℕ ) → repeat (countArgs (ℕtoTy m)) TyNat ≡ getArgs (ℕtoTy m) 
+helper' zero = refl
+helper' (suc n) = cong (λ xs → TyNat ∷ xs) (helper' n)
+
+helper'' :  ∀ {m : ℕ } → HVec evalTy (repeat (countArgs (ℕtoTy m)) TyNat) → HVec evalTy (getArgs (ℕtoTy m))  
+helper''  {m} hxs rewrite helper' m = hxs
+
+helper''' : ∀ {m} → m ≡ (countArgs (ℕtoTy m))
+helper''' {zero} = refl
+helper''' {suc m} = cong suc (helper''' {m})
+
+helper'''' : ∀ {A : Set} {m} → Vec A m → Vec A (countArgs (ℕtoTy m))
+helper'''' {A}{m} vs rewrite (sym(helper''' {m})) = vs
+
+-- helper'''' :  ∀ {m : ℕ } → HVec evalTy (repeat m TyNat) → HVec evalTy   (repeat (countArgs (ℕtoTy m)) TyNat)
+-- helper''''  {m} hxs rewrite helper''' m = {!   !}
+
+-- helper' : ∀ (m) → m ≡  (getArgs (ℕtoTy m)) 
+-- helper' m = ?
+helper1 : ∀ {n : ℕ} (ctx : Vec ℕ n) (x : Fin n)  → lookup ctx x ≡ evalExp'' (Var' (finToDBI x)) (toHVec' ctx) (helper'' (toHVec' (helper'''' [])))
+helper1  (x ∷ ctx) zero = refl
+helper1 (x₁ ∷ ctx) (suc x) rewrite helper1  ctx x  = refl
+
+sound-embedd : ∀ {n m : ℕ} (exp : Exp n m)  (ctx : Vec ℕ n) (args : Vec ℕ m) → (evalST exp ctx args)  ≡  (evalExp'' (embedd  exp) (toHVec' ctx) ) (helper'' (toHVec'   (helper'''' args)))
+sound-embedd (Var x) ctx []   = helper1 ctx x
+sound-embedd (Lam exp) (ctx) (x ∷ args) rewrite sound-embedd exp (x ∷ ctx) args = {! cong ? ? !}
+sound-embedd CZero ctx args = refl
+sound-embedd Suc ctx [ n ] = refl
+
+ -- (evalST exp ctx args) 
+
