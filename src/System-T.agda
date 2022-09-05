@@ -183,8 +183,8 @@ Ctx n  = Vec (Ty) n
 
 
 data DBI : ∀ {n : ℕ} -> Ctx n  -> Ty -> Set where
-    ZDB : ∀ {t ts} → DBI (t ∷ ts) t
-    SDB : ∀ {t ts t'} → DBI (ts) t → DBI (t' ∷ ts) t
+    ZDB : ∀ {n : ℕ} {ts : Ctx n}  {t} → DBI (t ∷ ts) t
+    SDB : ∀ {n : ℕ} {ts : Ctx n} {t t' : Ty} → DBI (ts) t → DBI (t' ∷ ts) t
 
 data Exp' : ∀ {n : ℕ} -> Ctx n  -> Ty -> Set where
     Var' : ∀ {n : ℕ} {ctx : Ctx n} {ty} → DBI ctx ty → Exp' ctx ty
@@ -200,12 +200,12 @@ data Exp' : ∀ {n : ℕ} -> Ctx n  -> Ty -> Set where
 ℕtoCtx : (n : ℕ) → Ctx n
 ℕtoCtx n = repeat n TyNat
 
--- finToDBI : ∀ {n : ℕ} → (Fin n) → DBI (ℕtoCtx n) TyNat
--- finToDBI zero = ZDB {TyNat} {ℕtoCtx (1)}
--- finToDBI (suc f) = {!   !}
+finToDBI : ∀ {n : ℕ} → (Fin n) → DBI (ℕtoCtx n) TyNat
+finToDBI zero = ZDB
+finToDBI (suc f) = SDB (finToDBI f)
 
 embedd : ∀ {n m} → Exp n m → Exp' {n} (ℕtoCtx n) (ℕtoTy m) 
-embedd {n} {.zero} (Var x) = Var' {!   !}
-embedd {n} {.(suc _)} (Lam exp) = Lam' (embedd exp)
-embedd {n} {.zero} CZero = CZero'
-embedd {n} {.1} Suc = Suc'
+embedd (Var x) = Var' (finToDBI x)
+embedd (Lam exp) = Lam' (embedd exp)
+embedd CZero = CZero'
+embedd Suc = Suc'
