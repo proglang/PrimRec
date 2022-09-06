@@ -18,7 +18,6 @@ open import PR-Nat
 open import Utils
 open import HVec
 
--- {-# REWRITE +-comm #-}
 
 
 -- size of context and number of arguments
@@ -28,14 +27,16 @@ data Exp : ℕ → ℕ  → Set where
     Lam : Exp (suc n) m → Exp n (suc m)
     CZero :  Exp n zero
     Suc : Exp n (suc zero)
-
+    App : Exp n (suc m) → Exp n (zero) → Exp n m
+    Nat : ℕ  → Exp n zero
 
 evalST : Exp n m → Vec ℕ n → Vec ℕ m → ℕ 
 evalST (Var x) ctx args = lookup ctx x
 evalST (Lam exp) ctx (x ∷ args) = evalST exp (x ∷ ctx) args
 evalST CZero ctx args = 0
 evalST Suc ctx [ x ] = suc x
-
+evalST (App f x) ctx args = evalST f ctx ( evalST x ctx [] ∷ args)
+evalST (Nat n) _ [] = n
 
 evalSTClosed : Exp zero m → Vec ℕ m → ℕ
 evalSTClosed exp args = evalST exp [] args
@@ -81,6 +82,9 @@ helperFin' {n} = refl
 
 swapIndicesF : ∀  {m : ℕ}  {n : ℕ} → Fin (n + m)   ≡ Fin (m + n) 
 swapIndicesF {m} {n}  rewrite +-comm m n  = refl
+
+-- {-# REWRITE swapIndicesF #-}
+
 
 
 swapIndicesF' : ∀  {m : ℕ}  {n : ℕ} → Fin (n + m)   → Fin (m + n) 
@@ -155,7 +159,10 @@ eqPrSTn n (C pr x) v = {!   !}
 eqPrSTn .(suc _) (P pr pr₁) v = {!   !}
 
 
--------------------------------
+------------------------------------------------------------------------------
+-- embedding
+------------------------------------------------------------------------------
+
 data Ty : Set where
     TyNat : Ty
     _⇒_ : Ty → Ty → Ty
@@ -178,7 +185,8 @@ data Exp' : ∀ {n : ℕ} -> Ctx n  -> Ty -> Set where
     Lam'  : ∀ {n : ℕ} {ctx : Ctx n} { tyA tyB} → Exp' (tyA ∷ ctx) tyB → Exp' ctx  (tyA ⇒ tyB)
     CZero' :   ∀ {n : ℕ} {ctx : Ctx n} → Exp' ctx TyNat
     Suc' : ∀ {n : ℕ} {ctx : Ctx n} → Exp' ctx (TyNat ⇒ TyNat)
-
+    App' : ∀ {n : ℕ} {ctx : Ctx n} {tyA tyB} →   Exp' ctx (tyA ⇒ tyB) → Exp' ctx tyA → Exp' ctx tyB
+    Nat' : ∀ {n : ℕ} {ctx : Ctx n} → ℕ → Exp' ctx TyNat
 
 ℕtoTy : ℕ → Ty
 ℕtoTy zero = TyNat
@@ -197,6 +205,8 @@ embedd (Var x) = Var' (finToDBI x)
 embedd (Lam exp) = Lam' (embedd exp)
 embedd CZero = CZero'
 embedd Suc = Suc'
+embedd (App f x) = App' (embedd f) (embedd x)
+embedd (Nat n) = Nat' n
 
 evalTy : Ty → Set
 evalTy TyNat = ℕ
@@ -207,8 +217,8 @@ evalExp' (Var' x) ctx = lkupH x ctx
 evalExp' (Lam' exp) ctx = λ x → evalExp' exp (x ∷ᴴ ctx)
 evalExp' CZero' ctx = 0
 evalExp' Suc' ctx = λ x → suc x
-
-
+evalExp' (App' f x) ctx = (evalExp' f ctx) (evalExp' x ctx)
+evalExp' (Nat' n) ctx = n
 
 countArgs : Ty → ℕ
 countArgs TyNat = 0
@@ -282,8 +292,8 @@ helper1 : ∀ {n : ℕ} (ctx : Vec ℕ n) (x : Fin n)  → lookup ctx x ≡ eval
 helper1  (x ∷ ctx) zero = refl
 helper1 (x₁ ∷ ctx) (suc x) rewrite helper1  ctx x  = refl
 
-helper2 : ∀ {n  x : ℕ} (args :  Vec ℕ n ) → (helper'' (toHVec' (helper'''' (x ∷ args)))) ≡ x ∷ᴴ (helper'' (toHVec' (helper'''' ( args))))
-helper2 {n} {x} args  = begin ((helper'' (toHVec' (helper'''' (x ∷ args)))) ≡⟨ {!   !} ⟩ helper'' (toHVec' {! x ∷ args  !}) ≡⟨⟩ {!   !})
+-- helper2 : ∀ {n  x : ℕ} (args :  Vec ℕ n ) → (helper'' (toHVec' (helper'''' (x ∷ args)))) ≡ x ∷ᴴ (helper'' (toHVec' (helper'''' ( args))))
+-- helper2 {n} {x} args  = begin ((helper'' (toHVec' (helper'''' (x ∷ args)))) ≡⟨ {!   !} ⟩ helper'' (toHVec' {! x ∷ args  !}) ≡⟨⟩ {!   !})
 
 -- sound-embedd : ∀ {n m : ℕ} (exp : Exp n m)  (ctx : Vec ℕ n) (args : Vec ℕ m) → (evalST exp ctx args)  ≡  (evalExp'' (embedd  exp) (toHVec' ctx) ) (helper'' (toHVec'   (helper'''' args)))
 -- sound-embedd (Var x) ctx []   = helper1 ctx x
@@ -294,8 +304,12 @@ helper2 {n} {x} args  = begin ((helper'' (toHVec' (helper'''' (x ∷ args)))) �
  
 sound-embedd : ∀ {n m : ℕ} (exp : Exp n m)  (ctx : Vec ℕ n) (args : Vec ℕ m) → (evalST exp ctx args)  ≡  (evalExp'' (embedd  exp) (toHVec' ctx) ) ( (toHVec'   ( args)))
 sound-embedd (Var x) ctx []   = helper1 ctx x
-sound-embedd {n} {suc m} (Lam exp) (ctx) (x ∷ args) rewrite sound-embedd exp (x ∷ ctx) args    = refl
+sound-embedd {n} {suc m} (Lam exp) (ctx) (x ∷ args) rewrite sound-embedd exp (x ∷ ctx) args = refl
 sound-embedd CZero ctx args = refl
 sound-embedd Suc ctx [ n ] = refl 
-
+sound-embedd (App f x) ctx args rewrite sound-embedd x ctx []  | sound-embedd f ctx ( (evalExp' (embedd x) (toHVec' ctx)) ∷ args) = refl
+sound-embedd (Nat n) ctx [] = refl
 -- | toHVecCons {m} {x} args
+-- rewrite sound-embedd x [] 
+-- v
+--  | sound-embedd f ctx (evalST x ctx [] ∷ args)
