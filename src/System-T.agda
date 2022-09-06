@@ -1,14 +1,17 @@
+{-# OPTIONS --rewriting --prop -v rewriting:50 #-}
+
 module System-T where
+
+
 
 open import Data.Fin using (Fin; suc; zero; fromℕ; opposite; raise)
 open import Data.Nat using (ℕ; suc; zero; _∸_; _+_)
 open import Data.Nat.Properties using (+-suc; +-identityʳ; +-comm)
 open import Data.Vec using (Vec; []; _∷_; _++_; lookup; map; toList; head; init) 
-
 import Relation.Binary.PropositionalEquality as Eq
 open Eq using (_≡_; refl; cong; sym)
 open Eq.≡-Reasoning using (begin_; _≡⟨⟩_; step-≡; _∎)
-
+open import Agda.Builtin.Equality.Rewrite
 
 
 open import PR-Nat
@@ -150,28 +153,6 @@ eqPrSTn n (C pr x) v = {!   !}
 eqPrSTn .(suc _) (P pr pr₁) v = {!   !}
 
 
-
--- eqPrSTPi : ∀  (n : ℕ ) (v : Vec ℕ n) (f : Fin n) → lookup v f ≡ evalSTClosed (prToST' n (π f)) v
--- eqPrSTPi (suc zero) (x ∷ v) zero = refl
--- eqPrSTPi (suc (suc n)) (x ∷ v) zero = {!   !}
--- eqPrSTPi (suc (suc n)) (x ∷ v) (suc f) rewrite (eqPrSTPi (suc n) v f) = {!   !}
-
--- eqPrSTPi' : ∀  (m n : ℕ ) (f : Fin n) (xs : Vec ℕ n) (ys : Vec ℕ m) → evalST (convProj''' n m f ) ys xs ≡ lookup  xs f
--- eqPrSTPi' zero (suc m) zero (x ∷ xs) [] = {!   !}
--- eqPrSTPi' zero (suc m) (suc f) (x ∷ xs) [] = {!   !}
--- eqPrSTPi' (suc n) m f xs ys = {!   !}
-
-
-
-
-
-
-
-
-
-
-
-
 -------------------------------
 data Ty : Set where
     TyNat : Ty
@@ -204,9 +185,6 @@ data Exp' : ∀ {n : ℕ} -> Ctx n  -> Ty -> Set where
 ℕtoCtx : (n : ℕ) → Ctx n
 ℕtoCtx n = repeat n TyNat
 
--- finToDBI : ∀ {n : ℕ} → (Fin n) → DBI (ℕtoCtx n) TyNat
--- finToDBI zero = ZDB
--- finToDBI (suc f) = SDB (finToDBI f)
 
 finToDBI : ∀ {n : ℕ} → (Fin n) → DBI (ℕtoCtx n) TyNat
 finToDBI zero = ZI
@@ -247,17 +225,17 @@ init' (x ∷ y ∷ vs) = x ∷ init (y ∷ vs)
 uncurryH : ∀ {ty : Ty} → evalTy ty → HVec evalTy ( (getArgs ty))  → ℕ
 uncurryH {TyNat} exp hxs = exp
 uncurryH {tyA ⇒ tyB} f (x ∷ᴴ hxs) = uncurryH (f x) hxs
--- ty ∷ (countArgs tyB) 
 
 
 toHVec' : ∀  {n} → (v : Vec ℕ n) → HVec (evalTy) (repeat n TyNat )
 toHVec' [] = []ᴴ
 toHVec' (x ∷ v) = x ∷ᴴ toHVec' v
 
+toHVecCons  : ∀  {n v} → (vs : Vec ℕ n) → toHVec' (v ∷ vs) ≡ v ∷ᴴ toHVec' vs
+toHVecCons vs = refl
 
 evalExp'' : ∀ {n : ℕ} {ctx : Ctx n} {ty : Ty}  → Exp' ctx ty → HVec evalTy ctx → HVec evalTy (getArgs ty) → ℕ
 evalExp'' exp ctx = uncurryH (evalExp' exp ctx)
-
 
 helper' : ∀ (m : ℕ ) → repeat (countArgs (ℕtoTy m)) TyNat ≡ getArgs (ℕtoTy m) 
 helper' zero = refl
@@ -266,27 +244,28 @@ helper' (suc n) = cong (λ xs → TyNat ∷ xs) (helper' n)
 helper'' :  ∀ {m : ℕ } → HVec evalTy (repeat (countArgs (ℕtoTy m)) TyNat) → HVec evalTy (getArgs (ℕtoTy m))  
 helper''  {m} hxs rewrite helper' m = hxs
 
-helper''' : ∀ {m} → m ≡ (countArgs (ℕtoTy m))
+helper''' : ∀ {m} → (countArgs (ℕtoTy m)) ≡ m 
 helper''' {zero} = refl
 helper''' {suc m} = cong suc (helper''' {m})
 
 helper'''' : ∀ {A : Set} {m} → Vec A m → Vec A (countArgs (ℕtoTy m))
-helper'''' {A}{m} vs rewrite (sym(helper''' {m})) = vs
+helper'''' {A}{m} vs rewrite ((helper''' {m})) = vs
 
--- helper'''' :  ∀ {m : ℕ } → HVec evalTy (repeat m TyNat) → HVec evalTy   (repeat (countArgs (ℕtoTy m)) TyNat)
--- helper''''  {m} hxs rewrite helper''' m = {!   !}
 
--- helper' : ∀ (m) → m ≡  (getArgs (ℕtoTy m)) 
--- helper' m = ?
+{-# REWRITE helper' helper'''  #-}
+
 helper1 : ∀ {n : ℕ} (ctx : Vec ℕ n) (x : Fin n)  → lookup ctx x ≡ evalExp'' (Var' (finToDBI x)) (toHVec' ctx) (helper'' (toHVec' (helper'''' [])))
 helper1  (x ∷ ctx) zero = refl
 helper1 (x₁ ∷ ctx) (suc x) rewrite helper1  ctx x  = refl
 
+
+helper2 : ∀ {n  x : ℕ} (args :  Vec ℕ n ) → (helper'' (toHVec' (helper'''' (x ∷ args)))) ≡ x ∷ᴴ (helper'' (toHVec' (helper'''' ( args))))
+helper2 {n} {x} args  = begin ((helper'' (toHVec' (helper'''' (x ∷ args)))) ≡⟨ {!   !} ⟩ helper'' (toHVec' {! x ∷ args  !}) ≡⟨⟩ {!   !})
+
 sound-embedd : ∀ {n m : ℕ} (exp : Exp n m)  (ctx : Vec ℕ n) (args : Vec ℕ m) → (evalST exp ctx args)  ≡  (evalExp'' (embedd  exp) (toHVec' ctx) ) (helper'' (toHVec'   (helper'''' args)))
 sound-embedd (Var x) ctx []   = helper1 ctx x
-sound-embedd (Lam exp) (ctx) (x ∷ args) rewrite sound-embedd exp (x ∷ ctx) args = {! cong ? ? !}
+sound-embedd {n} {suc m} (Lam exp) (ctx) (x ∷ args) rewrite sound-embedd exp (x ∷ ctx) args | toHVecCons {m} {x} args   = {!m   !}
 sound-embedd CZero ctx args = refl
 sound-embedd Suc ctx [ n ] = refl
-
- -- (evalST exp ctx args) 
-
+--  
+ 
