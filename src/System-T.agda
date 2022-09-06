@@ -18,6 +18,8 @@ open import PR-Nat
 open import Utils
 open import HVec
 
+-- {-# REWRITE +-comm #-}
+
 
 -- size of context and number of arguments
 
@@ -252,20 +254,48 @@ helper'''' : ∀ {A : Set} {m} → Vec A m → Vec A (countArgs (ℕtoTy m))
 helper'''' {A}{m} vs rewrite ((helper''' {m})) = vs
 
 
-{-# REWRITE helper' helper'''  #-}
 
-helper1 : ∀ {n : ℕ} (ctx : Vec ℕ n) (x : Fin n)  → lookup ctx x ≡ evalExp'' (Var' (finToDBI x)) (toHVec' ctx) (helper'' (toHVec' (helper'''' [])))
+helper4 : ∀ (n : ℕ) → countArgs (ℕtoTy n) ≡ n 
+helper4 zero = refl
+helper4 (suc n) = cong suc (helper4 n)
+
+
+
+
+{-# REWRITE helper' helper''' helper4  #-}
+
+helper3 : ∀ (n : ℕ) → repeat n TyNat ≡ getArgs (ℕtoTy n)
+helper3 zero = refl
+helper3 (suc n) = cong (λ vs → TyNat ∷ vs) (helper3 n)
+
+
+{-# REWRITE helper3  #-}
+
+
+
+-- helper1 : ∀ {n : ℕ} (ctx : Vec ℕ n) (x : Fin n)  → lookup ctx x ≡ evalExp'' (Var' (finToDBI x)) (toHVec' ctx) (helper'' (toHVec' (helper'''' [])))
+-- helper1  (x ∷ ctx) zero = refl
+-- helper1 (x₁ ∷ ctx) (suc x) rewrite helper1  ctx x  = refl
+
+
+helper1 : ∀ {n : ℕ} (ctx : Vec ℕ n) (x : Fin n)  → lookup ctx x ≡ evalExp'' (Var' (finToDBI x)) (toHVec' ctx) ([]ᴴ)
 helper1  (x ∷ ctx) zero = refl
 helper1 (x₁ ∷ ctx) (suc x) rewrite helper1  ctx x  = refl
-
 
 helper2 : ∀ {n  x : ℕ} (args :  Vec ℕ n ) → (helper'' (toHVec' (helper'''' (x ∷ args)))) ≡ x ∷ᴴ (helper'' (toHVec' (helper'''' ( args))))
 helper2 {n} {x} args  = begin ((helper'' (toHVec' (helper'''' (x ∷ args)))) ≡⟨ {!   !} ⟩ helper'' (toHVec' {! x ∷ args  !}) ≡⟨⟩ {!   !})
 
-sound-embedd : ∀ {n m : ℕ} (exp : Exp n m)  (ctx : Vec ℕ n) (args : Vec ℕ m) → (evalST exp ctx args)  ≡  (evalExp'' (embedd  exp) (toHVec' ctx) ) (helper'' (toHVec'   (helper'''' args)))
-sound-embedd (Var x) ctx []   = helper1 ctx x
-sound-embedd {n} {suc m} (Lam exp) (ctx) (x ∷ args) rewrite sound-embedd exp (x ∷ ctx) args | toHVecCons {m} {x} args   = {!m   !}
-sound-embedd CZero ctx args = refl
-sound-embedd Suc ctx [ n ] = refl
+-- sound-embedd : ∀ {n m : ℕ} (exp : Exp n m)  (ctx : Vec ℕ n) (args : Vec ℕ m) → (evalST exp ctx args)  ≡  (evalExp'' (embedd  exp) (toHVec' ctx) ) (helper'' (toHVec'   (helper'''' args)))
+-- sound-embedd (Var x) ctx []   = helper1 ctx x
+-- sound-embedd {n} {suc m} (Lam exp) (ctx) (x ∷ args) rewrite sound-embedd exp (x ∷ ctx) args | toHVecCons {m} {x} args   = {!m   !}
+-- sound-embedd CZero ctx args = refl
+-- sound-embedd Suc ctx [ n ] = refl
 --  
  
+sound-embedd : ∀ {n m : ℕ} (exp : Exp n m)  (ctx : Vec ℕ n) (args : Vec ℕ m) → (evalST exp ctx args)  ≡  (evalExp'' (embedd  exp) (toHVec' ctx) ) ( (toHVec'   ( args)))
+sound-embedd (Var x) ctx []   = helper1 ctx x
+sound-embedd {n} {suc m} (Lam exp) (ctx) (x ∷ args) rewrite sound-embedd exp (x ∷ ctx) args    = refl
+sound-embedd CZero ctx args = refl
+sound-embedd Suc ctx [ n ] = refl 
+
+-- | toHVecCons {m} {x} args
