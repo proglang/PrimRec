@@ -4,7 +4,7 @@ module System-T where
 
 
 
-open import Data.Fin using (Fin; suc; zero; fromℕ; opposite; raise)
+open import Data.Fin using (Fin; suc; zero; fromℕ; opposite; raise; inject+)
 open import Data.Nat using (ℕ; suc; zero; _∸_; _+_)
 open import Data.Nat.Properties using (+-suc; +-identityʳ; +-comm)
 open import Data.Vec using (Vec; []; _∷_; _++_; lookup; map; toList; head; init) 
@@ -63,39 +63,25 @@ mkConstZero (suc m) = Lam (mkConstZero m)
 -- projection
 ------------------------------------------------------------------------------
 
+{-# REWRITE +-identityʳ +-suc #-}
 
 convProj'' : (m : ℕ) → (n : ℕ) → Fin (n + m)  →  Exp n m
-convProj'' zero n f rewrite +-identityʳ n = Var f
-convProj'' (suc m) n f rewrite +-suc n m  = Lam (convProj'' m (suc n) f)
+convProj'' zero n f  = Var f
+convProj'' (suc m) n f  = Lam (convProj'' m (suc n) f)
+
+
+myInject : ∀ {m} n → Fin m → Fin (n + m)
+myInject n zero = zero
+myInject n (suc f) = suc (myInject n f)
 
 
 convProj''' :  (m : ℕ) → (n : ℕ) → Fin m  → Exp n m
-convProj'''  m n f = convProj'' m n (raise n (opposite {m} f))
+convProj'''  m n f = convProj'' m n (myInject n (opposite {m} f))
 
 helperFin : opposite {1} zero ≡  zero
 helperFin = refl
 
 
-helperFin' : ∀ {n : ℕ}  → opposite {suc n} zero ≡  fromℕ n
-helperFin' {n} = refl
-
-
-swapIndicesF : ∀  {m : ℕ}  {n : ℕ} → Fin (n + m)   ≡ Fin (m + n) 
-swapIndicesF {m} {n}  rewrite +-comm m n  = refl
-
--- {-# REWRITE swapIndicesF #-}
-
-
-
-swapIndicesF' : ∀  {m : ℕ}  {n : ℕ} → Fin (n + m)   → Fin (m + n) 
-swapIndicesF' {m} {n} f rewrite swapIndicesF {m} {n}  = f
-
-
-
-eqProj'''' : ∀  (m : ℕ)  (n : ℕ) (f : Fin (n + m) ) (xs : Vec ℕ n) (ys : Vec ℕ m)  → evalST (convProj'' m n f) xs ys ≡ lookup (ys ++ xs) (swapIndicesF'   {m} {n} f)
-eqProj'''' zero (suc n) zero (x ∷ xs) []  = {!   !}
-eqProj'''' zero (suc n) (suc f) (x ∷ xs) [] = {!   !}
-eqProj'''' (suc m) n f xs (y ∷ ys) = {!  xs !}
 
 ------------------------------------------------------------------------------
 -- conversion
@@ -154,10 +140,16 @@ eqPrSTZ n v = eqPrSTZ' zero n [] v
 eqPrSTn : ∀  (n : ℕ ) ( pr : PR n) (v : Vec ℕ n ) → eval pr v ≡ evalSTClosed (prToST' n  pr) v
 eqPrSTn n Z v = eqPrSTZ n v
 eqPrSTn 1 σ [ x ] = refl
-eqPrSTn n (π i) v = {!   !}
+eqPrSTn (suc n) (π i) (v ∷ vs) = {!   !}
 eqPrSTn n (C pr x) v = {!   !}
-eqPrSTn .(suc _) (P pr pr₁) v = {!   !}
+eqPrSTn .(suc _) (P pr pr₁) v = {!   !}                -- convProj'' m n (myInject n (opposite {m} f)) -- 
 
+helper11 : ∀  {v m n : ℕ} (i : Fin (suc n)) (args : Vec ℕ n)(ctx : Vec ℕ m) → lookup (v ∷ args) i ≡ evalST (convProj''  (suc n) m ((myInject m (opposite {suc n} i)))) ctx (v ∷ args)
+helper11 zero [] ctx = refl
+helper11 {v} zero (x ∷ args) ctx  rewrite helper11 {v} zero args (v ∷ ctx )= {!   !}
+helper11 (suc f) (x ∷ args) ctx = {!   !}
+
+-- rewrite helper11 zero args ctx
 
 ------------------------------------------------------------------------------
 -- embedding
@@ -233,11 +225,9 @@ init' [] = []
 init' [ x ] = []
 init' (x ∷ y ∷ vs) = x ∷ init (y ∷ vs)
 
-
 uncurryH : ∀ {ty : Ty} → evalTy ty → HVec evalTy ( (getArgs ty))  → ℕ
 uncurryH {TyNat} exp hxs = exp
 uncurryH {tyA ⇒ tyB} f (x ∷ᴴ hxs) = uncurryH (f x) hxs
-
 
 toHVec' : ∀  {n} → (v : Vec ℕ n) → HVec (evalTy) (repeat n TyNat )
 toHVec' [] = []ᴴ
@@ -263,13 +253,9 @@ helper''' {suc m} = cong suc (helper''' {m})
 helper'''' : ∀ {A : Set} {m} → Vec A m → Vec A (countArgs (ℕtoTy m))
 helper'''' {A}{m} vs rewrite ((helper''' {m})) = vs
 
-
-
 helper4 : ∀ (n : ℕ) → countArgs (ℕtoTy n) ≡ n 
 helper4 zero = refl
 helper4 (suc n) = cong suc (helper4 n)
-
-
 
 
 {-# REWRITE helper' helper''' helper4  #-}
@@ -282,24 +268,11 @@ helper3 (suc n) = cong (λ vs → TyNat ∷ vs) (helper3 n)
 {-# REWRITE helper3  #-}
 
 
-
--- helper1 : ∀ {n : ℕ} (ctx : Vec ℕ n) (x : Fin n)  → lookup ctx x ≡ evalExp'' (Var' (finToDBI x)) (toHVec' ctx) (helper'' (toHVec' (helper'''' [])))
--- helper1  (x ∷ ctx) zero = refl
--- helper1 (x₁ ∷ ctx) (suc x) rewrite helper1  ctx x  = refl
-
-
 helper1 : ∀ {n : ℕ} (ctx : Vec ℕ n) (x : Fin n)  → lookup ctx x ≡ evalExp'' (Var' (finToDBI x)) (toHVec' ctx) ([]ᴴ)
 helper1  (x ∷ ctx) zero = refl
 helper1 (x₁ ∷ ctx) (suc x) rewrite helper1  ctx x  = refl
 
--- helper2 : ∀ {n  x : ℕ} (args :  Vec ℕ n ) → (helper'' (toHVec' (helper'''' (x ∷ args)))) ≡ x ∷ᴴ (helper'' (toHVec' (helper'''' ( args))))
--- helper2 {n} {x} args  = begin ((helper'' (toHVec' (helper'''' (x ∷ args)))) ≡⟨ {!   !} ⟩ helper'' (toHVec' {! x ∷ args  !}) ≡⟨⟩ {!   !})
 
--- sound-embedd : ∀ {n m : ℕ} (exp : Exp n m)  (ctx : Vec ℕ n) (args : Vec ℕ m) → (evalST exp ctx args)  ≡  (evalExp'' (embedd  exp) (toHVec' ctx) ) (helper'' (toHVec'   (helper'''' args)))
--- sound-embedd (Var x) ctx []   = helper1 ctx x
--- sound-embedd {n} {suc m} (Lam exp) (ctx) (x ∷ args) rewrite sound-embedd exp (x ∷ ctx) args | toHVecCons {m} {x} args   = {!m   !}
--- sound-embedd CZero ctx args = refl
--- sound-embedd Suc ctx [ n ] = refl
 --  
  
 sound-embedd : ∀ {n m : ℕ} (exp : Exp n m)  (ctx : Vec ℕ n) (args : Vec ℕ m) → (evalST exp ctx args)  ≡  (evalExp'' (embedd  exp) (toHVec' ctx) ) ( (toHVec'   ( args)))
@@ -309,7 +282,3 @@ sound-embedd CZero ctx args = refl
 sound-embedd Suc ctx [ n ] = refl 
 sound-embedd (App f x) ctx args rewrite sound-embedd x ctx []  | sound-embedd f ctx ( (evalExp' (embedd x) (toHVec' ctx)) ∷ args) = refl
 sound-embedd (Nat n) ctx [] = refl
--- | toHVecCons {m} {x} args
--- rewrite sound-embedd x [] 
--- v
---  | sound-embedd f ctx (evalST x ctx [] ∷ args)
