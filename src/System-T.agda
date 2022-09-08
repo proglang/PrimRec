@@ -9,7 +9,7 @@ open import Data.Nat using (ℕ; suc; zero; _∸_; _+_)
 open import Data.Nat.Properties using (+-suc; +-identityʳ; +-comm)
 open import Data.Vec using (Vec; []; _∷_; _++_; lookup; map; toList; head; init; reverse; last; foldl) -- ; _ʳ++_) 
 open import Function.Base using (const; _∘′_; id; _∘_)
--- open import Data.Vec.Base using (_ʳ++_)
+open import Data.Vec.Properties using () -- (++-assoc)
 import Relation.Binary.PropositionalEquality as Eq
 open Eq using (_≡_; refl; cong; sym)
 open Eq.≡-Reasoning using (begin_; _≡⟨⟩_; step-≡; _∎)
@@ -82,10 +82,20 @@ myInject : ∀ {m} n → Fin m → Fin (n + m)
 myInject n zero = zero
 myInject n (suc f) = suc (myInject n f)
 
+myInject0 :  ∀ {m}  (f  : Fin m)  → myInject zero f ≡ f
+myInject0 zero = refl
+myInject0 (suc f) = cong suc (myInject0 f)
+
+{-# REWRITE myInject0 #-}
+
 
 convProj :  (m : ℕ) → (n : ℕ) → Fin m  → Exp n m
 convProj  m n f = convProjHelper m n (myInject n (opposite {m} f))
 
+
+_++2_ : ∀ {m n} → Vec A m → Vec A n → Vec A (n + m)
+(x ∷ xs)      ++2 ys =  (x ∷ (xs ++2 ys))
+[] ++2 ys =  ys
 
 _++r_ : ∀ {m n} → Vec A m → Vec A n → Vec A (n + m)
 (x ∷ xs)      ++r ys = xs ++r (x ∷ ys)
@@ -96,9 +106,9 @@ id' : ∀ {m n : ℕ } → Vec A (m + n) → Vec A (n + m)
 id' {A} {m} {n} vs rewrite +-comm m n = vs
 
 
-++r-reverse' : ∀ {A : Set} {m n : ℕ}  (xs : Vec A m) (ys : Vec A n) →    (xs ++r ys) ≡ id' {A} {m} {n} ((reverse xs) ++ ys)
-++r-reverse' {A} {zero} {n} [] ys = {!   !} 
-++r-reverse' (x ∷ xs) ys = {!   !}
+++r-reverse' : ∀ {A : Set} {m n : ℕ}  (xs : Vec A m) (ys : Vec A n) →    (xs ++r ys) ≡ ((reverse xs) ++2 ys)
+++r-reverse' {A} {zero} {n} [] ys = refl 
+++r-reverse' (x ∷ xs) ys rewrite ++r-reverse' xs ((x ∷ ys)) = {!   !}
 
 ++r-reverse : ∀ {m} (xs : Vec A m) → xs ++r [] ≡ (reverse xs)
 ++r-reverse [] = refl
@@ -122,8 +132,12 @@ eqProj'' {n} f vs = evalST (convProjHelper (suc n) zero (opposite f)) [] vs ≡�
 
 
 eqProj''' : ∀  {n : ℕ} (f : Fin ((suc n)) ) (vs : Vec ℕ (suc n))  → lookup (vs ++r []) (opposite f) ≡ lookup vs f
+eqProj''' {.zero} zero [ x ] = refl
 eqProj''' {n} zero (x ∷ vs) = {!   !}
 eqProj''' {n} (suc f) (x ∷ vs) = {!   !}
+
+
+
 -- ------------------------------------------------------------------------------
 -- -- conversion
 -- ------------------------------------------------------------------------------
@@ -188,7 +202,7 @@ eqPrSTZ n v = eqPrSTZ' zero n [] v
 eqPrSTn : ∀  (n : ℕ ) ( pr : PR n) (v : Vec ℕ n ) → eval pr v ≡ evalSTClosed (prToST' n  pr) v
 eqPrSTn n Z v = eqPrSTZ n v
 eqPrSTn 1 σ [ x ] = refl
-eqPrSTn (suc n) (π i) (vs) = {!   !} --helper12 i ((v ∷ vs)) []
+eqPrSTn (suc n) (π i) (vs) =  sym (eqProj'' i vs) --helper12 i ((v ∷ vs)) []
 eqPrSTn n (C pr x) v = {!   !}
 eqPrSTn .(suc _) (P pr pr₁) v = {!   !}                
 
@@ -326,4 +340,4 @@ eqPrSTn .(suc _) (P pr pr₁) v = {!   !}
 -- sound-embedd Suc ctx [ n ] = refl 
 -- sound-embedd (App f x) ctx args rewrite sound-embedd x ctx []  | sound-embedd f ctx ( (evalExp' (embedd x) (toHVec' ctx)) ∷ args) = refl
 -- sound-embedd (Nat n) ctx [] = refl
-     
+      
