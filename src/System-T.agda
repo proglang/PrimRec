@@ -55,8 +55,9 @@ evalSTClosed exp args = evalST exp [] args
 {-# REWRITE +-identityʳ +-suc toℕ-fromℕ fromℕ-toℕ #-}
 -- exp rewrite +-identityʳ n rewrite +-identityʳ o
 -- rewrite (+-suc o m) rewrite (+-suc n m) 
+-- (m : ℕ) → (n : ℕ) → Fin (n + m)  →  Exp n m
 
-prepLambdas' : ∀ {o} (n : ℕ) → (m : ℕ) →  Exp (n + m) o -> Exp n (o + m)
+prepLambdas' : ∀ {o} (n : ℕ) → (m : ℕ) →  Exp (m + n) o -> Exp n (o + m)
 prepLambdas' {o} n zero exp  = exp
 prepLambdas' {o} n (suc m) exp  = Lam (prepLambdas'  (suc n) m exp)
 
@@ -82,11 +83,10 @@ convZeroSound n v = convZeroSoundHelper zero n [] v
 ------------------------------------------------------------------------------
 
 
-convProjHelper : (m : ℕ) → (n : ℕ) → Fin (n + m)  →  Exp n m
+convProjHelper : (m : ℕ) → (n : ℕ) → Fin (m + n)  →  Exp n m
 -- convProjHelper zero n f  = Var f
 -- convProjHelper (suc m) n f  = Lam (convProjHelper m (suc n) f)
 convProjHelper m n f  = prepLambdas' n m (Var f)
-
 
 
 
@@ -94,58 +94,62 @@ myInject : ∀ {m} n → Fin m → Fin (n + m)
 myInject n zero = zero
 myInject n (suc f) = suc (myInject n f)
 
-myInject0 :  ∀ {m}  (f  : Fin m)  → myInject zero f ≡ f
-myInject0 zero = refl
-myInject0 (suc f) = cong suc (myInject0 f)
+-- myInject0 :  ∀ {m}  (f  : Fin m)  → myInject zero f ≡ f
+-- myInject0 zero = refl
+-- myInject0 (suc f) = cong suc (myInject0 f)
 
-myInject1 : ∀ {m}  (f  : Fin m)  → myInject 1 ( f) ≡ inject₁ ( f) 
-myInject1 {suc zero} zero = refl
-myInject1 {suc (suc m)} zero = refl 
-myInject1 {suc (suc m)} (suc f) = cong suc (myInject1 f)
+Inject+0 :  ∀ {m}  (f  : Fin m)  → inject+ zero f ≡ f
+Inject+0 zero = refl
+Inject+0 (suc f) = cong suc (Inject+0 f)
 
-{-# REWRITE myInject0 myInject1 #-}
+-- myInject1 : ∀ {m}  (f  : Fin m)  → myInject 1 ( f) ≡ inject₁ ( f) 
+-- myInject1 {suc zero} zero = refl
+-- myInject1 {suc (suc m)} zero = refl 
+-- myInject1 {suc (suc m)} (suc f) = cong suc (myInject1 f)
 
-
-myInject' : ∀ (m)( n ) → myInject ( ( (m))) (inject₁ (fromℕ n)) ≡  myInject ( ( ( (suc m)))) (fromℕ n)
-myInject' zero zero = refl
-myInject' zero (suc n) = refl
-myInject' (suc m) zero = refl
-myInject' (suc m) (suc n) = cong suc (myInject' (suc m) n)
-
-myInjectEq : ∀ (m)  (f  : Fin m)  →  (myInject ( m) (inject₁ ( f))) ≡ (myInject ( (suc m)) ( f))
--- myInjectEq m f = (myInject m (inject₁ f)) ≡⟨⟩ ({! (myInject m (inject₁ (fromℕ (toℕ f))))   !} ≡⟨⟩ {!   !}) -- with (toℕ f) -- = -- {!  (toℕ f)  !}
-myInjectEq (suc zero) zero = refl
-myInjectEq (suc (suc m)) zero = refl
-myInjectEq (suc (suc zero)) (suc zero) = cong suc refl
-myInjectEq (suc (suc (suc m))) (suc zero) = cong suc refl
-myInjectEq (suc (suc (suc m))) (suc (suc f)) = cong suc (cong suc {!   !}) --cong suc refl
--- myInjectEq (suc (suc (suc zero))) (suc (suc zero)) = cong suc {!   !} --  cong suc (cong suc {! myInjectEq ((suc (suc m))) f  !})
-
-myInjectEq' : ∀ (m)  (f  : Fin m)  →  (myInject ( suc m) (( f))) ≡ inject₁ (myInject ( ( m)) ( f))
-myInjectEq' (suc zero) zero = refl
-myInjectEq' (suc (suc m)) zero = refl
-myInjectEq' (suc (suc m)) (suc f) = cong suc {!   !}
-
-myInjectEq'' : ∀ (m)( n ) →  myInject (suc (suc m)) (fromℕ n) ≡ suc (myInject (suc m) (fromℕ n))
-myInjectEq'' zero zero = {!   !}
-myInjectEq'' zero (suc n) = {!   !}
-myInjectEq'' (suc m) zero = {!   !}
-myInjectEq'' (suc m) (suc n) = {!   !}
+{-# REWRITE Inject+0  #-}
 
 
-myInjectEq''' : ∀ (n) → inject₁ (fromℕ n) ≡ suc (myInject zero (fromℕ n))
-myInjectEq''' zero = {!   !}
-myInjectEq''' (suc n) = {!   !}
+-- myInject' : ∀ (m)( n ) → myInject ( ( (m))) (inject₁ (fromℕ n)) ≡  myInject ( ( ( (suc m)))) (fromℕ n)
+-- myInject' zero zero = refl
+-- myInject' zero (suc n) = refl
+-- myInject' (suc m) zero = refl
+-- myInject' (suc m) (suc n) = cong suc (myInject' (suc m) n)
+
+-- myInjectEq : ∀ (m)  (f  : Fin m)  →  (myInject ( m) (inject₁ ( f))) ≡ (myInject ( (suc m)) ( f))
+-- -- myInjectEq m f = (myInject m (inject₁ f)) ≡⟨⟩ ({! (myInject m (inject₁ (fromℕ (toℕ f))))   !} ≡⟨⟩ {!   !}) -- with (toℕ f) -- = -- {!  (toℕ f)  !}
+-- myInjectEq (suc zero) zero = refl
+-- myInjectEq (suc (suc m)) zero = refl
+-- myInjectEq (suc (suc zero)) (suc zero) = cong suc refl
+-- myInjectEq (suc (suc (suc m))) (suc zero) = cong suc refl
+-- myInjectEq (suc (suc (suc m))) (suc (suc f)) = cong suc (cong suc {!   !}) --cong suc refl
+-- -- myInjectEq (suc (suc (suc zero))) (suc (suc zero)) = cong suc {!   !} --  cong suc (cong suc {! myInjectEq ((suc (suc m))) f  !})
+
+-- myInjectEq' : ∀ (m)  (f  : Fin m)  →  (myInject ( suc m) (( f))) ≡ inject₁ (myInject ( ( m)) ( f))
+-- myInjectEq' (suc zero) zero = refl
+-- myInjectEq' (suc (suc m)) zero = refl
+-- myInjectEq' (suc (suc m)) (suc f) = cong suc {!   !}
+
+-- myInjectEq'' : ∀ (m)( n ) →  myInject (suc (suc m)) (fromℕ n) ≡ suc (myInject (suc m) (fromℕ n))
+-- myInjectEq'' zero zero = {!   !}
+-- myInjectEq'' zero (suc n) = {!   !}
+-- myInjectEq'' (suc m) zero = {!   !}
+-- myInjectEq'' (suc m) (suc n) = {!   !}
+
+
+-- myInjectEq''' : ∀ (n) → inject₁ (fromℕ n) ≡ suc (myInject zero (fromℕ n))
+-- myInjectEq''' zero = {!   !}
+-- myInjectEq''' (suc n) = {!   !}
 
 convProj :  (m : ℕ) → (n : ℕ) → Fin m  → Exp n m
-convProj  m n f = convProjHelper m n (myInject n (opposite {m} f))
+convProj  m n f = convProjHelper m n (inject+ n (opposite {m} f))
 
 
 _++2_ : ∀ {A : Set}{m n} → Vec A m → Vec A n → Vec A (n + m)
 (x ∷ xs)      ++2 ys =  (x ∷ (xs ++2 ys))
 [] ++2 ys =  ys
 
-_++r_ : ∀ {m n} → Vec A m → Vec A n → Vec A (n + m)
+_++r_ : ∀ {m n} → Vec A m → Vec A n → Vec A (m + n)
 (x ∷ xs)      ++r ys = xs ++r (x ∷ ys)
 [] ++r ys =  ys
 
@@ -161,7 +165,7 @@ id' : ∀ {m n : ℕ } → Vec A (m + n) → Vec A (n + m)
 id' {A} {m} {n} vs rewrite +-comm m n = vs
 
 
-++r-reverse' : ∀ {A : Set} {m n : ℕ}  (xs : Vec A m) (ys : Vec A n) →    (xs ++r ys) ≡ ((reverse xs) ++2 ys)
+++r-reverse' : ∀ {A : Set} {m n : ℕ}  (xs : Vec A m) (ys : Vec A n) →    (xs ++r ys) ≡ ((reverse xs) ++ ys)
 ++r-reverse' {A} {zero} {n} [] ys = refl 
 ++r-reverse' (x ∷ xs) ys rewrite ++r-reverse' xs ((x ∷ ys)) = {!   !}
 
@@ -176,13 +180,11 @@ lookupOpRev zero (x ∷ y ∷ xs) = {!   !}
 lookupOpRev {A} {suc (suc n)} (suc f) (x ∷ y ∷ xs)  = {!    !} 
 
 
-convProjSoundHelper : ∀  {m n : ℕ} (f : Fin (n + (suc m)) ) (ctx : Vec ℕ n) (args : Vec ℕ (suc m))  → evalST (convProjHelper (suc m) n f) ctx args ≡ lookup ((  args) ++r ctx) ( f)
+convProjSoundHelper : ∀  {m n : ℕ} (f : Fin (m + (suc n)) ) (ctx : Vec ℕ n) (args : Vec ℕ (suc m))  → evalST (convProjHelper (suc m) n f) ctx args ≡ lookup ((  args) ++r ctx) ( f)
 -- convProjSoundHelper {.zero} {n} f ctx [ x ] = refl
 -- convProjSoundHelper {(suc m)} {n} f ctx (x ∷ y ∷ args) = convProjSoundHelper f  (( x ∷ ctx)) (y ∷ args) 
 convProjSoundHelper f ctx args = prepLambdasEval ctx args (Var f)
 
-convProjSoundHelperAlt : ∀  {m n : ℕ} (f : Fin (suc (m + n)  )) (ctx : Vec ℕ n) (args : Vec ℕ (suc m))  → evalST ({!   !} (suc m) n f) ctx args ≡ lookup ((  args) ++ ctx) ( f)
-convProjSoundHelperAlt = {!   !}
 
 convProjSound : ∀  {n : ℕ} (f : Fin ((suc n)) ) (args : Vec ℕ (suc n))  → evalST (convProjHelper (suc n) zero (opposite f)) [] args ≡ lookup args f
 convProjSound {n} f vs = evalST (convProjHelper (suc n) zero (opposite f)) [] vs ≡⟨ convProjSoundHelper (opposite f) [] vs ⟩ lookup (vs ++r []) (opposite f) ≡⟨⟩ {!   !} ≡⟨⟩ {!   !}
@@ -197,15 +199,10 @@ lookupInj : ∀  {n x : ℕ} (f : Fin ((n)) )(vs : Vec ℕ (n))  → lookup  vs 
 lookupInj zero (x ∷ vs) = {!   !}
 lookupInj (suc f) (x ∷ vs) = {!   !}
  
-lookupOP' : ∀  {n m : ℕ} (f : Fin ((n)) ) (vs : Vec ℕ (n)) (ys : Vec ℕ (m))  → lookup (vs ++r ys) (myInject m (opposite f)) ≡ lookup vs f
--- lookupOP' zero [ x ] xs = refl
--- lookupOP' zero (x ∷ y ∷ vs) [] = {! lookupOP' (  zero)  (y ∷ vs) [ x ] !}  -- lookupOP' zero (y ∷ vs) [ x ]
--- lookupOP' (suc f) (x ∷ vs) [] = lookupOP' f (vs) [ x ] -- lookupOP' f {!  !} {!   !}
--- lookupOP' {(suc (suc n))} {(suc m )} zero (x ∷ x' ∷ vs) (y ∷ ys) rewrite myInject' (suc (suc m)) n = {! lookupOP' (zero) (y ∷ x ∷ x' ∷ vs) ( ys)  !} --  lookupOP' ?  (x' ∷ vs) (x ∷ y ∷ ys) 
--- lookupOP' {suc (suc n) } {suc (m)}(suc f) (x ∷ x' ∷ vs) (y ∷ ys) = lookupOP' {suc n} {suc (suc m)} ( f) {! x' ∷ vs !} (x ∷ y ∷ ys) -- lookupOP' f  ({!  x' !} ∷ {! vs  !}) {!   !} --  lookupOP' f {!   !} ys -- f  (x' ∷ vs) ((x ∷ y ∷ ys))  
+lookupOP' : ∀  {n m : ℕ} (f : Fin ((n)) ) (vs : Vec ℕ (n)) (ys : Vec ℕ (m))  → lookup (vs ++r ys) (inject+ m (opposite f)) ≡ lookup vs f
 lookupOP' {.1} {n} zero [ x ] ys = refl
 lookupOP' {(suc (suc m))} {n} zero (x ∷ y ∷ vs) ys = {! !} --   --lookupOP' zero  ({!   !} ∷ {!   !}) {!   !}
-lookupOP' {.(suc _)} {.zero} (suc f) (x ∷ vs) [] = lookupOP' f vs [ x ]
+lookupOP' {.(suc _)} {.zero} (suc f) (x ∷ vs) [] = {!   !}
 lookupOP' {.(suc _)} {.(suc _)} (suc f) (x ∷ vs) (x₁ ∷ ys) = {!   !}
 
 lkupfromN :  ∀  {n}(vs : Vec ℕ (suc n)) → lookup (vs)  ((fromℕ n)) ≡   last vs
@@ -277,7 +274,7 @@ eqPrST4 (P pr pr₁) v = {!   !}
 eqPrSTn : ∀  (n : ℕ ) ( pr : PR n) (v : Vec ℕ n ) → eval pr v ≡ evalSTClosed (prToST' n  pr) v
 eqPrSTn n Z v = convZeroSound n v
 eqPrSTn 1 σ [ x ] = refl
-eqPrSTn (suc n) (π i) (vs) =  sym (convProjSound i vs) --helper12 i ((v ∷ vs)) []
+eqPrSTn (suc n) (π i) (vs) =  {!   sym (convProjSound i vs) !} -- sym (convProjSound i vs) --helper12 i ((v ∷ vs)) []
 eqPrSTn n (C pr x) v = {!   !}
 eqPrSTn .(suc _) (P pr pr₁) v = {!   !}                
 
