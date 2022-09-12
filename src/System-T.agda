@@ -23,10 +23,6 @@ open import Utils
 open import HVec
 
 
--- rewrite +-comm m n
--- rewrite sym (+-assoc m n o) |
-
--- size of context and number of arguments
 
 data Exp : ℕ → ℕ  → Set where
     Var : Fin n → Exp   n zero
@@ -51,21 +47,20 @@ evalSTClosed exp args = evalST exp [] args
 ------------------------------------------------------------------------------
 -- helper
 ------------------------------------------------------------------------------
--- 
 
--- prepLambdas : (n : ℕ) → (m : ℕ) →  Exp (m + n) o -> Exp n (m + o)
--- prepLambdas n zero  exp = exp
--- prepLambdas n (suc m) exp = Lam (prepLambdas  (suc n) m exp)
--- exp rewrite +-identityʳ n rewrite +-identityʳ o
--- rewrite (+-suc o m) rewrite (+-suc n m) 
--- (m : ℕ) → (n : ℕ) → Fin (n + m)  →  Exp n m
-
--- {-# REWRITE   toℕ-fromℕ fromℕ-toℕ  #-} -- +-assoc +-suc +-identityʳ
 
 
 prepLambdas' : ∀ {o} (n : ℕ) → (m : ℕ) →  Exp (m + n) o -> Exp n (o + m)
 prepLambdas' {o} n zero exp   = exp
 prepLambdas' {o} n (suc m) exp   = Lam (prepLambdas'  (suc n) m exp)
+
+
+prepLambdasEval : ∀ {ctxLen argsLen : ℕ} (ctx : Vec ℕ ctxLen ) (args : Vec ℕ argsLen ) (exp) → evalST (prepLambdas' ctxLen argsLen exp) ctx args ≡ evalST exp (args ++r ctx) []
+prepLambdasEval ctx [] exp = refl
+prepLambdasEval ctx (x ∷ args) exp = prepLambdasEval ((x ∷ ctx)) args  exp
+
+prepLambdasEvalClose : ∀ {argsLen : ℕ}  (args : Vec ℕ argsLen ) (exp) → evalSTClosed (prepLambdas' 0 argsLen exp) args ≡ evalST exp (fastReverse args) []
+prepLambdasEvalClose = prepLambdasEval []
 
 
 ------------------------------------------------------------------------------
@@ -74,15 +69,10 @@ prepLambdas' {o} n (suc m) exp   = Lam (prepLambdas'  (suc n) m exp)
 
 mkConstZero :  {n : ℕ} → (m : ℕ) → Exp n m 
 mkConstZero {n} m = prepLambdas' n m CZero
--- mkConstZero zero = CZero
--- mkConstZero (suc m) = Lam (mkConstZero m)
 
-convZeroSoundHelper : ∀  (n m : ℕ ) (xs : Vec ℕ n )  (ys : Vec ℕ m )→ 0 ≡ evalST (mkConstZero m) xs ys
-convZeroSoundHelper n zero xs ys = refl
-convZeroSoundHelper n (suc m) xs (y ∷ ys) = convZeroSoundHelper (suc n) m (y ∷ xs) ys -- 
 
-convZeroSound : ∀  (n : ℕ ) (v : Vec ℕ n ) → 0 ≡ evalSTClosed (mkConstZero n) v
-convZeroSound n v = convZeroSoundHelper zero n [] v
+convZeroSound : ∀  (n : ℕ ) (v : Vec ℕ n ) → evalSTClosed (mkConstZero n) v  ≡ 0
+convZeroSound n v = prepLambdasEvalClose v CZero 
 
 ------------------------------------------------------------------------------
 -- projection
@@ -90,49 +80,30 @@ convZeroSound n v = convZeroSoundHelper zero n [] v
 
 
 convProjHelper : (m : ℕ) → (n : ℕ) → Fin (m + n)  →  Exp n m
--- convProjHelper zero n f  = Var f
--- convProjHelper (suc m) n f  = Lam (convProjHelper m (suc n) f)
 convProjHelper m n f  = prepLambdas' n m (Var f)
 
 {-# REWRITE inject+0  #-}
 
-{-# REWRITE inject+Eq  #-}
 
 convProj :  (m : ℕ) → (n : ℕ) → Fin m  → Exp n m
 convProj  m n f = convProjHelper m n (inject+ n (opposite {m} f))
 
 
-
-
-prepLambdasEval : ∀ {ctxLen argsLen : ℕ} (ctx : Vec ℕ ctxLen ) (args : Vec ℕ argsLen ) (exp) → evalST (prepLambdas' ctxLen argsLen exp) ctx args ≡ evalST exp (args ++r ctx) []
-prepLambdasEval ctx [] exp = refl
-prepLambdasEval ctx (x ∷ args) exp = prepLambdasEval ((x ∷ ctx)) args  exp
-
-prepLambdasEvalClose : ∀ {argsLen : ℕ}  (args : Vec ℕ argsLen ) (exp) → evalSTClosed (prepLambdas' 0 argsLen exp) args ≡ evalST exp (args ++r []) []
-prepLambdasEvalClose = prepLambdasEval []
-
-
-
-
-convProjSoundHelper : ∀  {m n : ℕ} (f : Fin (m + (suc n)) ) (ctx : Vec ℕ n) (args : Vec ℕ (suc m))  → evalST (convProjHelper (suc m) n f) ctx args ≡ lookup ((  args) ++r ctx) ( f)
--- convProjSoundHelper {.zero} {n} f ctx [ x ] = refl
--- convProjSoundHelper {(suc m)} {n} f ctx (x ∷ y ∷ args) = convProjSoundHelper f  (( x ∷ ctx)) (y ∷ args) 
-convProjSoundHelper f ctx args = prepLambdasEval ctx args (Var f)
+convProjSoundHelper : ∀  {m : ℕ} (f : Fin (suc m ) ) (args : Vec ℕ (suc m))  → evalSTClosed (convProjHelper (suc m) zero f)  args ≡ lookup (( fastReverse args) ) ( f)
+convProjSoundHelper f args = prepLambdasEvalClose args (Var f)
 
 
 convProjSound : ∀  {n : ℕ} (f : Fin ((suc n)) ) (args : Vec ℕ (suc n))  → evalST (convProjHelper (suc n) zero (opposite f)) [] args ≡ lookup args f
-convProjSound {n} f vs = evalST (convProjHelper (suc n) zero (opposite f)) [] vs ≡⟨ convProjSoundHelper (opposite f) [] vs ⟩ lookup (vs ++r []) (opposite f) ≡⟨⟩ {!   !} ≡⟨⟩ {!   !}
+convProjSound {n} f vs = evalST (convProjHelper (suc n) zero (opposite f)) [] vs 
+    ≡⟨ convProjSoundHelper (opposite f) vs ⟩ 
+                        lookup (fastReverse vs) (opposite f) 
+    ≡⟨ lookupOpRev f vs ⟩ 
+                        (lookup vs f) ∎ 
 
 
-
--- lkupfromN'' : ∀  {n m o}(vs : Vec ℕ (suc n)) (ys : Vec ℕ (m)) (xs : Vec ℕ o ) → lookup (vs ++r (xs ++ ys)) (raise o  ( inject+ m (fromℕ n))) ≡ lookup xs (fromℕ o) 
--- lkupfromN'' = ?
 
 {-# REWRITE assoc-comm-suc  #-}
 
--- (inject+ o (fromℕ (n + m))) 
-
--- (inject+ o (fromℕ (n + m)))
 
 -- ------------------------------------------------------------------------------
 -- -- conversion
@@ -189,7 +160,7 @@ eqPrST4 (C pr x) v = {!   !}
 eqPrST4 (P pr pr₁) v = {!   !}
 
 eqPrSTn : ∀  (n : ℕ ) ( pr : PR n) (v : Vec ℕ n ) → eval pr v ≡ evalSTClosed (prToST' n  pr) v
-eqPrSTn n Z v = convZeroSound n v
+eqPrSTn n Z v = sym (convZeroSound n v)
 eqPrSTn 1 σ [ x ] = refl
 eqPrSTn (suc n) (π i) (vs) =  sym (convProjSound i vs) -- sym (convProjSound i vs) --helper12 i ((v ∷ vs)) []
 eqPrSTn n (C pr x) v = {!   !}
@@ -318,4 +289,4 @@ sound-embedd CZero ctx args = refl
 sound-embedd Suc ctx [ n ] = refl 
 sound-embedd (App f x) ctx args rewrite sound-embedd x ctx []  | sound-embedd f ctx ( (evalExp' (embedd x) (toHVec' ctx)) ∷ args) = refl
 sound-embedd (Nat n) ctx [] = refl
-          
+           

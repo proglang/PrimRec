@@ -21,52 +21,29 @@ _++r_ : ∀ {A : Set}{m n} → Vec A m → Vec A n → Vec A (m + n)
 (x ∷ xs)      ++r ys = xs ++r (x ∷ ys)
 [] ++r ys =  ys
 
+fastReverse : ∀ {A : Set} {m : ℕ} → Vec A m → Vec A m
+fastReverse vs = vs ++r []
 
 
-++r-reverse' : ∀ {A : Set} {m n : ℕ}  (xs : Vec A m) (ys : Vec A n) →    (xs ++r ys) ≡ ((reverse xs) ++ ys)
-++r-reverse' {A} {zero} {n} [] ys = refl 
-++r-reverse' (x ∷ xs) ys rewrite ++r-reverse' xs ((x ∷ ys)) = {!   !}
-
-++r-reverse : ∀ {A : Set}{m} (xs : Vec A m) → xs ++r [] ≡ (reverse xs)
-++r-reverse [] = refl
-++r-reverse (x ∷ xs) = {!   !}
-
-
-lookupOpRev :  ∀ {A : Set} {n} (f : Fin n) (xs : Vec A n) → lookup (reverse xs) (opposite f)  ≡ lookup  (xs) f
-lookupOpRev zero (x ∷ []) = {!   !}
-lookupOpRev zero (x ∷ y ∷ xs) = {!   !} 
-lookupOpRev {A} {suc (suc n)} (suc f) (x ∷ y ∷ xs)  = {!    !} 
-
-
-
-lookupOP : ∀  {n : ℕ} (f : Fin ((suc n)) ) (vs : Vec ℕ (suc n))  → lookup (vs ++r []) (opposite f) ≡ lookup vs f
-lookupOP {.zero} zero (x ∷ []) = refl
-lookupOP zero (x ∷ x₁ ∷ vs) = {!   !}
-lookupOP {n} (suc f) (x ∷ vs) = {!n   !}
-
-lookupInj : ∀  {n x : ℕ} (f : Fin ((n)) )(vs : Vec ℕ (n))  → lookup  vs f  ≡ lookup(x ∷ vs)  (inject₁ f) 
-lookupInj zero (x ∷ vs) = {!   !}
-lookupInj (suc f) (x ∷ vs) = {!   !}
  
 {-# REWRITE inject+Eq #-}
 
 
-lookupOP' : ∀  {n m : ℕ} (f : Fin ((n)) ) (vs : Vec ℕ (n)) (ys : Vec ℕ (m))  → lookup (vs ++r ys) (inject+ m (opposite f)) ≡ lookup vs f
-lookupOP' zero (v ∷ vs) ys = {!  !}
-lookupOP' (suc f) (x ∷ vs) (ys) = lookupOP' f (vs) ((x ∷ ys)) --  
-
-
-lkupfromN' : ∀  {n m v}(vs : Vec ℕ (n)) (ys : Vec ℕ (m))   → lookup (vs ++r (v ∷ ys)) (inject+ m (fromℕ n)) ≡ v
-lkupfromN' {n} {m} {v} (xs) (ys) = {!   ys!} 
-
-lkupfromN :  ∀  {n}(vs : Vec ℕ (suc n)) → lookup (vs)  ((fromℕ n)) ≡   last vs
-lkupfromN (x ∷ []) = refl
-lkupfromN {suc (n)} (x ∷ x₁ ∷ vs) = sym (last (x ∷ x₁ ∷ vs) ≡⟨⟩ {! last (x₁ ∷ vs)  !} ≡⟨⟩ ({!   !} ≡⟨⟩ {!   !}) )
-
-
-{-# REWRITE assoc-comm-suc #-}
-
---  (inject+ o (fromℕ (n + m))) -- (xs ++r ys)
-lkupfromN'' : ∀  {m n o :  ℕ}(xs : Vec ℕ m) (ys : Vec ℕ ((suc n) + (o))) → lookup ((xs ++r ys))   (inject+ {suc(m + n)} o (fromℕ ( m + n)))   ≡  lookup ys ( (inject+ o (fromℕ (n ))))
+lkupfromN'' : ∀  {A}{m n o :  ℕ}(xs : Vec A m) (ys : Vec A ((suc n) + (o))) → lookup ((xs ++r ys))   (inject+ {suc(m + n)} o (fromℕ ( m + n)))   ≡  lookup ys ( (inject+ o (fromℕ (n ))))
 lkupfromN'' [] (x ∷ ys) = refl
-lkupfromN'' {suc m} {n} {o} (x ∷ xs) (y ∷ ys) = lkupfromN'' {m} {suc n} {o} xs (x ∷ (y ∷ ys))
+lkupfromN'' {A} {suc m} {n} {o} (x ∷ xs) (y ∷ ys) = lkupfromN'' {A} {m} {suc n} {o} xs (x ∷ (y ∷ ys))
+
+lkupfromN' : ∀  {A} {n m v}(vs : Vec A (n)) (ys : Vec A (m))   → lookup (vs ++r (v ∷ ys)) (inject+ m (fromℕ n)) ≡ v
+lkupfromN' {A} {n} {m} {v} (xs) (ys) = lkupfromN'' {A} {n} xs (v ∷ ys ) 
+
+
+lookupOP' : ∀  {A} {n m : ℕ} (f : Fin ((n)) ) (vs : Vec A (n)) (ys : Vec A (m))  → lookup (vs ++r ys) (inject+ m (opposite f)) ≡ lookup vs f
+lookupOP' zero (v ∷ vs) ys = lkupfromN' vs ys
+lookupOP' (suc f) (x ∷ vs) (ys) = lookupOP' f (vs) ((x ∷ ys))
+
+lookupOpRev :  ∀ {A : Set} {n} (f : Fin n) (xs : Vec A n) → lookup (fastReverse xs) (opposite f)  ≡ lookup  (xs) f
+lookupOpRev f xs rewrite sym(inject+0 (opposite f)) = lookupOP' f xs []
+
+-- ++r-reverse' : ∀ {A : Set} {m n : ℕ}  (xs : Vec A m) (ys : Vec A n) →    (xs ++r ys) ≡ ((fastReverse xs) ++ ys)
+-- ++r-reverse' [] (ys) = refl
+-- ++r-reverse'  (x ∷ xs) ys = {! ++r-reverse' xs ((x ∷ ys))  !}
