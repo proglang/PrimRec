@@ -8,7 +8,7 @@ open import Data.Fin using (Fin; suc; zero; fromℕ; opposite; raise; inject+; i
 open import Data.Nat using (ℕ; suc; zero; _∸_; _+_)
 open import Data.Nat.Properties using (+-suc; +-identityʳ; +-comm; +-assoc)
 open import Data.Vec using (Vec; []; _∷_; _++_; lookup; map; toList; head; init; reverse; last; foldl) -- ; _ʳ++_) 
-open import Function.Base using (const; _∘′_; id; _∘_)
+open import Function.Base using (const; _∘′_; id; _∘_; flip)
 open import Data.Fin.Properties using (toℕ-fromℕ; fromℕ-toℕ) -- (++-assoc)
 import Relation.Binary.PropositionalEquality as Eq
 open Eq using (_≡_; refl; cong; sym)
@@ -93,7 +93,7 @@ convProjSoundHelper : ∀  {m : ℕ} (f : Fin (suc m ) ) (args : Vec ℕ (suc m)
 convProjSoundHelper f args = prepLambdasEvalClose args (Var f)
 
 
-convProjSound : ∀  {n : ℕ} (f : Fin ((suc n)) ) (args : Vec ℕ (suc n))  → evalST (convProjHelper (suc n) zero (opposite f)) [] args ≡ lookup args f
+convProjSound : ∀  {n : ℕ} (f : Fin ((suc n)) ) (args : Vec ℕ (suc n))  → evalSTClosed (convProjHelper (suc n) zero (opposite f)) args ≡ lookup args f
 convProjSound {n} f vs = evalST (convProjHelper (suc n) zero (opposite f)) [] vs 
     ≡⟨ convProjSoundHelper (opposite f) vs ⟩ 
                         lookup (fastReverse vs) (opposite f) 
@@ -102,19 +102,19 @@ convProjSound {n} f vs = evalST (convProjHelper (suc n) zero (opposite f)) [] vs
 
 
 
-{-# REWRITE assoc-comm-suc  #-}
-
-
 -- ------------------------------------------------------------------------------
 -- -- conversion
 -- ------------------------------------------------------------------------------
+
+
+convComp : ∀  {n m : ℕ } (o  : ℕ ) → PR n → Vec (PR m) n → Exp o m
 
 
 prToST : (n : ℕ) → (m : ℕ) → PR m → Exp n m 
 prToST n m Z = mkConstZero m
 prToST n .1 σ = Suc
 prToST n m (π i) = convProj m n ( i)
-prToST n m (C pr x) = {!   !}
+prToST n m (C f gs) = convComp n f gs
 prToST n .(suc _) (P pr pr₁) = {!   !}
 
 
@@ -166,9 +166,80 @@ eqPrSTn (suc n) (π i) (vs) =  sym (convProjSound i vs) -- sym (convProjSound i 
 eqPrSTn n (C pr x) v = {!   !}
 eqPrSTn .(suc _) (P pr pr₁) v = {!   !}                
 
--- ∀ {m} (i : Fin m) lookup vs i ≡ evalSTClosed (prToST' (suc n) (π i)) vs
+
+-- ------------------------------------------------------------------------------
+-- -- composition
+-- ------------------------------------------------------------------------------
+
+mkFinvec : ∀ (n : ℕ ) (m : ℕ ) → Vec (Fin (n + m)) n
+mkFinvec zero m = []
+mkFinvec (suc n) m = inject+ m  (fromℕ n ) ∷ (mkFinvec n (suc m))
+
+arity : ∀ {n : ℕ} (pr : PR n) → ℕ
+arity {n} _ = n
+
+apply* : ∀ {n m o : ℕ} → Exp m (n + o) → Vec (Exp m zero) o  → Exp m n
+apply* exp [] = exp
+apply* exp (x ∷ vec) = apply* (App exp x) vec
 
 
+prToSt* : ∀ (o : ℕ) (m : ℕ)  → Vec (PR m) n → Vec (Exp (m + o) m) n
+prToSt* o m [] = []
+prToSt* o m (x ∷ vs) = (prToST (m + o) m x) ∷ (prToSt* o m vs)
+
+
+generalComp : ∀ {n : ℕ} {m : ℕ} → (o : ℕ) → (Exp (m + o) n) → (Vec (Exp (m + o) m) n) → Exp o m
+generalComp {n} {m} o f' gs' = prepLambdas' o m (apply* f' (map ((flip apply* ) (map Var (mkFinvec m o))) gs'))
+
+
+-- generalCompEQ : ∀ {n : ℕ} {m : ℕ} (f : Exp m n) (gs : Vec (Exp m m) n) (args : Vec ℕ m) →  evalSTClosed (generalComp zero f gs) args ≡  0
+-- generalCompEQ f gs args = {!   !}
+
+
+
+convComp {n} {m} o f gs = generalComp o (prToST (m + o) n f) (prToSt* o m  gs) -- let f' = prToST (m + o) n f
+                            --   gs' = map  (prToST (m + o) m) gs
+--                               gs' = prToSt* o m  gs
+--                             --   args = map Var (mkFinvec m o) 
+--                             --   gs'' = map ((flip apply* ) args) gs'
+--                             --   fApplied  = apply* f' gs'' 
+--                             --   x = {!   !}
+--                               in generalComp o f' gs'
+-- -- prToST n m (C f gs) = convComp n f gs
+
+
+convCompSound : ∀ {n m : ℕ} (f : PR m) (gs : Vec (PR n) m) (vs : Vec ℕ n)  → evalSTClosed (prToST' n (C f gs)) vs ≡ eval f (eval* gs vs)  
+convCompSound pr gs vs = {!   !}
+
+
+convCompZeroHelper : ∀ {n m o : ℕ} (exp : Exp  o zero) →  apply* exp (map Var (mkFinvec 0 o)) ≡ exp
+convCompZeroHelper exp = refl
+
+-- {-# REWRITE convCompZeroHelper   #-}
+
+
+map-id : ∀ {A : Set} {n : ℕ} (vs : Vec A n) → map (λ x → x) vs ≡ vs
+map-id [] = refl
+map-id (x ∷ vs) = cong (x ∷_) (map-id vs)
+
+convCompZero : ∀ {o m : ℕ} (f : PR m) (gs : Vec (PR zero) m) → convComp o f gs ≡ apply* (prToST o m f) (prToSt* o zero  gs)
+convCompZero {o} {m} f (gs) rewrite map-id ((prToSt* o 0 gs)) = refl -- convComp o f gs ≡⟨⟩ (apply* (prToST o m f) (map (λ x → apply* x (map Var (mkFinvec 0 o))) (prToSt* o 0 gs)) ≡⟨⟩ {!   !})
+
+
+convCompSound' : ∀ {n m : ℕ} (f : PR m) (gs : Vec (PR n) m) (vs : Vec ℕ n)  → evalST (generalComp zero (prToST n m f) (prToSt* zero n gs))[] vs ≡ eval f (eval* gs vs)  
+-- convCompSound' {zero} {m} f gs [] rewrite convCompZero {zero} f gs = {! +  !} 
+convCompSound'  {n} {m} f gs (vs) = (evalST (generalComp zero (prToST n m f) (prToSt* zero n gs))[] vs) ≡⟨⟩ 
+                                    (evalSTClosed (prepLambdas' zero n ((apply* ((prToST n m f)) (map ((flip apply* ) (map Var (mkFinvec n zero))) ((prToSt* zero n gs))))))  vs) 
+                                        ≡⟨ prepLambdasEvalClose vs (((apply* ((prToST n m f)) (map ((flip apply* ) (map Var (mkFinvec n zero))) ((prToSt* zero n gs)))))) ⟩ 
+                                    evalST (apply* (prToST n m f) (map ((flip apply* ) (map Var (mkFinvec n zero))) (prToSt* zero n gs)))   (fastReverse vs) [] ≡⟨⟩ 
+                                    {!   !} ≡⟨⟩ 
+                                    {!   !} 
+
+
+-- prepLambdasEvalClose : ∀ {argsLen : ℕ}  (args : Vec ℕ argsLen ) (exp) → evalSTClosed (prepLambdas' 0 argsLen exp) args ≡ evalST exp (fastReverse args) []
+                                    
+-- (apply* ? (map ((flip apply* ) (map Var (mkFinvec m zero))) ?))
+-- prepLambdas' zero n (apply* f (map ((flip apply* ) (map Var (mkFinvec n zero))) gs))
 -- ------------------------------------------------------------------------------
 -- -- embedding
 -- ------------------------------------------------------------------------------
