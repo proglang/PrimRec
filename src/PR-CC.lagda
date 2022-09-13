@@ -1,3 +1,4 @@
+\begin{code}
 module PR-CC where
 
 open import Data.Unit using (⊤; tt)
@@ -53,3 +54,4 @@ data _→ᴾ_ : Ty → Ty → Set where
 ⟦ `# f g ⟧ᴱ            = < ⟦ f ⟧ᴱ , ⟦ g ⟧ᴱ >
 ⟦ π₁ ⟧ᴱ                = proj₁
 ⟦ π₂ ⟧ᴱ                = proj₂
+\end{code}

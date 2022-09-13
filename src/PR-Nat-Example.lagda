@@ -1,3 +1,4 @@
+\begin{code}
 module PR-Nat-Example where
 
 import Relation.Binary.PropositionalEquality as Eq
@@ -78,3 +79,4 @@ facP=fac zero = refl
 facP=fac (suc m)
   rewrite facP=fac m
         | mulP=* (fac m) (suc m) = refl
+\end{code}

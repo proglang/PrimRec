@@ -1,3 +1,4 @@
+\begin{code}
 module NatsVec-CC where
 
 import Relation.Binary.PropositionalEquality as Eq
@@ -84,3 +85,4 @@ sound (NV.P g h) (suc i ∷ v)
   = cong ⟦ T⟦ h ⟧ ⟧ᴱ (trans (lemma-iso-+ (NV.eval (NV.P g h) (i ∷ v)) (i ∷ v))
                            (cong (λ ih → ⟦ iso-+ _ _ ⟧ᴱ ⟨ ih , ⟨ i , T⟦ v ⟧ⱽ ⟩ ⟩)
                                  (sound (NV.P g h) (i ∷ v))))
+\end{code}

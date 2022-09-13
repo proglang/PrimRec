@@ -1,3 +1,4 @@
+\begin{code}
 module PR-NatsVec where
 
 open import Data.Fin using (Fin; suc; zero)
@@ -29,3 +30,4 @@ eval (C g f) v* = eval g (eval f v*)
 eval (♯ g f) v* = eval g v* ++ eval f v*
 eval (P g h) (zero ∷ v*) = eval g v*
 eval (P g h) (suc x ∷ v*) = eval h (eval (P g h) (x ∷ v*) ++ x ∷ v*)
+\end{code}
