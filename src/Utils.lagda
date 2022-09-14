@@ -11,6 +11,7 @@ open import Function using (_∘_)
 
 pattern [_] x = x ∷ []
 pattern [_,_] x y = x ∷ y ∷ []
+pattern [_,_,_] x y z = x ∷ y ∷ z ∷ []
 
 variable
   A : Set                       -- alphabet
