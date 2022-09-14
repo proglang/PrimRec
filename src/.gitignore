@@ -1,0 +1,9 @@
+auto
+latex
+*.aux
+*.bbl
+*.blg
+*.log
+*.ptb
+*.rel
+*.synctex.gz
