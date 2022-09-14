@@ -64,26 +64,7 @@ module Nats-NatsVec where
 -- primitive recursion on words over alphabet A
 ----------------------------------------------------------------------
 
-module Words where
-  data PRW (A : Set) : ℕ → Set where
-    Z : PRW A n
-    σ : (a : A) → PRW A (suc zero)
-    π : (i : Fin n) → PRW A n
-    C : PRW A m → Vec (PRW A n) m → PRW A n
-    P : (g : PRW A n) → (h : A → PRW A (suc (suc n))) → PRW A (suc n)
-
-  eval  : PRW A n → Vec (List A) n → List A
-  eval* : Vec (PRW A n) m → Vec (List A) n → Vec (List A) m
-
-  eval Z        v*               = []ᴸ
-  eval (σ x)    (xs ∷ v*)        = x ∷ᴸ xs
-  eval (π i)    v*               = lookup v* i
-  eval (C f g*) v*               = eval f (eval* g* v*)
-  eval (P g h)  ([]ᴸ ∷ v*)       = eval g v*
-  eval (P g h)  ((x ∷ᴸ xs) ∷ v*) = eval (h x) (eval (P g h) (xs ∷ v*) ∷ xs ∷ v*)
-
-  eval* []       v*              = []
-  eval* (p ∷ p*) v*              = eval p v* ∷ eval* p* v*
+import PR-Words as Words
 
 ----------------------------------------------------------------------
 -- primitive recursion on trees over ranked alphabet A
@@ -344,7 +325,7 @@ module NatsToWords where
   -- pr on words simulates pr on natural numbers
 
   {-# TERMINATING #-}
-  ⟦_⟧ : Nats.PR n → Words.PRW ⊤ n
+  ⟦_⟧ : Nats.PR n → Words.PR ⊤ n
   ⟦ Nats.Z ⟧ = Words.Z
   ⟦ Nats.σ ⟧ = Words.σ tt
   ⟦ Nats.π i ⟧ = Words.π i
@@ -379,7 +360,7 @@ module WordsToTrees where
   make-r (just _) = 1
   
   {-# TERMINATING #-}
-  ⟦_⟧ : Words.PRW A n → Trees.PRR{Maybe A} (make-r{A}) n
+  ⟦_⟧ : Words.PR A n → Trees.PRR{Maybe A} (make-r{A}) n
   ⟦ Words.Z ⟧ = Trees.C (Trees.σ nothing) []
   ⟦ Words.σ a ⟧ = Trees.σ (just a)
   ⟦ Words.π i ⟧ = Trees.π i

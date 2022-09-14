@@ -1,4 +1,4 @@
-\begin{code}
+\begin{code}[hide]
 module PR-Nat-Example where
 
 import Relation.Binary.PropositionalEquality as Eq
@@ -19,14 +19,16 @@ open import PR-Nat
 
 ----------------------------------------------------------------------
 -- addition
-
+\end{code}
+\begin{code}
 addP : PR 2
 addP = P (π zero) (C σ [ π zero ])
 
 addP=+ : ∀ m n → eval addP [ m , n ] ≡ m + n
 addP=+ zero n = refl
-addP=+ (suc m) n = cong suc (addP=+ m n)
-
+addP=+ (suc m) n rewrite addP=+ m n = refl
+\end{code}
+\begin{code}[hide]
 ----------------------------------------------------------------------
 -- multiplication
 
