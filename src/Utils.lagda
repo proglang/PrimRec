@@ -1,3 +1,4 @@
+\begin{code}
 module Utils where
 
 import Relation.Binary.PropositionalEquality as Eq
@@ -38,3 +39,4 @@ map-repeat (suc n) x f rewrite map-repeat n x f = refl
 
 asType : ∀ {A B : Set} → A → A ≡ B → B
 asType a refl = a
+\end{code}

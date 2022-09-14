@@ -1,3 +1,4 @@
+\begin{code}
 module PrimRecWord where
 
 import Relation.Binary.PropositionalEquality as Eq
@@ -471,3 +472,4 @@ module TreesToHetTrees where
 
   sound* [] v* = refl
   sound* (p ∷ p*) v* rewrite sound* p* v* = {!!}
+\end{code}

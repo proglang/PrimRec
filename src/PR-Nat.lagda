@@ -1,3 +1,4 @@
+\begin{code}
 module PR-Nat where
 
 open import Data.Fin using (Fin; suc; zero)
@@ -29,3 +30,4 @@ eval (P g h)  (suc x ∷ v*) = eval h ((eval (P g h) (x ∷ v*)) ∷ (x ∷ v*))
 
 eval* []       v*          = []
 eval* (p ∷ p*) v*          = eval p v*  ∷ eval* p* v*
+\end{code}
