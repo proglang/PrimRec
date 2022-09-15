@@ -5,11 +5,11 @@ TARGET_FILES= $(addprefix $(PREFIX)/, $(addsuffix .tex, $(TARGET_MODULES)))
 
 .PHONY: all all_files
 
-all:
+all: all_files
 	pdflatex jfpmain
 
 all_files: $(TARGET_FILES)
 	@echo $(PATH)
 
 $(PREFIX)/%.tex: %.lagda
-	agda --latex $<
+	agda --latex --only-scope-checking $<
