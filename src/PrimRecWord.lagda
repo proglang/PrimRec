@@ -320,37 +320,7 @@ module HTrees2 where
 
 -- results
 
-module NatsToWords where
-
-  -- pr on words simulates pr on natural numbers
-
-  {-# TERMINATING #-}
-  ⟦_⟧ : Nats.PR n → Words.PR ⊤ n
-  ⟦ Nats.Z ⟧ = Words.Z
-  ⟦ Nats.σ ⟧ = Words.σ tt
-  ⟦ Nats.π i ⟧ = Words.π i
-  ⟦ Nats.C f g* ⟧ = Words.C ⟦ f ⟧ (map ⟦_⟧ g*)
-  ⟦ Nats.P g h ⟧ = Words.P ⟦ g ⟧ (λ{ tt → ⟦ h ⟧})
-
-  ⟦_⟧ⱽ : ℕ → List ⊤
-  ⟦ zero ⟧ⱽ  = []ᴸ
-  ⟦ suc n ⟧ⱽ = tt ∷ᴸ ⟦ n ⟧ⱽ
-
-  sound : ∀ {n} p v* → ⟦ Nats.eval {n} p v* ⟧ⱽ ≡ Words.eval ⟦ p ⟧ (map ⟦_⟧ⱽ v*)
-  sound* : ∀ {m n} p* v* → map{n = m} ⟦_⟧ⱽ (Nats.eval* {n = n}{m = m} p* v*) ≡ Words.eval* (map ⟦_⟧ p*) (map ⟦_⟧ⱽ v*)
-
-  sound Nats.Z v* = refl
-  sound Nats.σ (x ∷ []) = refl
-  sound (Nats.π i) v* = sym (lookup-map i ⟦_⟧ⱽ v*)
-  sound (Nats.C f g*) v* rewrite sound f (Nats.eval* g* v*) | sound* g* v* = refl
-  sound (Nats.P g h) (zero ∷ v*) = sound g v*
-  sound (Nats.P g h) (suc x ∷ v*) = trans (sound h (Nats.eval (Nats.P g h) (x ∷ v*) ∷ x ∷ v*))
-                                          (cong (Words.eval ⟦ h ⟧) 
-                                                (cong (_∷ ⟦ x ⟧ⱽ ∷ map ⟦_⟧ⱽ v*)
-                                                      (sound (Nats.P g h) (x ∷ v*))))
-
-  sound* [] v* = refl
-  sound* (p ∷ p*) v* rewrite sound p v* | sound* p* v* = refl
+import NatsToWords
 
 module WordsToTrees where
 
