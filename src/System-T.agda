@@ -52,6 +52,15 @@ raiseExP o Suc = Suc
 raiseExP o (App f x) = App (raiseExP o f) (raiseExP o x)
 raiseExP o (Nat x) = Nat x
 
+
+raiseExp0Eq : ∀ {m n}  (exp : Exp m n) → raiseExP 0 exp ≡ exp 
+raiseExp0Eq (Var x) = cong Var (inject+0 x)
+raiseExp0Eq (Lam exp) = cong Lam (raiseExp0Eq exp)
+raiseExp0Eq CZero = refl
+raiseExp0Eq Suc = refl
+raiseExp0Eq (App f x) rewrite raiseExp0Eq f |  raiseExp0Eq x = refl
+raiseExp0Eq (Nat x) = refl
+
 raiseExPSound : ∀ {m n o} (exp : Exp m n) (ctx : Vec ℕ m)(ctx2 : Vec ℕ o)(args : Vec ℕ n) → evalST exp ctx args ≡ evalST (raiseExP o exp) (ctx ++ ctx2) args
 raiseExPSound (Var x) (ctx) ctx2 args = sym (lookup-++ˡ ctx ctx2 x) -- lookup-++ˡ {! ctx  !} {!   !} x
 raiseExPSound (Lam exp) ctx ctx2 (a ∷ args) rewrite raiseExPSound exp (a ∷ ctx) ctx2 args = refl
@@ -177,13 +186,15 @@ prToST n pr = raiseExP n (prToST' pr)
 -- eqPrST4 (π (suc (suc (suc zero)))) (x ∷ x₁ ∷ [ x₂ , x₃ ]) = refl
 -- eqPrST4 (C pr x) v = {!   !}
 -- eqPrST4 (P pr pr₁) v = {!   !}
+convCompSound : ∀ {n m} (f : PR n)  (gs : Vec  (PR m) n ) (vs : Vec ℕ m) → evalSTClosed (convComp f gs) vs  ≡  eval f (eval* gs vs)
 
-eqPrSTn : ∀  (n : ℕ ) ( pr : PR n) (v : Vec ℕ n ) → eval pr v ≡ evalSTClosed (prToST'   pr) v
-eqPrSTn n Z v = sym (convZeroSound n v)
-eqPrSTn 1 σ [ x ] = refl
-eqPrSTn (suc n) (π i) (vs) =  sym (convProjSound i vs) -- sym (convProjSound i vs) --helper12 i ((v ∷ vs)) []
-eqPrSTn n (C pr x) v = {!   !}
-eqPrSTn .(suc _) (P pr pr₁) v = {!   !}                
+
+eqPrSTn : ∀  {n : ℕ} ( pr : PR n) (v : Vec ℕ n ) → eval pr v ≡ evalSTClosed (prToST'   pr) v
+eqPrSTn {n} Z v = sym (convZeroSound n v)
+eqPrSTn  σ [ x ] = refl
+eqPrSTn  {suc n} (π i) (vs) =  sym (convProjSound i vs)
+eqPrSTn  (C f gs) vs = sym (convCompSound f gs vs)
+eqPrSTn  (P pr pr₁) v = {!   !}                
 
 
 -- -- ------------------------------------------------------------------------------
@@ -301,6 +312,22 @@ evalGeneralComp {n} {m} f gs args = (evalSTClosed (generalComp f gs) args)
                                                 evalST (raiseExP m f) (fastReverse args) (map (λ exp → evalSTClosed exp args) gs) 
                                                         ≡⟨ sym ( raiseExPSound f []  (fastReverse args) (map (λ exp → evalSTClosed exp args) gs)) ⟩ 
                                                 evalST f [] (map (λ exp → evalSTClosed exp args) gs) ∎ 
+
+
+eval*≡evalPrToST* : ∀ {n m}  (vs : Vec ℕ m) (gs : Vec (PR m) n) → (map (λ g → evalSTClosed g vs) (prToSt* zero gs)) ≡ (eval* gs vs)
+eval*≡evalPrToST* vs [] = refl
+eval*≡evalPrToST* vs (g ∷ gs) rewrite eqPrSTn  g vs | eval*≡evalPrToST* vs gs | raiseExp0Eq (prToST' g) = refl
+
+convCompSoundHelper : ∀ {n m} (f : PR n) (vs : Vec ℕ m) (gs : Vec (PR m) n) → evalSTClosed (prToST' f) (map (λ g → evalSTClosed g vs) (prToSt* zero gs))≡ eval f (eval* gs vs)
+convCompSoundHelper f vs gs rewrite eval*≡evalPrToST* vs gs | eqPrSTn f (eval* gs vs) = refl
+
+convCompSound f gs vs = (evalSTClosed (convComp f gs) vs) 
+        ≡⟨⟩ 
+                (((evalSTClosed (generalComp (prToST' f) (prToSt* zero gs)) vs)) 
+        ≡⟨ evalGeneralComp (prToST' f) (prToSt* zero gs) vs ⟩ 
+                (evalSTClosed (prToST' f)  (map (λ g → evalSTClosed g vs) (prToSt* zero gs)) 
+        ≡⟨ convCompSoundHelper f  vs gs ⟩ 
+                (eval f (eval* gs vs)) ∎ ))
 
 
 
