@@ -207,30 +207,28 @@ evalApply*Eq :  ∀ {n m : ℕ} (exp : Exp n m) (args : Vec (Exp n zero) m) (ctx
 evalApply*Eq exp [] ctx = refl
 evalApply*Eq {n} {suc m } exp (arg ∷ args) ctx rewrite evalApply*Eq {n} {m} (App exp arg) args ctx = refl
 
-helper20 :  {n m : ℕ}  (vs : Vec ℕ n) (ys : Vec ℕ m) → (map (λ x → lookup (vs ++r ys) x) (mkFinvec n m)) ≡ vs
-helper20 {.zero} [] ys = refl
-helper20 {(suc n)} {m} (x ∷ vs) ys rewrite lookupOP' zero  (x ∷ vs) ys = cong (λ vec → x ∷ vec) (helper20 {n} {suc m} vs (x ∷ ys)) 
+maplookupEq :  {n m : ℕ}  (vs : Vec ℕ n) (ys : Vec ℕ m) → (map (λ x → lookup (vs ++r ys) x) (mkFinvec n m)) ≡ vs
+maplookupEq {.zero} [] ys = refl
+maplookupEq {(suc n)} {m} (x ∷ vs) ys rewrite lookupOP' zero  (x ∷ vs) ys = cong (λ vec → x ∷ vec) (maplookupEq {n} {suc m} vs (x ∷ ys)) 
 
 
-helper23 : ∀ {n : ℕ} (vs : Vec ℕ n) (exp : Exp n n) →  (map (λ arg → evalST arg (fastReverse vs) []) (map Var (mkFinvec n zero))) ≡ vs 
-helper23 {n} vs exp    = 
+mapEvalVarsEq : ∀ {n : ℕ} (vs : Vec ℕ n) (exp : Exp n n) →  (map (λ arg → evalST arg (fastReverse vs) []) (map Var (mkFinvec n zero))) ≡ vs 
+mapEvalVarsEq {n} vs exp    = 
         (map (λ arg → evalST arg (fastReverse vs) []) (map Var (mkFinvec n zero))) 
                 ≡⟨ ∘-map (λ arg → evalST arg (fastReverse vs) []) Var (mkFinvec n zero) ⟩ 
         (map ((λ arg → evalST arg (fastReverse vs) []) ∘ Var) (mkFinvec n zero)) 
                 ≡⟨⟩ 
         ((map (λ f → lookup (fastReverse vs) f ) (mkFinvec n zero)) 
-                ≡⟨ helper20 vs [] ⟩ 
+                ≡⟨ maplookupEq vs [] ⟩ 
         vs ∎) 
 
-helper24 : ∀ {n : ℕ} (vs : Vec ℕ n) (exp : Exp n n) → evalST exp (fastReverse vs) (map (λ arg → evalST arg (fastReverse vs) []) (map Var (mkFinvec n zero))) ≡ evalST exp (fastReverse vs) vs
-helper24 vs exp rewrite helper23 vs exp = refl
+evalApplyToVarsHelper1 : ∀ {n : ℕ} (vs : Vec ℕ n) (exp : Exp n n) → evalST exp (fastReverse vs) (map (λ arg → evalST arg (fastReverse vs) []) (map Var (mkFinvec n zero))) ≡ evalST exp (fastReverse vs) vs
+evalApplyToVarsHelper1 vs exp rewrite mapEvalVarsEq vs exp = refl
 
 
 applyToVars : ∀ {m o} → Exp (m + o) m → Exp (m + o) zero
 applyToVars {m} {o} exp  = ((flip apply* ) (map Var (mkFinvec m o))) exp
 
-
--- raiseExPSound : ∀ {m n o} (exp : Exp m n) (ctx : Vec ℕ m)(ctx2 : Vec ℕ o)(args : Vec ℕ n) → evalST exp ctx args ≡ evalST (raiseExP o exp) (ctx ++ ctx2) args
 
 
 evalApplyToVars :  ∀ {n : ℕ} (exp : Exp zero n) (vs : Vec ℕ n) → evalST (applyToVars (raiseExP n exp)) (fastReverse vs) [] ≡ evalST exp [] vs
@@ -238,7 +236,7 @@ evalApplyToVars  {n} exp vs  =
     evalST (apply* (raiseExP n exp) (map Var (mkFinvec n zero))) (fastReverse vs) [] 
             ≡⟨ evalApply*Eq (raiseExP n exp)  (map Var (mkFinvec n zero)) (fastReverse vs) ⟩ 
     evalST (raiseExP n exp) (fastReverse vs) ((map (λ arg → evalST arg (fastReverse vs) []) ((map Var (mkFinvec n zero))))) 
-            ≡⟨ helper24 vs (raiseExP n exp) ⟩ 
+            ≡⟨ evalApplyToVarsHelper1 vs (raiseExP n exp) ⟩ 
     (evalST (raiseExP n exp) (fastReverse vs) vs) 
             ≡⟨ sym( raiseExPSound exp [] (fastReverse vs) vs) ⟩ 
     (evalST exp [] vs) ∎ 
@@ -249,9 +247,6 @@ prToSt* o  [] = []
 prToSt* {m} o  (x ∷ vs) = (prToST (o) x) ∷ (prToSt* o  vs)
 
 
--- generalComp : ∀ {n : ℕ} {m : ℕ} → (o : ℕ) → (Exp (m + o) n) → (Vec (Exp (m + o) m) n) → Exp o m
--- generalComp {n} {m} o f' gs' = prepLambdas' o m (apply* f' (map (applyToVars {m} {o}) gs'))
-
 generalComp : ∀ {n : ℕ} {m : ℕ}  → (Exp zero n) → (Vec (Exp zero m) n) → Exp zero m
 generalComp {n} {m} f' gs' = prepLambdas' zero m (apply* (raiseExP m f') (map (applyToVars {m} {zero}) (map (raiseExP m)  gs')))
 
@@ -260,34 +255,15 @@ generalComp {n} {m} f' gs' = prepLambdas' zero m (apply* (raiseExP m f') (map (a
 convComp {n} {m} f gs = generalComp (prToST' f) (prToSt* zero gs)
 
 
--- convCompSound : ∀ {n m : ℕ} (f : PR m) (gs : Vec (PR n) m) (vs : Vec ℕ n)  → evalSTClosed (prToST' n (C f gs)) vs ≡ eval f (eval* gs vs)  
--- convCompSound pr gs vs = {!   !}
-
-
--- convCompZeroHelper : ∀ {n m o : ℕ} (exp : Exp  o zero) →  apply* exp (map Var (mkFinvec 0 o)) ≡ exp
--- convCompZeroHelper exp = refl
-
--- {-# REWRITE evalApplyToVars   #-}
 
 
 map-id : ∀ {A : Set} {n : ℕ} (vs : Vec A n) → map (λ x → x) vs ≡ vs
 map-id [] = refl
 map-id (x ∷ vs) = cong (x ∷_) (map-id vs)
 
--- convCompZero : ∀ {o m : ℕ} (f : PR m) (gs : Vec (PR zero) m) → convComp  f gs ≡ apply* (prToST o m f) (prToSt* o zero  gs)
--- convCompZero {o} {m} f (gs) rewrite map-id ((prToSt* o 0 gs)) = refl -- convComp o f gs ≡⟨⟩ (apply* (prToST o m f) (map (λ x → apply* x (map Var (mkFinvec 0 o))) (prToSt* o 0 gs)) ≡⟨⟩ {!   !})
-
--- helper21 : ∀ {n m : ℕ} (vs : Vec ℕ n) (exp : Exp n m ) (exps : Vec (Exp n n) m) → evalST exp (fastReverse vs)(map (λ arg → evalST arg (fastReverse vs) [])(map (λ x → apply* x (map Var (mkFinvec n zero))) exps))  ≡ (evalST exp (fastReverse vs) (map ((λ z → evalST z (fastReverse vs) []) ∘ (λ z → apply* z (map Var (mkFinvec n zero))))  (exps)))
--- helper21 {n} {m} vs exp exps rewrite ∘-map (λ arg → evalST arg (fastReverse vs) []) (λ x → apply* x (map Var (mkFinvec n zero))) exps = refl
-
-helper21 : ∀ {n m : ℕ} (args : Vec ℕ m)(f : Exp zero n) (gs : Vec (Exp zero m) n) → evalST (raiseExP m f) (fastReverse args)(map (λ arg → evalST arg (fastReverse args) []) (map (applyToVars {m} {zero}) (map (raiseExP m) gs))) ≡ evalST (raiseExP m f) (fastReverse args) (map (( λ arg → evalST arg (fastReverse args) []) ∘ (applyToVars {m} {zero})) ((map (raiseExP m) gs)))
-helper21 {n} {m} args f gs rewrite ∘-map (λ arg → evalST arg (fastReverse args) []) (applyToVars {m} {zero}) (map (raiseExP m) gs) = refl 
 
 cong3 : ∀ {A B C D : Set}(f : A → B → C → D) {x y u v w z} → x ≡ y → u ≡ v → w ≡ z → f x u w ≡ f y v z
 cong3 f refl refl refl = refl
-
-
--- evalApplyToVars :  ∀ {n : ℕ} (exp : Exp zero n) (vs : Vec ℕ n) → evalST (applyToVars (raiseExP n exp)) (fastReverse vs) [] ≡ evalST exp [] vs
 
 
 evalApplyToVarsFun :  ∀ {A : Set} {n : ℕ} (vs : Vec ℕ n) → (λ exp → evalST ((applyToVars {n} {zero}) (raiseExP n exp)) (fastReverse vs) []) ≗  (λ exp → evalST exp [] vs)
@@ -297,18 +273,17 @@ evalApplyToVarsMap : ∀ {n m : ℕ} (vs : Vec ℕ n) (gs : Vec (Exp zero n) m) 
 evalApplyToVarsMap vs [] = refl
 evalApplyToVarsMap vs (g ∷ gs) rewrite evalApplyToVars g vs | evalApplyToVarsMap vs gs  = refl
 
--- evalApplyToVarsMap : ∀ {m} (args : Vec ℕ m)( gs : Vec (Exp zero m) n ) → (map (λ x → evalST (applyToVars {n} {zero} (raiseExP m x)) (fastReverse args) [])gs) ≡ map ((λ exp → evalST exp [] args)) gs 
- 
-helper27 : ∀ {m n} (f : Exp zero n) (args : Vec ℕ m)(gs : Vec (Exp zero m) n) → evalST (raiseExP m f) (fastReverse args)(map(λ x → evalST (applyToVars {m} {zero} (raiseExP m x)) (fastReverse args) []) gs) ≡ evalST (raiseExP m f) (fastReverse args)  (map(λ exp → evalST exp [] args) gs)
-helper27 f args gs rewrite evalApplyToVarsMap args gs = refl
 
--- helper22 :  ∀ {n m : ℕ} (args : Vec ℕ m)(f : Exp zero n) (gs : Vec (Exp zero m) n) → evalST (raiseExP m f) (fastReverse args) (map (λ x → evalST ((applyToVars {m} {zero}) x) (fastReverse args) []) (map (raiseExP m) gs)) ≡ evalST (raiseExP m f) (fastReverse args) (map (λ x → evalST  x (fastReverse args) args) (map (raiseExP m) gs))
--- helper22 args f gs rewrite map-cong (evalApplyToVars' args)  = {!   !}
+evalGeneralCompHelper1 : ∀ {n m : ℕ} (args : Vec ℕ m)(f : Exp zero n) (gs : Vec (Exp zero m) n) → evalST (raiseExP m f) (fastReverse args)(map (λ arg → evalST arg (fastReverse args) []) (map (applyToVars {m} {zero}) (map (raiseExP m) gs))) ≡ evalST (raiseExP m f) (fastReverse args) (map (( λ arg → evalST arg (fastReverse args) []) ∘ (applyToVars {m} {zero})) ((map (raiseExP m) gs)))
+evalGeneralCompHelper1 {n} {m} args f gs rewrite ∘-map (λ arg → evalST arg (fastReverse args) []) (applyToVars {m} {zero}) (map (raiseExP m) gs) = refl 
+
+evalGeneralCompHelper2 : ∀ {n m : ℕ} (args : Vec ℕ m)(f : Exp zero n) (gs : Vec (Exp zero m) n) →  evalST (raiseExP m f) (fastReverse args) (map (λ x → evalST (applyToVars {m} {zero} x) (fastReverse args) []) (map (raiseExP m) gs)) ≡ evalST (raiseExP m f) (fastReverse args) (map (λ x → evalST (applyToVars {m} {zero} (raiseExP m x)) (fastReverse args) [])(gs))
+evalGeneralCompHelper2 {n} {m} args f gs rewrite ∘-map (λ x → evalST (applyToVars {m} {zero} x) (fastReverse args) []) (raiseExP m) gs = refl
+
+evalGeneralCompHelper3 : ∀ {m n} (f : Exp zero n) (args : Vec ℕ m)(gs : Vec (Exp zero m) n) → evalST (raiseExP m f) (fastReverse args)(map(λ x → evalST (applyToVars {m} {zero} (raiseExP m x)) (fastReverse args) []) gs) ≡ evalST (raiseExP m f) (fastReverse args)  (map(λ exp → evalST exp [] args) gs)
+evalGeneralCompHelper3 f args gs rewrite evalApplyToVarsMap args gs = refl
 
 
-helper26 : ∀ {n m : ℕ} (args : Vec ℕ m)(f : Exp zero n) (gs : Vec (Exp zero m) n) →  evalST (raiseExP m f) (fastReverse args) (map (λ x → evalST (applyToVars {m} {zero} x) (fastReverse args) []) (map (raiseExP m) gs)) ≡ evalST (raiseExP m f) (fastReverse args) (map (λ x → evalST (applyToVars {m} {zero} (raiseExP m x)) (fastReverse args) [])(gs))
-helper26 {n} {m} args f gs rewrite ∘-map (λ x → evalST (applyToVars {m} {zero} x) (fastReverse args) []) (raiseExP m) gs = refl
--- helper25 
 evalGeneralComp : ∀ {n m : ℕ} (f : Exp zero n) (gs : Vec (Exp zero m) n) (args : Vec  ℕ m)  → evalSTClosed (generalComp f gs) args ≡ evalSTClosed f (map (λ g → evalSTClosed g args) gs)
 evalGeneralComp {n} {m} f gs args = (evalSTClosed (generalComp f gs) args)
                                                 ≡⟨⟩ evalSTClosed (prepLambdas' zero m (apply* (raiseExP m f) (map (applyToVars {m} {zero}) (map (raiseExP m)  gs)))) args 
@@ -316,37 +291,16 @@ evalGeneralComp {n} {m} f gs args = (evalSTClosed (generalComp f gs) args)
                                                  evalST (apply* (raiseExP m f) (map (applyToVars {m} {zero})(map (raiseExP {zero} {m} m ) gs))) (fastReverse args) [] 
                                                         ≡⟨ evalApply*Eq (raiseExP m f)  (map (applyToVars {m} {zero})  (map (raiseExP {zero} {m} m) gs)) (fastReverse args) ⟩ 
                                                 evalST (raiseExP m f) (fastReverse args)(map (λ arg → evalST arg (fastReverse args) [])(map (applyToVars {m} {zero}) (map (raiseExP m) gs))) 
-                                                        ≡⟨ helper21 args f gs ⟩ 
+                                                        ≡⟨ evalGeneralCompHelper1 args f gs ⟩ 
                                                 evalST (raiseExP m f) (fastReverse args) (map ((λ arg → evalST arg (fastReverse args) []) ∘ (applyToVars {m} {zero})) (map (raiseExP m) gs)) 
                                                         ≡⟨⟩ 
                                                 evalST (raiseExP m f) (fastReverse args) (map (λ x → evalST ((applyToVars {m} {zero}) x) (fastReverse args) []) (map (raiseExP m) gs)) 
-                                                        ≡⟨ helper26 args f gs ⟩ 
+                                                        ≡⟨ evalGeneralCompHelper2 args f gs ⟩ 
                                                 evalST (raiseExP m f) (fastReverse args) (map (λ x → evalST (applyToVars {m} {zero} (raiseExP m x)) (fastReverse args) []) gs) 
-                                                        ≡⟨ helper27 f args gs ⟩ 
+                                                        ≡⟨ evalGeneralCompHelper3 f args gs ⟩ 
                                                 evalST (raiseExP m f) (fastReverse args) (map (λ exp → evalSTClosed exp args) gs) 
                                                         ≡⟨ sym ( raiseExPSound f []  (fastReverse args) (map (λ exp → evalSTClosed exp args) gs)) ⟩ 
                                                 evalST f [] (map (λ exp → evalSTClosed exp args) gs) ∎ 
-
--- raiseExPSound : ∀ {m n o} (exp : Exp m n) (ctx : Vec ℕ m)(ctx2 : Vec ℕ o)(args : Vec ℕ n) → evalST exp ctx args ≡ evalST (raiseExP o exp) (ctx ++ ctx2) args
-
--- evalApply*Eq :  ∀ {n m : ℕ} (exp : Exp n m) (args : Vec (Exp n zero) m) (ctx : Vec ℕ n) → evalST (apply* exp args) ctx  [] ≡ evalST exp  ctx (map (λ arg → evalST arg ctx []) args)
-
--- 
-
--- convCompSound' : ∀ {n m : ℕ} (f : PR m) (gs : Vec (PR n) m) (vs : Vec ℕ n)  → evalST (generalComp zero (prToST n m f) (prToSt* zero n gs))[] vs ≡ eval f (eval* gs vs)  
--- convCompSound'  {n} {m} f gs (vs)  = (evalST (generalComp zero (prToST n m f) (prToSt* zero n gs))[] vs) ≡⟨⟩ 
---                                     (evalSTClosed (prepLambdas' zero n ((apply* ((prToST n m f)) (map ((flip apply* ) (map Var (mkFinvec n zero))) ((prToSt* zero n gs))))))  vs) 
---                                         ≡⟨ prepLambdasEvalClose vs (((apply* ((prToST n m f)) (map ((flip apply* ) (map Var (mkFinvec n zero))) ((prToSt* zero n gs)))))) ⟩ 
---                                     evalST (apply* (prToST n m f) (map ((flip apply* ) (map Var (mkFinvec n zero))) (prToSt* zero n gs)))   (fastReverse vs) [] 
---                                         ≡⟨ evalApply*Eq (prToST n m f)  ((map ((flip apply* ) (map Var (mkFinvec n zero))) (prToSt* zero n gs))) (fastReverse vs) ⟩ 
---                                     evalST (prToST n m f) (fastReverse vs)(map (λ arg → evalST arg (fastReverse vs) [])(map (λ x → apply* x (map Var (mkFinvec n zero)))(prToSt* zero n gs))) 
---                                         ≡⟨ helper21 vs (prToST n m f) (prToSt* zero n gs)  ⟩ 
---                                     (evalST (prToST n m f) (fastReverse vs) (map ((λ z → evalST z (fastReverse vs) []) ∘ (λ z → apply* z (map Var (mkFinvec n zero))))  (prToSt* zero n gs))) 
---                                         ≡⟨⟩ 
---                                     (evalST (prToST n m f) (fastReverse vs) (map (λ x → evalST (apply* x (map Var (mkFinvec n zero))) (fastReverse vs) []) (prToSt* zero n gs))) 
---                                         ≡⟨⟩ 
---                                     {!   !} 
-
 
 
 
