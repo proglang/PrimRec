@@ -22,7 +22,7 @@ import PR-Trees as Trees
 \end{code}
 \begin{code}
 make-R : ∀ A → Trees.Ranked
-make-R A = Trees.mkRanked (Maybe A) (maybe (const 1) 0)
+make-R A = Trees.mkRanked {Maybe A} (maybe (const 1) 0)
 
 ⟦_⟧ⱽ : List A → Trees.Term (make-R A)
 ⟦ []ᴸ ⟧ⱽ     = Trees.con nothing []

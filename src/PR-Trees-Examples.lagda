@@ -27,7 +27,7 @@ rankAlpha : Alpha → ℕ
 rankAlpha Leaf = 0
 rankAlpha Branch = 2
 
-RAlpha = mkRanked Alpha rankAlpha
+RAlpha = mkRanked rankAlpha
 
 leaf : Term RAlpha
 leaf = con Leaf []
@@ -45,7 +45,7 @@ rankLetters ε = 0
 rankLetters B = 1
 rankLetters C = 1
 
-RLetters = mkRanked Letters rankLetters
+RLetters = mkRanked rankLetters
 
 epsilon : Term RLetters
 epsilon = con ε []
@@ -61,7 +61,7 @@ rankNums : Nums → ℕ
 rankNums `Z = 0
 rankNums `S = 1
 
-RNums = mkRanked Nums rankNums
+RNums = mkRanked rankNums
 
 `zero : Term RNums
 `zero = con `Z []

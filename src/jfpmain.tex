@@ -27,7 +27,9 @@
 \newunicodechar{⊤}{\ensuremath{\top}}
 \newunicodechar{₁}{\ensuremath{_1}}
 \newunicodechar{∈}{\ensuremath{\in}}
-
+\newunicodechar{₀}{\ensuremath{_0}}
+\newunicodechar{′}{\ensuremath{'}}
+\newunicodechar{ᴬ}{\ensuremath{^A}}
 \newcommand\Nat{ℕ}
 
 \input{jfpmacros}
@@ -144,8 +146,8 @@ alphabet by instantiating $A$ to $\ATop$.
 \label{sec:prim-recurs-trees}
 
 To move from words to terms requires generalizing alphabets to
-\emph{ranked alphabets}. A ranked alphabet consists of a set and a
-ranking function that assigns each symbol a rank (arity) in \Nat.
+\emph{ranked alphabets}. A ranked alphabet consists of a set of
+symbols and a ranking function that assigns each symbol a rank (arity) in \Nat.
 \input{latex/PR-Trees}
 Again, we can establish pr over words as a special case of pr on
 terms. Given an alphabet $A$ we define a ranked alphabet with symbols
@@ -153,6 +155,19 @@ $A + \ATop \cong \text{\AMaybe{A}}$ and ranks defined such that the element
 from $\ATop$ has arity $0$ and all other element from $A$ have arity
 $1$. This mapping of types also determines the embedding of values.
 \input{latex/WordsToTrees}
+
+\subsection{Primitive recursion on many-sorted terms}
+\label{sec:prim-recurs-sort}
+
+Many-sorted terms are closely related to mutually recursive algebraic
+datatypes without parameters. They generalize terms, which are akin to
+singly recursive algebraic datatypes.
+
+To define many-sorted terms, we start with a set of sorts $S$. An
+$S$-sorted alphabet consists of a set of symbols and a sorting
+function that assigns each symbol an arity of the form $(w, s)$ where
+$w \in S^*$ and $s \in S$.
+\input{latex/PR-HTrees}
 
 \section{Vector-valued primitive recursion}
 \label{sec:vect-valu-prim}

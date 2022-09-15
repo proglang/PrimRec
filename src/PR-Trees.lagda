@@ -48,7 +48,7 @@ We can express the concept of a ranked alphabet literally in Agda.
 record Ranked : Set₁ where
   constructor mkRanked
   field
-    symbols : Set
+    {symbols} : Set
     rank : symbols → ℕ
 open Ranked
 \end{code}
