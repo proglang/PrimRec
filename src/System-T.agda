@@ -32,6 +32,11 @@ data Exp : ℕ → ℕ  → Set where
     Suc : Exp n (suc zero)
     App : Exp n (suc m) → Exp n (zero) → Exp n m
     Nat : ℕ  → Exp n zero
+    PRecT : Exp n 2 → Exp n zero → Exp n zero → Exp n zero
+
+prek : ∀ {A : Set} (h : A → ℕ → A) → A → ℕ → A
+prek h acc zero = acc
+prek h acc (suc counter) = h (prek h acc counter) counter
 
 evalST : ∀ {n m : ℕ} → Exp n m → Vec ℕ n → Vec ℕ m → ℕ 
 evalST (Var x) ctx args = lookup ctx x
@@ -40,6 +45,10 @@ evalST CZero ctx args = 0
 evalST Suc ctx [ x ] = suc x
 evalST (App f x) ctx args = evalST f ctx ( evalST x ctx [] ∷ args)
 evalST (Nat n) _ [] = n
+evalST (PRecT h acc counter) ctx [] = prek (λ acc counter → (evalST h ctx) [ acc , counter ]) (evalST acc ctx []) (evalST counter ctx []) 
+
+
+
 
 evalSTClosed : Exp zero m → Vec ℕ m → ℕ
 evalSTClosed exp args = evalST exp [] args
@@ -51,7 +60,7 @@ raiseExP o CZero = CZero
 raiseExP o Suc = Suc
 raiseExP o (App f x) = App (raiseExP o f) (raiseExP o x)
 raiseExP o (Nat x) = Nat x
-
+raiseExP o ((PRecT h acc counter)) = PRecT (raiseExP o h) (raiseExP o acc) (raiseExP o counter)
 
 raiseExp0Eq : ∀ {m n}  (exp : Exp m n) → raiseExP 0 exp ≡ exp 
 raiseExp0Eq (Var x) = cong Var (inject+0 x)
@@ -60,6 +69,10 @@ raiseExp0Eq CZero = refl
 raiseExp0Eq Suc = refl
 raiseExp0Eq (App f x) rewrite raiseExp0Eq f |  raiseExp0Eq x = refl
 raiseExp0Eq (Nat x) = refl
+raiseExp0Eq ((PRecT h acc counter)) rewrite raiseExp0Eq h | raiseExp0Eq acc | raiseExp0Eq counter = refl
+
+cong3 : ∀ {A B C D : Set}(f : A → B → C → D) {x y u v w z} → x ≡ y → u ≡ v → w ≡ z → f x u w ≡ f y v z
+cong3 f refl refl refl = refl
 
 raiseExPSound : ∀ {m n o} (exp : Exp m n) (ctx : Vec ℕ m)(ctx2 : Vec ℕ o)(args : Vec ℕ n) → evalST exp ctx args ≡ evalST (raiseExP o exp) (ctx ++ ctx2) args
 raiseExPSound (Var x) (ctx) ctx2 args = sym (lookup-++ˡ ctx ctx2 x) -- lookup-++ˡ {! ctx  !} {!   !} x
@@ -68,8 +81,15 @@ raiseExPSound CZero ctx ctx2 args = refl
 raiseExPSound Suc ctx ctx2 [ x ] = refl
 raiseExPSound {m}{n} {o} (App f x) ctx ctx2 args  rewrite raiseExPSound x ctx ctx2 []  | raiseExPSound f ctx ctx2  (evalST (raiseExP o x) (ctx ++ ctx2) [] ∷ args) = refl
 raiseExPSound (Nat x) ctx ctx2 [] = refl
+raiseExPSound (PRecT h acc counter) ctx ctx2 []  rewrite raiseExPSound acc ctx ctx2 [] |  raiseExPSound counter ctx ctx2 [] |  = {!   !} 
 
 
+-- raiseExPSoundHelper2 : ∀ {m o x} h (ctx : Vec ℕ m)(ctx2 : Vec ℕ o) → (λ counter₁ → evalST h ctx [ x , counter₁ ]) ≗  (λ counter₁ → evalST (raiseExP o h) (ctx ++ ctx2) [ x , counter₁ ])
+-- raiseExPSoundHelper2 {m} {o} {x} h ctx ctx2 = λ x₁ → raiseExPSound h ctx ctx2  [ x , x₁ ]
+
+
+-- raiseExPSoundHelper : ∀ {m o } (h) (ctx : Vec ℕ m)(ctx2 : Vec ℕ o) → (λ acc₁ counter₁ → evalST h ctx [ acc₁ , counter₁ ]) ≗ λ acc₁ counter₁ → evalST (raiseExP o h) (ctx ++ ctx2) [ acc₁ , counter₁ ]
+-- raiseExPSoundHelper h ctx ctx2  = λ x → {! raiseExPSoundHelper2 h ctx ctx2   !}
 ------------------------------------------------------------------------------
 -- helper
 ------------------------------------------------------------------------------
@@ -273,8 +293,7 @@ map-id [] = refl
 map-id (x ∷ vs) = cong (x ∷_) (map-id vs)
 
 
-cong3 : ∀ {A B C D : Set}(f : A → B → C → D) {x y u v w z} → x ≡ y → u ≡ v → w ≡ z → f x u w ≡ f y v z
-cong3 f refl refl refl = refl
+
 
 
 evalApplyToVarsFun :  ∀ {A : Set} {n : ℕ} (vs : Vec ℕ n) → (λ exp → evalST ((applyToVars {n} {zero}) (raiseExP n exp)) (fastReverse vs) []) ≗  (λ exp → evalST exp [] vs)
