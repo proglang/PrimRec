@@ -32,13 +32,16 @@ import PR-Words as Words
 ⟦ Nats.C f g* ⟧ = Words.C ⟦ f ⟧ (map ⟦_⟧ g*)
 ⟦ Nats.P g h ⟧  = Words.P ⟦ g ⟧ (λ{ tt → ⟦ h ⟧})
 \end{code}
-\begin{code}[hide]
+To state soundness of the embedding, we need the embedding of ℕ in \AList\ATop.
+\begin{code}
 ⟦_⟧ⱽ : ℕ → List ⊤
+\end{code}
+\begin{code}[hide]
 ⟦ zero ⟧ⱽ  = []ᴸ
 ⟦ suc n ⟧ⱽ = tt ∷ᴸ ⟦ n ⟧ⱽ
 \end{code}
 \begin{code}
-sound : ∀ p (v* : Vec ℕ n)
+sound : ∀ (p : Nats.PR n) (v* : Vec ℕ n)
   → ⟦ Nats.eval p v* ⟧ⱽ ≡ Words.eval ⟦ p ⟧ (map ⟦_⟧ⱽ v*)
 \end{code}
 \begin{code}[hide]

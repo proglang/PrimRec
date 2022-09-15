@@ -47,8 +47,8 @@ eval (P g h)  (suc x ∷ v*) = eval h ((eval (P g h) (x ∷ v*)) ∷ (x ∷ v*))
 eval* []       v*          = []
 eval* (p ∷ p*) v*          = eval p v*  ∷ eval* p* v*
 \end{code}
-The function \AgdaFunction{eval*} can be expressed as a map over the function of functions, alas the termination checker does not accept this definition.
-\begin{code}
+The function \AgdaFunction{eval*} can be expressed equivalently as a map over the vector of functions \AgdaBound{g*}, alas the termination checker does not accept this definition. 
+\begin{code}[hide]
 eval*≡map-eval : ∀ (p* : Vec (PR n) m) (v* : Vec ℕ n) → eval* p* v* ≡ map (λ p → eval p v*) p*
 eval*≡map-eval [] v* = refl
 eval*≡map-eval (p ∷ p*) v* rewrite eval*≡map-eval p* v* = refl

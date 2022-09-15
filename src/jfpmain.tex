@@ -3,6 +3,7 @@
 
 \usepackage{graphicx}
 \usepackage{amssymb}
+\usepackage{stmaryrd}
 \usepackage{latex/agda}
 % \usepackage{unicode-math}
 % \setmathfont{XITS Math}
@@ -20,6 +21,14 @@
 \newunicodechar{≡}{\ensuremath{\equiv}}
 \newunicodechar{∀}{\ensuremath{\forall}}
 \newunicodechar{ᴸ}{\ensuremath{^L}}
+\newunicodechar{ⱽ}{\ensuremath{^V}}
+\newunicodechar{⟧}{\ensuremath{\rrbracket}}
+\newunicodechar{⟦}{\ensuremath{\llbracket}}
+\newunicodechar{⊤}{\ensuremath{\top}}
+\newunicodechar{₁}{\ensuremath{_1}}
+\newunicodechar{∈}{\ensuremath{\in}}
+
+\newcommand\Nat{ℕ}
 
 \input{jfpmacros}
 
@@ -51,7 +60,7 @@ Primitive recursive functions are a class of computable total
 functions on natural numbers. While they are a standard topic in any
 class on computability, it is less well known that primitive recursive
 functions generalize in several dimensions. One dimension generalizes
-to words, trees, and many-sorted algebras. Another dimension
+to words, terms, and many-sorted algebras. Another dimension
 generalizes to vector-valued functions. A third dimension adds
 higher-order functions to obtain System-T and (even more general) STLC
 with inductive types. 
@@ -94,7 +103,7 @@ matches. \AgdaFunction{addP} is defined by primitive recursion, which
 decomposes the first argument. The $g$-function is just the identity;
 the $h$-function composes the successor with inductive result.
 
-\section{From numbers to words, trees, and many-sorted algebras}
+\section{From numbers to words, terms, and many-sorted algebras}
 \label{sec:from-numbers-words}
 
 While primitive recursion on natural numbers is well-known, it is less
@@ -110,22 +119,40 @@ The textbook definition of $A^*$, the sets of words over an alphabet $A$ goes li
   A^0 &= \{ \varepsilon \} & A^{n+1} &= A \times A^n & A^* &=
   \bigcup^{n \in ℕ} A^n
 \end{align*}
-It slightly obscures the underlying algebraic structure, a list of
+This definition slightly obscures the underlying algebraic structure, a list of
 elements of $A$, which is better described as a fixed point:
-$A^*\cong \mathbb{I} + A \times A^*$.
+$A^*\cong \ATop + A \times A^*$ where $\ATop$ is a one-element type.
 Compared with the natural numbers, we can say that a word is
 constructed from one nullary constructor, typically called
 $\varepsilon$, and then a successor, $\sigma_a$, for each symbol $a\in A$.
 
-Rosza Peter~\cite{xxx} defined primitive recursion on words
+Rosza Peter~\cite{xxx} defines primitive recursion on words
 accordingly. The $n$-ary $0$-function becomes the $n$-ary
 $\varepsilon$-function; the single successor $\sigma$ generalizes to a
-family of successors $\sigma_a$; projection and composition does not
-change; for primitive recursion we have a $g$-function to handle the
+family of successors $\sigma_a$; projection and composition do not
+change; and for primitive recursion we have a $g$-function to handle the
 case for $\varepsilon$ and a family of functions $h_a$ to handle the
-case for $\sigma_a$. The arities of the functions are just the same as
-before.
+case for $\sigma_a$. The arities of the functions are the same as before.
 \input{latex/PR-Words}
+Natural numbers arise as the special case where the alphabet $A$ is a
+one-element set: we can prove that $\Nat \cong \text{\AList\ATop}$. Hence, we
+can soundly embed pr on natural numbers into pr on words over an
+alphabet by instantiating $A$ to $\ATop$.
+\input{latex/NatsToWords}
+
+\subsection{Primitive recursion on terms}
+\label{sec:prim-recurs-trees}
+
+To move from words to terms requires generalizing alphabets to
+\emph{ranked alphabets}. A ranked alphabet consists of a set and a
+ranking function that assigns each symbol a rank (arity) in \Nat.
+\input{latex/PR-Trees}
+Again, we can establish pr over words as a special case of pr on
+terms. Given an alphabet $A$ we define a ranked alphabet with symbols
+$A + \ATop \cong \text{\AMaybe{A}}$ and ranks defined such that the element
+from $\ATop$ has arity $0$ and all other element from $A$ have arity
+$1$. This mapping of types also determines the embedding of values.
+\input{latex/WordsToTrees}
 
 \section{Vector-valued primitive recursion}
 \label{sec:vect-valu-prim}
