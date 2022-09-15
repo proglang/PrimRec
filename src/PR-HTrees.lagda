@@ -25,7 +25,7 @@ record Sorted (S : Set) : Set₁ where
     rank : symbols → ℕ
     sin* : (a : symbols) → Vec S (rank a)
     sout : symbols → S
-open Sorted
+open Sorted public
 \end{code}
 \begin{code}
 data Term* {S} (Sig : Sorted S) : Vec S n → Set

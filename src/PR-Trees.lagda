@@ -50,7 +50,7 @@ record Ranked : Set₁ where
   field
     {symbols} : Set
     rank : symbols → ℕ
-open Ranked
+open Ranked public
 \end{code}
 The set of terms over a ranked alphabet $R : \ARanked$ is also called the term algebra over $R$.
 To construct a term, we need a symbol $a$ and as many terms as indicated by the rank of $a$.
