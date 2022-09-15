@@ -1,15 +1,15 @@
 PREFIX= latex
-TARGET_MODULES= PR-Nat PR-Words NatsVec-CC PR-CC PR-Nat-Example PR-NatsVec Utils
+TARGET_MODULES= PR-Nat PR-Words PR-Trees NatsToWords WordsToTrees NatsVec-CC PR-CC PR-Nat-Example PR-Trees-Examples PR-NatsVec Utils
 TARGET_BROKEN=  PrimRecWord
 TARGET_FILES= $(addprefix $(PREFIX)/, $(addsuffix .tex, $(TARGET_MODULES)))
 
 .PHONY: all all_files
 
-all:
+all: all_files
 	pdflatex jfpmain
 
 all_files: $(TARGET_FILES)
 	@echo $(PATH)
 
 $(PREFIX)/%.tex: %.lagda
-	agda --latex $<
+	agda --latex --only-scope-checking $<

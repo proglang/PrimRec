@@ -70,6 +70,7 @@ import PR-Words as Words
 -- primitive recursion on trees over ranked alphabet A
 ----------------------------------------------------------------------
 
+{- obsolete -}
 module Trees where
 
   Rank : Set → Set
@@ -95,49 +96,6 @@ module Trees where
 
   eval* [] v* = []
   eval* (x ∷ p*) v* = (eval x v*) ∷ (eval* p* v*)
-
-  --- example
-  data Alpha : Set where
-    Leaf Branch : Alpha
-
-  rankAlpha : Alpha → ℕ
-  rankAlpha Leaf = 0
-  rankAlpha Branch = 2
-
-  leaf : Alg rankAlpha
-  leaf = con Leaf []
-
-  t1 : Alg rankAlpha
-  t1 = con Branch (leaf ∷ (leaf ∷ []))
-
-  -- words as trees
-  data Letters : Set where
-    ε B C : Letters
-
-  rankLetters : Letters → ℕ
-  rankLetters ε = 0
-  rankLetters B = 1
-  rankLetters C = 1
-
-  epsilon : Alg rankLetters
-  epsilon = con ε []
-
-  bc : Alg rankLetters
-  bc = con B ((con C (epsilon ∷ [])) ∷ [])
-
-  -- numbers as trees
-  data Nums : Set where
-    `Z `S : Nums
-
-  rankNums : Rank Nums
-  rankNums `Z = 0
-  rankNums `S = 1
-
-  `zero : Alg rankNums
-  `zero = con `Z []
-
-  `one  : Alg rankNums
-  `one  = con `S (`zero ∷ [])
 
 ----------------------------------------------------------------------
 -- primitive recursion on trees over S-sorted alphabet A
@@ -320,72 +278,10 @@ module HTrees2 where
 
 -- results
 
-module NatsToWords where
+import NatsToWords
 
-  -- pr on words simulates pr on natural numbers
+import WordsToTrees 
 
-  {-# TERMINATING #-}
-  ⟦_⟧ : Nats.PR n → Words.PR ⊤ n
-  ⟦ Nats.Z ⟧ = Words.Z
-  ⟦ Nats.σ ⟧ = Words.σ tt
-  ⟦ Nats.π i ⟧ = Words.π i
-  ⟦ Nats.C f g* ⟧ = Words.C ⟦ f ⟧ (map ⟦_⟧ g*)
-  ⟦ Nats.P g h ⟧ = Words.P ⟦ g ⟧ (λ{ tt → ⟦ h ⟧})
-
-  ⟦_⟧ⱽ : ℕ → List ⊤
-  ⟦ zero ⟧ⱽ  = []ᴸ
-  ⟦ suc n ⟧ⱽ = tt ∷ᴸ ⟦ n ⟧ⱽ
-
-  sound : ∀ {n} p v* → ⟦ Nats.eval {n} p v* ⟧ⱽ ≡ Words.eval ⟦ p ⟧ (map ⟦_⟧ⱽ v*)
-  sound* : ∀ {m n} p* v* → map{n = m} ⟦_⟧ⱽ (Nats.eval* {n = n}{m = m} p* v*) ≡ Words.eval* (map ⟦_⟧ p*) (map ⟦_⟧ⱽ v*)
-
-  sound Nats.Z v* = refl
-  sound Nats.σ (x ∷ []) = refl
-  sound (Nats.π i) v* = sym (lookup-map i ⟦_⟧ⱽ v*)
-  sound (Nats.C f g*) v* rewrite sound f (Nats.eval* g* v*) | sound* g* v* = refl
-  sound (Nats.P g h) (zero ∷ v*) = sound g v*
-  sound (Nats.P g h) (suc x ∷ v*) = trans (sound h (Nats.eval (Nats.P g h) (x ∷ v*) ∷ x ∷ v*))
-                                          (cong (Words.eval ⟦ h ⟧) 
-                                                (cong (_∷ ⟦ x ⟧ⱽ ∷ map ⟦_⟧ⱽ v*)
-                                                      (sound (Nats.P g h) (x ∷ v*))))
-
-  sound* [] v* = refl
-  sound* (p ∷ p*) v* rewrite sound p v* | sound* p* v* = refl
-
-module WordsToTrees where
-
-  -- pr on trees simulates pr on words
-  make-r : ∀ {A : Set} → Trees.Rank (Maybe A)
-  make-r nothing = 0
-  make-r (just _) = 1
-  
-  {-# TERMINATING #-}
-  ⟦_⟧ : Words.PR A n → Trees.PRR{Maybe A} (make-r{A}) n
-  ⟦ Words.Z ⟧ = Trees.C (Trees.σ nothing) []
-  ⟦ Words.σ a ⟧ = Trees.σ (just a)
-  ⟦ Words.π i ⟧ = Trees.π i
-  ⟦ Words.C f g* ⟧ = Trees.C ⟦ f ⟧ (map ⟦_⟧ g*)
-  ⟦ Words.P g h ⟧ = Trees.P λ{ nothing → ⟦ g ⟧ ; (just a) → ⟦ h a ⟧}
-
-  ⟦_⟧ⱽ : List A → Trees.Alg (make-r{A})
-  ⟦ []ᴸ ⟧ⱽ = Trees.con nothing []
-  ⟦ a ∷ᴸ a* ⟧ⱽ = Trees.con (just a) (⟦ a* ⟧ⱽ ∷ [])
-
-  sound : ∀ {n}{A} p v* → ⟦ Words.eval {A = A} {n = n} p v* ⟧ⱽ ≡ Trees.eval ⟦ p ⟧ (map ⟦_⟧ⱽ v*)
-  sound* : ∀ {m n A} p* v* → map{n = m} ⟦_⟧ⱽ (Words.eval* {A = A}{n = n}{m = m} p* v*) ≡ Trees.eval* (map ⟦_⟧ p*) (map ⟦_⟧ⱽ v*)
-
-  sound Words.Z v* = refl
-  sound (Words.σ a) (x ∷ []) = refl
-  sound (Words.π i) v* = sym (lookup-map i ⟦_⟧ⱽ v*)
-  sound (Words.C f g*) v* rewrite sound f (Words.eval* g* v*) | sound* g* v* = refl
-  sound (Words.P g h) ([]ᴸ ∷ v*) = sound g v*
-  sound (Words.P g h) ((x ∷ᴸ x₁) ∷ v*) = trans (sound (h x) (Words.eval (Words.P g h) (x₁ ∷ v*) ∷ x₁ ∷ v*))
-                                              (cong (Trees.eval ⟦ h x ⟧)
-                                                    (cong (_∷ ⟦ x₁ ⟧ⱽ ∷ map ⟦_⟧ⱽ v*)
-                                                          (sound (Words.P g h) (x₁ ∷ v*))))
-
-  sound* [] v* = refl
-  sound* (p ∷ p*) v* rewrite sound p v* | sound* p* v* = refl
 
 module TreesToHetTrees where
 
