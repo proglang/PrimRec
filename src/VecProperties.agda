@@ -47,3 +47,8 @@ lookupOpRev f xs rewrite sym(inject+0 (opposite f)) = lookupOP' f xs []
 -- ++r-reverse' : ∀ {A : Set} {m n : ℕ}  (xs : Vec A m) (ys : Vec A n) →    (xs ++r ys) ≡ ((fastReverse xs) ++ ys)
 -- ++r-reverse' [] (ys) = refl
 -- ++r-reverse'  (x ∷ xs) ys = {! ++r-reverse' xs ((x ∷ ys))  !}
+
+
+-- lookupRaise : ∀ {A : Set} {n m} (f : Fin n) (xs : Vec A n) (ys : Vec A m) → lookup xs f ≡ lookup (xs ++ ys) (inject+ m f) 
+-- lookupRaise f xs [] = {!   !}
+-- lookupRaise f xs (x ∷ ys) = {!   !}
