@@ -272,6 +272,9 @@ map-id (x ∷ vs) = cong (x ∷_) (map-id vs)
 -- helper21 : ∀ {n m : ℕ} (vs : Vec ℕ n) (exp : Exp n m ) (exps : Vec (Exp n n) m) → evalST exp (fastReverse vs)(map (λ arg → evalST arg (fastReverse vs) [])(map (λ x → apply* x (map Var (mkFinvec n zero))) exps))  ≡ (evalST exp (fastReverse vs) (map ((λ z → evalST z (fastReverse vs) []) ∘ (λ z → apply* z (map Var (mkFinvec n zero))))  (exps)))
 -- helper21 {n} {m} vs exp exps rewrite ∘-map (λ arg → evalST arg (fastReverse vs) []) (λ x → apply* x (map Var (mkFinvec n zero))) exps = refl
 
+helper21 : ∀ {n m : ℕ} (args : Vec ℕ m)(f : Exp zero n) (gs : Vec (Exp zero m) n) → evalST (raiseExP m f) (fastReverse args)(map (λ arg → evalST arg (fastReverse args) []) (map (applyToVars {m} {zero}) (map (raiseExP m) gs))) ≡ evalST (raiseExP m f) (fastReverse args) (map (( λ arg → evalST arg (fastReverse args) []) ∘ (applyToVars {m} {zero})) ((map (raiseExP m) gs)))
+helper21 {n} {m} args f gs rewrite ∘-map (λ arg → evalST arg (fastReverse args) []) (applyToVars {m} {zero}) (map (raiseExP m) gs) = refl 
+
 cong3 : ∀ {A B C D : Set}(f : A → B → C → D) {x y u v w z} → x ≡ y → u ≡ v → w ≡ z → f x u w ≡ f y v z
 cong3 f refl refl refl = refl
 
@@ -282,8 +285,11 @@ evalGeneralComp {n} {m} f gs args = (evalSTClosed (generalComp f gs) args)
                                                  evalST (apply* (raiseExP m f) (map (applyToVars {m} {zero})(map (raiseExP {zero} {m} m ) gs))) (fastReverse args) [] 
                                                         ≡⟨ evalApply*Eq (raiseExP m f)  (map (applyToVars {m} {zero})  (map (raiseExP {zero} {m} m) gs)) (fastReverse args) ⟩ 
                                                 evalST (raiseExP m f) (fastReverse args)(map (λ arg → evalST arg (fastReverse args) [])(map (applyToVars {m} {zero}) (map (raiseExP m) gs))) 
+                                                        ≡⟨ helper21 args f gs ⟩ 
+                                                evalST (raiseExP m f) (fastReverse args) (map ((λ arg → evalST arg (fastReverse args) []) ∘ (applyToVars {m} {zero})) (map (raiseExP m) gs)) 
                                                         ≡⟨⟩ 
-                                                {!   !} ≡⟨⟩ {!   !}
+                                                evalST (raiseExP m f) (fastReverse args) (map (λ x → evalST ((applyToVars {m} {zero}) x) (fastReverse args) []) (map (raiseExP m) gs)) 
+                                                        ≡⟨⟩ {!   !} ≡⟨⟩ {!   !}
 
 
 -- evalApply*Eq :  ∀ {n m : ℕ} (exp : Exp n m) (args : Vec (Exp n zero) m) (ctx : Vec ℕ n) → evalST (apply* exp args) ctx  [] ≡ evalST exp  ctx (map (λ arg → evalST arg ctx []) args)
