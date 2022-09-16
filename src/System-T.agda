@@ -96,6 +96,10 @@ raiseExPSound {m}{n} {o} (App f x) ctx ctx2 args  rewrite raiseExPSound x ctx ct
 raiseExPSound (Nat x) ctx ctx2 [] = refl
 raiseExPSound (PRecT h acc counter) ctx ctx2 []  rewrite raiseExPSound acc ctx ctx2 [] |  raiseExPSound counter ctx ctx2 [] | ext2 λ x y → raiseExPSound h ctx ctx2 [ x , y ]  = refl 
 
+
+fastReverseEq : ∀ {x n : ℕ } (args : Vec ℕ n) → fastReverse (x ∷ args) ≡ (fastReverse args) ++ [ x ]
+fastReverseEq [] = refl
+fastReverseEq (x ∷ args) rewrite fastReverseEq {x} args = {!   !}
 ------------------------------------------------------------------------------
 -- helper
 ------------------------------------------------------------------------------
@@ -377,19 +381,35 @@ paraT : ∀ {n} → Exp zero n → Exp zero (suc (suc n)) →  Exp zero ( (suc n
 paraT {n} g h = prepLambdas' 0 (suc n)  (PRecT 
                 -- (Lam (Lam (applyToVars {n} {3} (App (App (raiseExP  (n + 3) h) (Var (suc zero))) (Var zero))))) 
                 (Lam (Lam (applyToVars {n} {3}    (raiseExP (suc n) (App (App (raiseExP  (2) h) (Var (suc zero))) (Var zero)) )          ))) 
-                (applyToVars {n} {1} (raiseExP (suc n) g)) 
+                (raiseExP 1(applyToVars {n} {0} (raiseExP (n) g)) )
                 (Var (fromℕ n))) 
 
 
 convPR g h = paraT ((prToST'  g )) (prToST'  h)
 
+evalParaT : ∀ {n x : ℕ} (g : Exp zero n) (h : Exp zero (suc (suc n))) (args : Vec ℕ n ) → evalSTClosed (paraT g h) (x ∷ args) ≡ para (λ acc counter  → evalSTClosed h (acc ∷ (counter ∷ args))) (evalSTClosed g args) x  
+evalParaT {n} {x} g h args = (evalSTClosed (paraT g h) (x ∷ args)) 
+                        ≡⟨⟩ 
+                ((evalSTClosed (prepLambdas' 0 (suc n)  (PRecT 
+                (Lam (Lam (applyToVars {n} {3}    (raiseExP (suc n) (App (App (raiseExP  (2) h) (Var (suc zero))) (Var zero)))))) 
+                (raiseExP 1(applyToVars {n} {0} (raiseExP (n) g)) )
+                (Var (fromℕ n))) ) (x ∷ args)) 
+                        ≡⟨ prepLambdasEvalClose (x ∷ args) (PRecT 
+                        (Lam (Lam (applyToVars {n} {3}    (raiseExP (suc n) (App (App (raiseExP  (2) h) (Var (suc zero))) (Var zero)))))) 
+                        (raiseExP 1(applyToVars {n} {0} (raiseExP (n) g)) )
+                        (Var (fromℕ n))) ⟩ 
+        
+                         {!   !} ≡⟨⟩ {!   !})
+
+evalParaTHelper1 : ∀  {n x} (args : Vec ℕ n ) → (lookup (fastReverse (x ∷ args)) (fromℕ n)) ≡ x
+evalParaTHelper1 {n} {x} args = lookupOpRev zero (x ∷ args)
+
+evalParaTHelper2 :  ∀  {n x  : ℕ} (args : Vec ℕ n ) (g : Exp zero n) → (evalST (applyToVars {n} {1} (raiseExP (suc n) g)) (fastReverse (x ∷ args)) []) ≡ evalSTClosed g args
+evalParaTHelper2  {n} {x} args g = {!   !} 
 
 
+-- evalApplyToVars :  ∀ {n : ℕ} (exp : Exp zero n) (vs : Vec ℕ n) → evalST (applyToVars (raiseExP n exp)) (fastReverse vs) [] ≡ evalST exp [] vs
 
-
-
-
-                
 -- -- ------------------------------------------------------------------------------
 -- -- -- embedding
 -- -- ------------------------------------------------------------------------------
