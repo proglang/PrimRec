@@ -74,6 +74,19 @@ raiseExp0Eq ((PRecT h acc counter)) rewrite raiseExp0Eq h | raiseExp0Eq acc | ra
 cong3 : ∀ {A B C D : Set}(f : A → B → C → D) {x y u v w z} → x ≡ y → u ≡ v → w ≡ z → f x u w ≡ f y v z
 cong3 f refl refl refl = refl
 
+-- PLFA 
+postulate
+  extensionality : ∀ {A B : Set} {f g : A → B}
+    → (∀ (x : A) → f x ≡ g x)
+      -----------------------
+    → f ≡ g
+
+ext2 : ∀ {A B C : Set} {f g : A → B → C}
+        → (∀ (x : A) (y : B) → f x y ≡ g x y)
+      -----------------------
+        → f ≡ g
+ext2  = λ x → extensionality (λ x₁ → extensionality (λ x₂ → x x₁ x₂))
+
 raiseExPSound : ∀ {m n o} (exp : Exp m n) (ctx : Vec ℕ m)(ctx2 : Vec ℕ o)(args : Vec ℕ n) → evalST exp ctx args ≡ evalST (raiseExP o exp) (ctx ++ ctx2) args
 raiseExPSound (Var x) (ctx) ctx2 args = sym (lookup-++ˡ ctx ctx2 x) -- lookup-++ˡ {! ctx  !} {!   !} x
 raiseExPSound (Lam exp) ctx ctx2 (a ∷ args) rewrite raiseExPSound exp (a ∷ ctx) ctx2 args = refl
@@ -81,15 +94,8 @@ raiseExPSound CZero ctx ctx2 args = refl
 raiseExPSound Suc ctx ctx2 [ x ] = refl
 raiseExPSound {m}{n} {o} (App f x) ctx ctx2 args  rewrite raiseExPSound x ctx ctx2 []  | raiseExPSound f ctx ctx2  (evalST (raiseExP o x) (ctx ++ ctx2) [] ∷ args) = refl
 raiseExPSound (Nat x) ctx ctx2 [] = refl
-raiseExPSound (PRecT h acc counter) ctx ctx2 []  rewrite raiseExPSound acc ctx ctx2 [] |  raiseExPSound counter ctx ctx2 [] |  = {!   !} 
+raiseExPSound (PRecT h acc counter) ctx ctx2 []  rewrite raiseExPSound acc ctx ctx2 [] |  raiseExPSound counter ctx ctx2 [] | ext2 λ x y → raiseExPSound h ctx ctx2 [ x , y ]  = refl 
 
-
--- raiseExPSoundHelper2 : ∀ {m o x} h (ctx : Vec ℕ m)(ctx2 : Vec ℕ o) → (λ counter₁ → evalST h ctx [ x , counter₁ ]) ≗  (λ counter₁ → evalST (raiseExP o h) (ctx ++ ctx2) [ x , counter₁ ])
--- raiseExPSoundHelper2 {m} {o} {x} h ctx ctx2 = λ x₁ → raiseExPSound h ctx ctx2  [ x , x₁ ]
-
-
--- raiseExPSoundHelper : ∀ {m o } (h) (ctx : Vec ℕ m)(ctx2 : Vec ℕ o) → (λ acc₁ counter₁ → evalST h ctx [ acc₁ , counter₁ ]) ≗ λ acc₁ counter₁ → evalST (raiseExP o h) (ctx ++ ctx2) [ acc₁ , counter₁ ]
--- raiseExPSoundHelper h ctx ctx2  = λ x → {! raiseExPSoundHelper2 h ctx ctx2   !}
 ------------------------------------------------------------------------------
 -- helper
 ------------------------------------------------------------------------------
@@ -226,8 +232,8 @@ mkFinvec zero m = []
 mkFinvec (suc n) m = inject+ m  (fromℕ n ) ∷ (mkFinvec n (suc m))
 
 
-arity : ∀ {n : ℕ} (pr : PR n) → ℕ
-arity {n} _ = n
+-- arity : ∀ {n : ℕ} (pr : PR n) → ℕ
+-- arity {n} _ = n
 
 apply* : ∀ {n m o : ℕ} → Exp m (n + o) → Vec (Exp m zero) o  → Exp m n
 apply* exp [] = exp
@@ -354,120 +360,122 @@ convCompSound f gs vs = (evalSTClosed (convComp f gs) vs)
 -- -- -- embedding
 -- -- ------------------------------------------------------------------------------
 
--- data Ty : Set where
---     TyNat : Ty
---     _⇒_ : Ty → Ty → Ty
+data Ty : Set where
+    TyNat : Ty
+    _⇒_ : Ty → Ty → Ty
 
 
--- Ctx : ℕ → Set 
--- Ctx n  = Vec (Ty) n
+Ctx : ℕ → Set 
+Ctx n  = Vec (Ty) n
 
 
--- DBI : ∀ {n : ℕ} -> Ctx n  -> Ty -> Set
--- DBI = HIndex
+DBI : ∀ {n : ℕ} -> Ctx n  -> Ty -> Set
+DBI = HIndex
 
 
--- -- data DBI : ∀ {n : ℕ} -> Ctx n  -> Ty -> Set where
--- --     ZDB : ∀ {n : ℕ} {ts : Ctx n}  {t} → DBI (t ∷ ts) t
--- --     SDB : ∀ {n : ℕ} {ts : Ctx n} {t t' : Ty} → DBI (ts) t → DBI (t' ∷ ts) t
+-- data DBI : ∀ {n : ℕ} -> Ctx n  -> Ty -> Set where
+--     ZDB : ∀ {n : ℕ} {ts : Ctx n}  {t} → DBI (t ∷ ts) t
+--     SDB : ∀ {n : ℕ} {ts : Ctx n} {t t' : Ty} → DBI (ts) t → DBI (t' ∷ ts) t
 
--- data Exp' : ∀ {n : ℕ} -> Ctx n  -> Ty -> Set where
---     Var' : ∀ {n : ℕ} {ctx : Ctx n} {ty} → DBI ctx ty → Exp' ctx ty
---     Lam'  : ∀ {n : ℕ} {ctx : Ctx n} { tyA tyB} → Exp' (tyA ∷ ctx) tyB → Exp' ctx  (tyA ⇒ tyB)
---     CZero' :   ∀ {n : ℕ} {ctx : Ctx n} → Exp' ctx TyNat
---     Suc' : ∀ {n : ℕ} {ctx : Ctx n} → Exp' ctx (TyNat ⇒ TyNat)
---     App' : ∀ {n : ℕ} {ctx : Ctx n} {tyA tyB} →   Exp' ctx (tyA ⇒ tyB) → Exp' ctx tyA → Exp' ctx tyB
---     Nat' : ∀ {n : ℕ} {ctx : Ctx n} → ℕ → Exp' ctx TyNat
+data Exp' : ∀ {n : ℕ} -> Ctx n  -> Ty -> Set where
+    Var' : ∀ {n : ℕ} {ctx : Ctx n} {ty} → DBI ctx ty → Exp' ctx ty
+    Lam'  : ∀ {n : ℕ} {ctx : Ctx n} { tyA tyB} → Exp' (tyA ∷ ctx) tyB → Exp' ctx  (tyA ⇒ tyB)
+    CZero' :   ∀ {n : ℕ} {ctx : Ctx n} → Exp' ctx TyNat
+    Suc' : ∀ {n : ℕ} {ctx : Ctx n} → Exp' ctx (TyNat ⇒ TyNat)
+    App' : ∀ {n : ℕ} {ctx : Ctx n} {tyA tyB} →   Exp' ctx (tyA ⇒ tyB) → Exp' ctx tyA → Exp' ctx tyB
+    Nat' : ∀ {n : ℕ} {ctx : Ctx n} → ℕ → Exp' ctx TyNat
+    PRecT' : ∀ {n : ℕ} {ctx : Ctx n}{ty} → Exp' ctx (ty ⇒ (TyNat ⇒ ty)) → Exp' ctx (ty) → Exp' ctx (TyNat) → Exp' ctx (ty)
 
--- ℕtoTy : ℕ → Ty
--- ℕtoTy zero = TyNat
--- ℕtoTy (suc n) = TyNat ⇒  (ℕtoTy n)
+
+ℕtoTy : ℕ → Ty
+ℕtoTy zero = TyNat
+ℕtoTy (suc n) = TyNat ⇒  (ℕtoTy n)
  
--- ℕtoCtx : (n : ℕ) → Ctx n
--- ℕtoCtx n = repeat n TyNat
+ℕtoCtx : (n : ℕ) → Ctx n
+ℕtoCtx n = repeat n TyNat
 
 
--- finToDBI : ∀ {n : ℕ} → (Fin n) → DBI (ℕtoCtx n) TyNat
--- finToDBI zero = ZI
--- finToDBI (suc f) = SI (finToDBI f)
+finToDBI : ∀ {n : ℕ} → (Fin n) → DBI (ℕtoCtx n) TyNat
+finToDBI zero = ZI
+finToDBI (suc f) = SI (finToDBI f)
 
--- embedd : ∀ {n m} → Exp n m → Exp' {n} (ℕtoCtx n) (ℕtoTy m) 
--- embedd (Var x) = Var' (finToDBI x)
--- embedd (Lam exp) = Lam' (embedd exp)
--- embedd CZero = CZero'
--- embedd Suc = Suc'
--- embedd (App f x) = App' (embedd f) (embedd x)
--- embedd (Nat n) = Nat' n
+embedd : ∀ {n m} → Exp n m → Exp' {n} (ℕtoCtx n) (ℕtoTy m) 
+embedd (Var x) = Var' (finToDBI x)
+embedd (Lam exp) = Lam' (embedd exp)
+embedd CZero = CZero'
+embedd Suc = Suc'
+embedd (App f x) = App' (embedd f) (embedd x)
+embedd (Nat n) = Nat' n
+embedd (PRecT h acc counter) = PRecT' (embedd h) (embedd acc) (embedd counter)
 
--- evalTy : Ty → Set
--- evalTy TyNat = ℕ
--- evalTy (tyA ⇒ tyB) = (evalTy tyA) → (evalTy tyB)
+evalTy : Ty → Set
+evalTy TyNat = ℕ
+evalTy (tyA ⇒ tyB) = (evalTy tyA) → (evalTy tyB)
 
--- evalExp' : ∀ {n : ℕ} {ctx : Ctx n} {ty : Ty}  → Exp' ctx ty → HVec evalTy ctx → (evalTy ty)
--- evalExp' (Var' x) ctx = lkupH x ctx
--- evalExp' (Lam' exp) ctx = λ x → evalExp' exp (x ∷ᴴ ctx)
--- evalExp' CZero' ctx = 0
--- evalExp' Suc' ctx = λ x → suc x
--- evalExp' (App' f x) ctx = (evalExp' f ctx) (evalExp' x ctx)
--- evalExp' (Nat' n) ctx = n
+evalExp' : ∀ {n : ℕ} {ctx : Ctx n} {ty : Ty}  → Exp' ctx ty → HVec evalTy ctx → (evalTy ty)
+evalExp' (Var' x) ctx = lkupH x ctx
+evalExp' (Lam' exp) ctx = λ x → evalExp' exp (x ∷ᴴ ctx)
+evalExp' CZero' ctx = 0
+evalExp' Suc' ctx = λ x → suc x
+evalExp' (App' f x) ctx = (evalExp' f ctx) (evalExp' x ctx)
+evalExp' (Nat' n) ctx = n
+evalExp' (PRecT' h acc counter) ctx = prek (evalExp' h ctx) (evalExp' acc ctx) (evalExp' counter ctx)
 
--- countArgs : Ty → ℕ
--- countArgs TyNat = 0
--- countArgs (tyA ⇒ tyB) = suc (countArgs tyB)
+countArgs : Ty → ℕ
+countArgs TyNat = 0
+countArgs (tyA ⇒ tyB) = suc (countArgs tyB)
 
--- getArgs : (ty : Ty) -> Vec Ty (countArgs ty) 
--- getArgs TyNat = []
--- getArgs (ty ⇒ tyB) = ty ∷ getArgs tyB
+getArgs : (ty : Ty) -> Vec Ty (countArgs ty) 
+getArgs TyNat = []
+getArgs (ty ⇒ tyB) = ty ∷ getArgs tyB
 
--- init' : ∀  {n : ℕ} {A : Set} → Vec A n → Vec A (n ∸ 1 )
--- init' [] = []
--- init' [ x ] = []
--- init' (x ∷ y ∷ vs) = x ∷ init (y ∷ vs)
+init' : ∀  {n : ℕ} {A : Set} → Vec A n → Vec A (n ∸ 1 )
+init' [] = []
+init' [ x ] = []
+init' (x ∷ y ∷ vs) = x ∷ init (y ∷ vs)
 
--- uncurryH : ∀ {ty : Ty} → evalTy ty → HVec evalTy ( (getArgs ty))  → ℕ
--- uncurryH {TyNat} exp hxs = exp
--- uncurryH {tyA ⇒ tyB} f (x ∷ᴴ hxs) = uncurryH (f x) hxs
+uncurryH : ∀ {ty : Ty} → evalTy ty → HVec evalTy ( (getArgs ty))  → ℕ
+uncurryH {TyNat} exp hxs = exp
+uncurryH {tyA ⇒ tyB} f (x ∷ᴴ hxs) = uncurryH (f x) hxs
 
--- toHVec' : ∀  {n} → (v : Vec ℕ n) → HVec (evalTy) (repeat n TyNat )
--- toHVec' [] = []ᴴ
--- toHVec' (x ∷ v) = x ∷ᴴ toHVec' v
-
-
-
--- evalExp'' : ∀ {n : ℕ} {ctx : Ctx n} {ty : Ty}  → Exp' ctx ty → HVec evalTy ctx → HVec evalTy (getArgs ty) → ℕ
--- evalExp'' exp ctx = uncurryH (evalExp' exp ctx)
-
--- helper' : ∀ (m : ℕ ) → repeat (countArgs (ℕtoTy m)) TyNat ≡ getArgs (ℕtoTy m) 
--- helper' zero = refl
--- helper' (suc n) = cong (λ xs → TyNat ∷ xs) (helper' n)
-
--- helper''' : ∀ {m} → (countArgs (ℕtoTy m)) ≡ m 
--- helper''' {zero} = refl
--- helper''' {suc m} = cong suc (helper''' {m})
+toHVec' : ∀  {n} → (v : Vec ℕ n) → HVec (evalTy) (repeat n TyNat )
+toHVec' [] = []ᴴ
+toHVec' (x ∷ v) = x ∷ᴴ toHVec' v
 
 
--- {-# REWRITE helper' helper''' #-}
 
--- helper3 : ∀ (n : ℕ) → repeat n TyNat ≡ getArgs (ℕtoTy n)
--- helper3 zero = refl
--- helper3 (suc n) = cong (λ vs → TyNat ∷ vs) (helper3 n)
+evalExp'' : ∀ {n : ℕ} {ctx : Ctx n} {ty : Ty}  → Exp' ctx ty → HVec evalTy ctx → HVec evalTy (getArgs ty) → ℕ
+evalExp'' exp ctx = uncurryH (evalExp' exp ctx)
 
+helper' : ∀ (m : ℕ ) → repeat (countArgs (ℕtoTy m)) TyNat ≡ getArgs (ℕtoTy m) 
+helper' zero = refl
+helper' (suc n) = cong (λ xs → TyNat ∷ xs) (helper' n)
 
--- {-# REWRITE helper3  #-}
-
-
--- convVarSound : ∀ {n : ℕ} (ctx : Vec ℕ n) (x : Fin n)  → lookup ctx x ≡ evalExp'' (Var' (finToDBI x)) (toHVec' ctx) ([]ᴴ)
--- convVarSound  (x ∷ ctx) zero = refl
--- convVarSound (x₁ ∷ ctx) (suc x) rewrite convVarSound  ctx x  = refl
+helper''' : ∀ {m} → (countArgs (ℕtoTy m)) ≡ m 
+helper''' {zero} = refl
+helper''' {suc m} = cong suc (helper''' {m})
 
 
--- --  
+{-# REWRITE helper' helper''' #-}
+
+helper3 : ∀ (n : ℕ) → repeat n TyNat ≡ getArgs (ℕtoTy n)
+helper3 zero = refl
+helper3 (suc n) = cong (λ vs → TyNat ∷ vs) (helper3 n)
+
+
+{-# REWRITE helper3  #-}
+
+
+convVarSound : ∀ {n : ℕ} (ctx : Vec ℕ n) (x : Fin n)  → lookup ctx x ≡ evalExp'' (Var' (finToDBI x)) (toHVec' ctx) ([]ᴴ)
+convVarSound  (x ∷ ctx) zero = refl
+convVarSound (x₁ ∷ ctx) (suc x) rewrite convVarSound  ctx x  = refl
+
  
--- sound-embedd : ∀ {n m : ℕ} (exp : Exp n m)  (ctx : Vec ℕ n) (args : Vec ℕ m) → (evalST exp ctx args)  ≡  (evalExp'' (embedd  exp) (toHVec' ctx) ) ( (toHVec'   ( args)))
--- sound-embedd (Var x) ctx []   = convVarSound ctx x
--- sound-embedd {n} {suc m} (Lam exp) (ctx) (x ∷ args) rewrite sound-embedd exp (x ∷ ctx) args = refl
--- sound-embedd CZero ctx args = refl
--- sound-embedd Suc ctx [ n ] = refl 
--- sound-embedd (App f x) ctx args rewrite sound-embedd x ctx []  | sound-embedd f ctx ( (evalExp' (embedd x) (toHVec' ctx)) ∷ args) = refl
--- sound-embedd (Nat n) ctx [] = refl
-             
+sound-embedd : ∀ {n m : ℕ} (exp : Exp n m)  (ctx : Vec ℕ n) (args : Vec ℕ m) → (evalST exp ctx args)  ≡  (evalExp'' (embedd  exp) (toHVec' ctx) ) ( (toHVec'   ( args)))
+sound-embedd (Var x) ctx []   = convVarSound ctx x
+sound-embedd {n} {suc m} (Lam exp) (ctx) (x ∷ args) rewrite sound-embedd exp (x ∷ ctx) args = refl
+sound-embedd CZero ctx args = refl
+sound-embedd Suc ctx [ n ] = refl 
+sound-embedd (App f x) ctx args rewrite sound-embedd x ctx []  | sound-embedd f ctx ( (evalExp' (embedd x) (toHVec' ctx)) ∷ args) = refl
+sound-embedd (Nat n) ctx [] = refl
+sound-embedd (PRecT h acc n) ctx [] rewrite sound-embedd acc ctx [] | sound-embedd n ctx [] | ext2 (λ x y → sound-embedd h ctx [ x , y ]) = refl
