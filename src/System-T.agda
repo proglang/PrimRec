@@ -256,34 +256,36 @@ maplookupEq {.zero} [] ys = refl
 maplookupEq {(suc n)} {m} (x ∷ vs) ys rewrite lookupOP' zero  (x ∷ vs) ys = cong (λ vec → x ∷ vec) (maplookupEq {n} {suc m} vs (x ∷ ys)) 
 
 
-mapEvalVarsEq : ∀ {n : ℕ} (vs : Vec ℕ n) (exp : Exp n n) →  (map (λ arg → evalST arg (fastReverse vs) []) (map Var (mkFinvec n zero))) ≡ vs 
-mapEvalVarsEq {n} vs exp    = 
-        (map (λ arg → evalST arg (fastReverse vs) []) (map Var (mkFinvec n zero))) 
-                ≡⟨ ∘-map (λ arg → evalST arg (fastReverse vs) []) Var (mkFinvec n zero) ⟩ 
-        (map ((λ arg → evalST arg (fastReverse vs) []) ∘ Var) (mkFinvec n zero)) 
-                ≡⟨⟩ 
-        ((map (λ f → lookup (fastReverse vs) f ) (mkFinvec n zero)) 
-                ≡⟨ maplookupEq vs [] ⟩ 
-        vs ∎) 
 
-evalApplyToVarsHelper1 : ∀ {n : ℕ} (vs : Vec ℕ n) (exp : Exp n n) → evalST exp (fastReverse vs) (map (λ arg → evalST arg (fastReverse vs) []) (map Var (mkFinvec n zero))) ≡ evalST exp (fastReverse vs) vs
-evalApplyToVarsHelper1 vs exp rewrite mapEvalVarsEq vs exp = refl
+mapEvalVarsEq2 : ∀ {n m : ℕ} (xs : Vec ℕ n) (ys : Vec ℕ m) →  (map (λ arg → evalST arg (xs ++r ys) []) (map Var (mkFinvec n m))) ≡ xs 
+mapEvalVarsEq2 {n} {m} xs ys    = map (λ arg → evalST arg (xs ++r ys) []) (map Var (mkFinvec n m)) 
+                                        ≡⟨ ∘-map (λ arg → evalST arg (xs ++r ys) []) Var (mkFinvec n m) ⟩ 
+                                map ((λ arg → evalST arg (xs ++r ys) []) ∘ Var) (mkFinvec n m) 
+                                        ≡⟨⟩ 
+                                map (λ f → lookup (xs ++r ys) f) (mkFinvec n m) 
+                                        ≡⟨ maplookupEq xs ys ⟩ 
+                                xs ∎
+
+evalApplyToVars2Helper1 : ∀ {n m : ℕ} (xs : Vec ℕ n) (ys : Vec ℕ m) (exp : Exp zero n) → evalST (raiseExP (n + m) exp) (xs ++r ys)(map (λ arg → evalST arg (xs ++r ys) []) (map Var (mkFinvec n m)))  ≡ evalST (raiseExP (n + m) exp) (xs ++r ys) xs
+evalApplyToVars2Helper1 xs ys exp rewrite mapEvalVarsEq2 xs ys = refl
 
 
 applyToVars : ∀ {m o} → Exp (m + o) m → Exp (m + o) zero
 applyToVars {m} {o} exp  = ((flip apply* ) (map Var (mkFinvec m o))) exp
 
 
+evalApplyToVars2 :  ∀ {n m : ℕ} (exp : Exp zero n) (xs : Vec ℕ n) (ys  : Vec ℕ m) → evalST (applyToVars {n} {m} (raiseExP (n + m) exp)) (xs ++r ys) [] ≡ evalST exp [] xs
+evalApplyToVars2  {n} {m} exp xs ys  = 
+        evalST (applyToVars (raiseExP (n + m) exp)) (xs ++r ys) [] 
+                ≡⟨ evalApply*Eq (raiseExP (n + m) exp)  (map Var (mkFinvec n m)) (xs ++r ys) ⟩ 
+        evalST (raiseExP (n + m) exp) (xs ++r ys) (map (λ arg → evalST arg (xs ++r ys) []) (map Var (mkFinvec n m))) 
+                ≡⟨ evalApplyToVars2Helper1 xs ys exp ⟩ 
+        evalST (raiseExP (n + m) exp) (xs ++r ys) xs 
+                ≡⟨ sym( raiseExPSound exp [] (xs ++r ys) xs) ⟩ 
+        (evalST exp [] xs) ∎ 
 
 evalApplyToVars :  ∀ {n : ℕ} (exp : Exp zero n) (vs : Vec ℕ n) → evalST (applyToVars (raiseExP n exp)) (fastReverse vs) [] ≡ evalST exp [] vs
-evalApplyToVars  {n} exp vs  = 
-    evalST (apply* (raiseExP n exp) (map Var (mkFinvec n zero))) (fastReverse vs) [] 
-            ≡⟨ evalApply*Eq (raiseExP n exp)  (map Var (mkFinvec n zero)) (fastReverse vs) ⟩ 
-    evalST (raiseExP n exp) (fastReverse vs) ((map (λ arg → evalST arg (fastReverse vs) []) ((map Var (mkFinvec n zero))))) 
-            ≡⟨ evalApplyToVarsHelper1 vs (raiseExP n exp) ⟩ 
-    (evalST (raiseExP n exp) (fastReverse vs) vs) 
-            ≡⟨ sym( raiseExPSound exp [] (fastReverse vs) vs) ⟩ 
-    (evalST exp [] vs) ∎ 
+evalApplyToVars  {n} exp vs  = evalApplyToVars2 exp vs []
 
 
 prToSt* : ∀ {m : ℕ} (o : ℕ)   → Vec (PR m) n → Vec (Exp (o) m) n
