@@ -34,9 +34,9 @@ data Exp : ℕ → ℕ  → Set where
     Nat : ℕ  → Exp n zero
     PRecT : Exp n 2 → Exp n zero → Exp n zero → Exp n zero
 
-prek : ∀ {A : Set} (h : A → ℕ → A) → A → ℕ → A
-prek h acc zero = acc
-prek h acc (suc counter) = h (prek h acc counter) counter
+para : ∀ {A : Set} (h : A → ℕ → A) → A → ℕ → A
+para h acc zero = acc
+para h acc (suc counter) = h (para h acc counter) counter
 
 evalST : ∀ {n m : ℕ} → Exp n m → Vec ℕ n → Vec ℕ m → ℕ 
 evalST (Var x) ctx args = lookup ctx x
@@ -45,7 +45,7 @@ evalST CZero ctx args = 0
 evalST Suc ctx [ x ] = suc x
 evalST (App f x) ctx args = evalST f ctx ( evalST x ctx [] ∷ args)
 evalST (Nat n) _ [] = n
-evalST (PRecT h acc counter) ctx [] = prek (λ acc counter → (evalST h ctx) [ acc , counter ]) (evalST acc ctx []) (evalST counter ctx []) 
+evalST (PRecT h acc counter) ctx [] = para (λ acc counter → (evalST h ctx) [ acc , counter ]) (evalST acc ctx []) (evalST counter ctx []) 
 
 
 
@@ -355,7 +355,27 @@ convCompSound f gs vs = (evalSTClosed (convComp f gs) vs)
                 (eval f (eval* gs vs)) ∎ ))
 
 
+-- -- ------------------------------------------------------------------------------
+-- -- -- primitive recursion
+-- -- ------------------------------------------------------------------------------
 
+paraNat : ∀ {n} → (Vec ℕ n → ℕ) → (Vec ℕ (suc (suc n)) → ℕ) → Vec ℕ ( (suc n)) → ℕ
+paraNat g h (zero ∷ args) = g args
+paraNat g h (suc x ∷ args) = h (paraNat g h (x ∷ args) ∷ (x ∷ args))
+
+paraNat' : ∀ {n} → (Vec ℕ n → ℕ) → (Vec ℕ (suc (suc n)) → ℕ) → Vec ℕ ( (suc n)) → ℕ
+paraNat' g h (x ∷ args) = para (λ acc n → h (acc ∷ (n ∷ args))) (g args) x
+
+paraNatEq : ∀ {n} → (g : Vec ℕ n → ℕ) → (h : Vec ℕ (suc (suc n)) → ℕ) → (args : Vec ℕ ( (suc n))) → paraNat g h args ≡ paraNat' g h args
+paraNatEq g h (zero ∷ args) = refl
+paraNatEq g h (suc x ∷ args) rewrite paraNatEq  g h (x ∷ args)  = refl
+
+
+paraT : ∀ {n} → Exp zero n → Exp zero (suc (suc n)) →  Exp zero ( (suc n))
+paraT {n} g h = prepLambdas' 0 (suc n)  (PRecT 
+                (Lam (Lam {!   !})) 
+                {!   !} 
+                {!   !}) 
 -- -- ------------------------------------------------------------------------------
 -- -- -- embedding
 -- -- ------------------------------------------------------------------------------
@@ -419,7 +439,7 @@ evalExp' CZero' ctx = 0
 evalExp' Suc' ctx = λ x → suc x
 evalExp' (App' f x) ctx = (evalExp' f ctx) (evalExp' x ctx)
 evalExp' (Nat' n) ctx = n
-evalExp' (PRecT' h acc counter) ctx = prek (evalExp' h ctx) (evalExp' acc ctx) (evalExp' counter ctx)
+evalExp' (PRecT' h acc counter) ctx = para (evalExp' h ctx) (evalExp' acc ctx) (evalExp' counter ctx)
 
 countArgs : Ty → ℕ
 countArgs TyNat = 0
