@@ -161,13 +161,16 @@ convProjSound {n} f vs = evalST (convProjHelper  (opposite f)) [] vs
 
 convComp : ∀  {n m : ℕ }→ PR n → Vec (PR m) n → Exp zero m
 
+convPR : ∀ {n} → PR n → PR (suc (suc n)) → Exp zero (suc n)
+
+
 
 prToST' : ∀ {m : ℕ} → PR m → Exp zero m 
 prToST'  {m} Z = mkConstZero m
 prToST'  σ = Suc
 prToST' (π i) = convProj ( i)
 prToST' (C f gs) = convComp f gs 
-prToST'  (P pr pr₁) = {!   !}
+prToST'  (P g h) = convPR g h
 
 prToST : (n : ℕ)  → PR m → Exp n m 
 prToST n pr = raiseExP n (prToST' pr)
@@ -220,7 +223,7 @@ eqPrSTn {n} Z v = sym (convZeroSound n v)
 eqPrSTn  σ [ x ] = refl
 eqPrSTn  {suc n} (π i) (vs) =  sym (convProjSound i vs)
 eqPrSTn  (C f gs) vs = sym (convCompSound f gs vs)
-eqPrSTn  (P pr pr₁) v = {!   !}                
+eqPrSTn  (P g h) vs = {!   !}                
 
 
 -- -- ------------------------------------------------------------------------------
@@ -370,12 +373,23 @@ paraNatEq : ∀ {n} → (g : Vec ℕ n → ℕ) → (h : Vec ℕ (suc (suc n)) �
 paraNatEq g h (zero ∷ args) = refl
 paraNatEq g h (suc x ∷ args) rewrite paraNatEq  g h (x ∷ args)  = refl
 
-
 paraT : ∀ {n} → Exp zero n → Exp zero (suc (suc n)) →  Exp zero ( (suc n))
 paraT {n} g h = prepLambdas' 0 (suc n)  (PRecT 
-                (Lam (Lam {!   !})) 
-                {!   !} 
-                {!   !}) 
+                -- (Lam (Lam (applyToVars {n} {3} (App (App (raiseExP  (n + 3) h) (Var (suc zero))) (Var zero))))) 
+                (Lam (Lam (applyToVars {n} {3}    (raiseExP (suc n) (App (App (raiseExP  (2) h) (Var (suc zero))) (Var zero)) )          ))) 
+                (applyToVars {n} {1} (raiseExP (suc n) g)) 
+                (Var (fromℕ n))) 
+
+
+convPR g h = paraT ((prToST'  g )) (prToST'  h)
+
+
+
+
+
+
+
+                
 -- -- ------------------------------------------------------------------------------
 -- -- -- embedding
 -- -- ------------------------------------------------------------------------------
