@@ -381,9 +381,9 @@ paraNatEq g h (suc x ∷ args) rewrite paraNatEq  g h (x ∷ args)  = refl
 
 paraT : ∀ {n} → Exp zero n → Exp zero (suc (suc n)) →  Exp zero ( (suc n))
 paraT {n} g h = prepLambdas' 0 (suc n)  (PRecT 
-                -- (Lam (Lam (applyToVars {n} {3} (App (App (raiseExP  (n + 3) h) (Var (suc zero))) (Var zero))))) 
-                (Lam (Lam (applyToVars {n} {3}    (raiseExP (suc n) (App (App (raiseExP  (2) h) (Var (suc zero))) (Var zero)) )          ))) 
-                (raiseExP 1(applyToVars {n} {0} (raiseExP (n) g)) )
+                (Lam (Lam (applyToVars {n} {3} (App (App (raiseExP  (n + 3) h) (Var (suc zero))) (Var zero))))) 
+                --(Lam (Lam (applyToVars {n} {3}    (raiseExP (suc n) (App (App (raiseExP  (2) h) (Var (suc zero))) (Var zero)) )          ))) 
+                ((applyToVars {n} {1} (raiseExP (suc n) g)) )
                 (Var (fromℕ n))) 
 
 
@@ -393,12 +393,12 @@ evalParaT : ∀ {n x : ℕ} (g : Exp zero n) (h : Exp zero (suc (suc n))) (args 
 evalParaT {n} {x} g h args = (evalSTClosed (paraT g h) (x ∷ args)) 
                         ≡⟨⟩ 
                 ((evalSTClosed (prepLambdas' 0 (suc n)  (PRecT 
-                (Lam (Lam (applyToVars {n} {3}    (raiseExP (suc n) (App (App (raiseExP  (2) h) (Var (suc zero))) (Var zero)))))) 
-                (raiseExP 1(applyToVars {n} {0} (raiseExP (n) g)) )
+                (Lam (Lam (applyToVars {n} {3} (App (App (raiseExP  (n + 3) h) (Var (suc zero))) (Var zero))))) 
+                ( (applyToVars {n} {1} (raiseExP (suc n) g)) )
                 (Var (fromℕ n))) ) (x ∷ args)) 
                         ≡⟨ prepLambdasEvalClose (x ∷ args) (PRecT 
-                        (Lam (Lam (applyToVars {n} {3}    (raiseExP (suc n) (App (App (raiseExP  (2) h) (Var (suc zero))) (Var zero)))))) 
-                        (raiseExP 1(applyToVars {n} {0} (raiseExP (n) g)) )
+                        (Lam (Lam (applyToVars {n} {3} (App (App (raiseExP  (n + 3) h) (Var (suc zero))) (Var zero))))) 
+                        ( (applyToVars { n} {1} (raiseExP (suc n) g)) )
                         (Var (fromℕ n))) ⟩ 
         
                          {!   !} ≡⟨⟩ {!   !})
@@ -406,11 +406,27 @@ evalParaT {n} {x} g h args = (evalSTClosed (paraT g h) (x ∷ args))
 evalParaTHelper1 : ∀  {n x} (args : Vec ℕ n ) → (lookup (fastReverse (x ∷ args)) (fromℕ n)) ≡ x
 evalParaTHelper1 {n} {x} args = lookupOpRev zero (x ∷ args)
 
-evalParaTHelper2 :  ∀  {n x  : ℕ} (args : Vec ℕ n ) (g : Exp zero n) → (evalST (applyToVars {n} {1} (raiseExP (suc n) g)) (fastReverse (x ∷ args)) []) ≡ evalSTClosed g args
-evalParaTHelper2  {n} {x} args g = {!   !} 
+evalParaTHelper2 :  ∀  {n x  : ℕ} (args : Vec ℕ n ) (g : Exp zero n) → (evalST (applyToVars  { n} {1} (raiseExP (suc n) g)) (fastReverse (x ∷ args)) []) ≡ evalSTClosed g args
+evalParaTHelper2  {n} {x} args g = evalApplyToVars2 g args [ x ] 
 
+-- evalApplyToVars2 :  ∀ {n m : ℕ} (exp : Exp zero n) (xs : Vec ℕ n) (ys  : Vec ℕ m) → evalST (applyToVars {n} {m} (raiseExP (n + m) exp)) (xs ++r ys) [] ≡ evalST exp [] xs
+evalParaTHelper3 : ∀  {n x : ℕ} (h : Exp zero (suc (suc n))) (args : Vec ℕ n) → (λ acc counter →
+         evalST
+         (applyToVars {n} {3}
+          (App (App (raiseExP (suc (suc (suc n))) h) (Var (suc zero)))
+           (Var zero)))
+         (counter ∷ acc ∷ fastReverse (x ∷ args)) []) ≡ (λ acc counter  → evalSTClosed h (acc ∷ (counter ∷ args)))
+evalParaTHelper3 h args = ext2 (λ acc counter → {!   !})
 
--- evalApplyToVars :  ∀ {n : ℕ} (exp : Exp zero n) (vs : Vec ℕ n) → evalST (applyToVars (raiseExP n exp)) (fastReverse vs) [] ≡ evalST exp [] vs
+evalParaTHelper4 : ∀  {n} (x : ℕ) (counter : ℕ) (acc : ℕ) (h : Exp zero (suc (suc n))) (args : Vec ℕ n) → evalST
+      (applyToVars {n} {3}
+       (App (App (raiseExP (suc (suc (suc n))) h) (Var (suc zero)))
+        (Var zero)))
+      (counter ∷ acc ∷ fastReverse (x ∷ args)) [] ≡ evalSTClosed h (acc ∷ counter ∷ args)
+evalParaTHelper4 {n} x counter acc h args = evalST (applyToVars {n} {3}(App (App (raiseExP (suc (suc (suc n))) h) (Var (suc zero)))(Var zero)))(counter ∷ acc ∷ fastReverse (x ∷ args)) [] 
+                                                        ≡⟨⟩ 
+                                                ({!   !} ≡⟨⟩ {!   !})
+
 
 -- -- ------------------------------------------------------------------------------
 -- -- -- embedding
