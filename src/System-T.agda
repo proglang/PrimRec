@@ -133,23 +133,19 @@ convZeroSound n v = prepLambdasEvalClose v CZero
 ------------------------------------------------------------------------------
 
 
-convProjHelper : ∀ {m} → Fin (m)  →  Exp zero m
-convProjHelper {m} f  = prepLambdas' zero m (Var f)
+convProj : ∀ {m} → Fin (m)  →  Exp zero m
+convProj {m} f  = prepLambdas' zero m (Var (opposite {m} f))
 
-{-# REWRITE inject+0  #-}
-
-
-convProj : ∀ {m : ℕ } → Fin m  → Exp zero m
-convProj  {m}  f = convProjHelper {m} (opposite {m} f)
+-- {-# REWRITE inject+0  #-}
 
 
-convProjSoundHelper : ∀  {m : ℕ} (f : Fin (suc m ) ) (args : Vec ℕ (suc m))  → evalSTClosed (convProjHelper f)  args ≡ lookup (( fastReverse args) ) ( f)
-convProjSoundHelper f args = prepLambdasEvalClose args (Var f)
+convProjSoundHelper : ∀  {m : ℕ} (f : Fin (suc m ) ) (args : Vec ℕ (suc m))  → evalSTClosed (convProj f)  args ≡ lookup (( fastReverse args) ) (opposite f)
+convProjSoundHelper f args = prepLambdasEvalClose args (Var (opposite f))
 
 
-convProjSound : ∀  {n : ℕ} (f : Fin ((suc n)) ) (args : Vec ℕ (suc n))  → evalSTClosed (convProjHelper  (opposite f)) args ≡ lookup args f
-convProjSound {n} f vs = evalST (convProjHelper  (opposite f)) [] vs 
-    ≡⟨ convProjSoundHelper (opposite f) vs ⟩ 
+convProjSound : ∀  {n : ℕ} (f : Fin ((suc n)) ) (args : Vec ℕ (suc n))  → evalSTClosed (convProj  (f)) args ≡ lookup args f
+convProjSound {n} f vs = evalST (convProj  ( f)) [] vs 
+    ≡⟨ convProjSoundHelper (f) vs ⟩ 
                         lookup (fastReverse vs) (opposite f) 
     ≡⟨ lookupOpRev f vs ⟩ 
                         (lookup vs f) ∎ 
