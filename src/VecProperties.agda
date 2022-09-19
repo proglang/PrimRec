@@ -1,4 +1,4 @@
-{-# OPTIONS --rewriting --prop -v rewriting:50 #-}
+{-# OPTIONS --rewriting  #-}
 
 module VecProperties where
 

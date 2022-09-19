@@ -1,4 +1,5 @@
-{-# OPTIONS --rewriting --prop -v rewriting:50 #-}
+-- {-# OPTIONS --rewriting --prop -v rewriting:50 #-}
+{-# OPTIONS --rewriting  #-}
 {-# OPTIONS --allow-unsolved-metas #-}
 module System-T where
 
@@ -71,7 +72,7 @@ raiseExp0Eq (App f x) rewrite raiseExp0Eq f |  raiseExp0Eq x = refl
 raiseExp0Eq (Nat x) = refl
 raiseExp0Eq ((PRecT h acc counter)) rewrite raiseExp0Eq h | raiseExp0Eq acc | raiseExp0Eq counter = refl
 
-cong3 : ∀ {A B C D : Set}(f : A → B → C → D) {x y u v w z} → x ≡ y → u ≡ v → w ≡ z → f x u w ≡ f y v z
+cong3 : ∀ {A B C D : Set} {x y u v w z} (f : A → B → C → D)  → x ≡ y → u ≡ v → w ≡ z → f x u w ≡ f y v z
 cong3 f refl refl refl = refl
 
 -- PLFA 
@@ -97,9 +98,6 @@ raiseExPSound (Nat x) ctx ctx2 [] = refl
 raiseExPSound (PRecT h acc counter) ctx ctx2 []  rewrite raiseExPSound acc ctx ctx2 [] |  raiseExPSound counter ctx ctx2 [] | ext2 λ x y → raiseExPSound h ctx ctx2 [ x , y ]  = refl 
 
 
-fastReverseEq : ∀ {x n : ℕ } (args : Vec ℕ n) → fastReverse (x ∷ args) ≡ (fastReverse args) ++ [ x ]
-fastReverseEq [] = refl
-fastReverseEq (x ∷ args) rewrite fastReverseEq {x} args = {!   !}
 ------------------------------------------------------------------------------
 -- helper
 ------------------------------------------------------------------------------
@@ -179,47 +177,10 @@ prToST'  (P g h) = convPR g h
 prToST : (n : ℕ)  → PR m → Exp n m 
 prToST n pr = raiseExP n (prToST' pr)
 
--- prToST' : (m : ℕ) → PR m → Exp zero m 
--- prToST' m  pr = prToST zero m pr
 
--- eqPrST0 : ∀ ( pr : PR zero) → eval pr [] ≡ evalSTClosed (prToST' zero  pr) []
--- eqPrST0 Z = refl
--- eqPrST0 (C pr x)  = {!   !}
-
-
--- eqPrST1 : ∀ ( pr : PR 1) (n : ℕ ) → eval pr [ n ] ≡ evalSTClosed (prToST' 1 pr) [ n ]
--- eqPrST1 Z n = refl
--- eqPrST1 σ n = refl
--- eqPrST1 (π zero) n = refl
--- eqPrST1 (C pr x) n = {!   !}
--- eqPrST1 (P pr pr₁) n = {!   !}
-
-
--- eqPrST2 : ∀ ( pr : PR 2) (v : Vec ℕ 2 ) → eval pr v ≡ evalSTClosed (prToST' 2 pr) v
--- eqPrST2 Z [ n , m ] = refl
--- eqPrST2 (π zero) [ n , m ]  = refl
--- eqPrST2 (π (suc zero)) [ n , m ] = refl
--- eqPrST2 (C pr x) v = {!   !}
--- eqPrST2 (P pr pr₁) v = {!   !}
-
-
--- eqPrST3 : ∀ ( pr : PR 3) (v : Vec ℕ 3 ) → eval pr v ≡ evalSTClosed (prToST' 3  pr) v
--- eqPrST3 Z (n ∷ [ m , o ]) = refl
--- eqPrST3 (π zero) (n ∷ [ m , o ]) = refl
--- eqPrST3 (π (suc zero)) (n ∷ [ m , o ]) = refl
--- eqPrST3 (π (suc (suc zero))) (n ∷ [ m , o ]) = refl
--- eqPrST3 (C pr x) (n ∷ [ m , o ]) = {!   !}
--- eqPrST3 (P pr pr₁) (n ∷ [ m , o ]) = {!   !}
-
--- eqPrST4 : ∀ ( pr : PR 4) (v : Vec ℕ 4 ) → eval pr v ≡ evalSTClosed (prToST' 4  pr) v
--- eqPrST4 Z v = {!   !}
--- eqPrST4 (π zero) (x ∷ x₁ ∷ [ x₂ , x₃ ]) = refl
--- eqPrST4 (π (suc zero)) (x ∷ x₁ ∷ [ x₂ , x₃ ]) = refl
--- eqPrST4 (π (suc (suc zero))) (x ∷ x₁ ∷ [ x₂ , x₃ ]) = refl
--- eqPrST4 (π (suc (suc (suc zero)))) (x ∷ x₁ ∷ [ x₂ , x₃ ]) = refl
--- eqPrST4 (C pr x) v = {!   !}
--- eqPrST4 (P pr pr₁) v = {!   !}
 convCompSound : ∀ {n m} (f : PR n)  (gs : Vec  (PR m) n ) (vs : Vec ℕ m) → evalSTClosed (convComp f gs) vs  ≡  eval f (eval* gs vs)
+
+convParaSound : ∀ {n : ℕ} (g : PR n) (h : PR (suc (suc n))) (args : Vec ℕ (suc n) ) → evalSTClosed (prToST' (P g h)) args ≡ eval (P g h) args
 
 
 eqPrSTn : ∀  {n : ℕ} ( pr : PR n) (v : Vec ℕ n ) → eval pr v ≡ evalSTClosed (prToST'   pr) v
@@ -227,7 +188,7 @@ eqPrSTn {n} Z v = sym (convZeroSound n v)
 eqPrSTn  σ [ x ] = refl
 eqPrSTn  {suc n} (π i) (vs) =  sym (convProjSound i vs)
 eqPrSTn  (C f gs) vs = sym (convCompSound f gs vs)
-eqPrSTn  (P g h) vs = {!   !}                
+eqPrSTn  (P g h) vs = sym (convParaSound g h vs)                
 
 
 -- -- ------------------------------------------------------------------------------
@@ -420,6 +381,11 @@ paraNatEq : ∀ {n} → (g : Vec ℕ n → ℕ) → (h : Vec ℕ (suc (suc n)) �
 paraNatEq g h (zero ∷ args) = refl
 paraNatEq g h (suc x ∷ args) rewrite paraNatEq  g h (x ∷ args)  = refl
 
+paraNatPR : ∀ {n : ℕ} (g : PR n) (h : PR (suc (suc n))) (vs : Vec ℕ (suc n) ) → eval (P g h) vs ≡ paraNat (eval g) (eval h) vs
+paraNatPR g h (zero ∷ vs) = refl
+paraNatPR g h (suc x ∷ vs) rewrite paraNatPR  g h (x ∷ vs)  = refl 
+
+
 paraT : ∀ {n} → Exp zero n → Exp zero (suc (suc n)) →  Exp zero ( (suc n))
 paraT {n} g h = prepLambdas' 0 (suc n)  (PRecT 
                 ---(Lam (Lam (applyToVars {n} {3} (App (App (raiseExP  (n + 3) h) (Var (suc zero))) (Var zero))))) 
@@ -429,6 +395,8 @@ paraT {n} g h = prepLambdas' 0 (suc n)  (PRecT
                 (Var (fromℕ n))) 
 
 
+convPR g h = paraT ((prToST'  g )) (prToST'  h)
+
 
 -- applyToVars3 : ∀ {n m o} → Exp (n + m + o) m → Exp (n + m + o) zero
 -- applyToVars3 {n}{m} {o} exp  = ((flip apply* ) (map Var (mkFinvec' m o n)))  exp
@@ -436,7 +404,46 @@ paraT {n} g h = prepLambdas' 0 (suc n)  (PRecT
 -- -- raise - length - inject
 
 
-convPR g h = paraT ((prToST'  g )) (prToST'  h)
+evalParaTHelper1 : ∀  {n x} (args : Vec ℕ n ) → (lookup (fastReverse (x ∷ args)) (fromℕ n)) ≡ x
+evalParaTHelper1 {n} {x} args = lookupOpRev zero (x ∷ args)
+
+
+evalParaTHelper2 :  ∀  {n x  : ℕ} (args : Vec ℕ n ) (g : Exp zero n) → (evalST (applyToVars  { n} {1} (raiseExP (suc n) g)) (fastReverse (x ∷ args)) []) ≡ evalSTClosed g args
+evalParaTHelper2  {n} {x} args g = evalApplyToVars2 g args [ x ] 
+
+
+evalParaTHelper4 : ∀  {n} (x : ℕ) (counter : ℕ) (acc : ℕ) (h : Exp zero (suc (suc n))) (args : Vec ℕ n) → evalST (applyToVars3 {2} {n} {1} (App (App (raiseExP (suc (suc (suc n))) h) (Var (suc zero)))(Var zero))) (counter ∷ acc ∷ fastReverse (x ∷ args)) [] ≡ evalSTClosed h (acc ∷ counter ∷ args)
+evalParaTHelper4 {n} x counter acc h args =     evalST (applyToVars3 {2} {n} {1} (App (App (raiseExP (suc (suc (suc n))) h) (Var (suc zero)))(Var zero)))  (counter ∷ acc ∷ fastReverse (x ∷ args)) [] 
+                                                        ≡⟨ evalApplyToVars3 (App (App (raiseExP (suc (suc (suc n))) h) (Var (suc zero))) (Var zero)) [ x ] [ counter , acc ] args ⟩ 
+                                                evalST (raiseExP (suc (suc (suc n))) h) (counter ∷ acc ∷ (args ++r [ x ])) (acc ∷ counter ∷ args) 
+                                                        ≡⟨ sym (raiseExPSound h [] (counter ∷ acc ∷ (args ++r [ x ]))  (acc ∷ counter ∷ args))  ⟩ (evalSTClosed h (acc ∷ counter ∷ args)) ∎ 
+
+evalParaTHelper3 : ∀  {n x : ℕ} (h : Exp zero (suc (suc n))) (args : Vec ℕ n) → (λ acc counter →
+         evalST
+         (applyToVars3 {2} {n} {1}
+          (App (App (raiseExP (suc (suc (suc n))) h) (Var (suc zero)))
+           (Var zero)))
+         (counter ∷ acc ∷ fastReverse (x ∷ args)) []) ≡ 
+         (λ acc counter  → evalSTClosed h (acc ∷ (counter ∷ args)))
+evalParaTHelper3 {n} {x} h args = ext2 (λ acc counter → evalParaTHelper4 x counter acc h args)
+
+
+evalParaTHelper5 : ∀  {n x : ℕ} (g : Exp zero ( ( n))) (h : Exp zero (suc (suc n))) (args : Vec ℕ n)
+        → para
+      (λ acc counter →
+         evalST
+         (applyToVars3 {2} {n} {1}
+          (App (App (raiseExP (suc (suc (suc n))) h) (Var (suc zero)))
+           (Var zero)))
+         (counter ∷ acc ∷ fastReverse (x ∷ args)) [])
+      (evalST (applyToVars  { n} {1}  (raiseExP (suc n) g)) (fastReverse (x ∷ args))
+       [])
+      (lookup (fastReverse (x ∷ args)) (fromℕ n))
+      ≡
+      para (λ acc counter → evalSTClosed h (acc ∷ counter ∷ args))
+      (evalSTClosed g args) x
+evalParaTHelper5 {n} {x} g h args rewrite evalParaTHelper1 {n} {x} args | evalParaTHelper2  {n} {x} args g | evalParaTHelper3 {n} {x} h args = refl
+
 
 evalParaT : ∀ {n x : ℕ} (g : Exp zero n) (h : Exp zero (suc (suc n))) (args : Vec ℕ n ) → evalSTClosed (paraT g h) (x ∷ args) ≡ para (λ acc counter  → evalSTClosed h (acc ∷ (counter ∷ args))) (evalSTClosed g args) x  
 evalParaT {n} {x} g h args = (evalSTClosed (paraT g h) (x ∷ args)) 
@@ -445,40 +452,34 @@ evalParaT {n} {x} g h args = (evalSTClosed (paraT g h) (x ∷ args))
                 (Lam (Lam (applyToVars3 {2} {n} {1} (App (App (raiseExP  (n + 3) h) (Var (suc zero))) (Var zero))))) 
                 ( (applyToVars {n} {1} (raiseExP (suc n) g)) )
                 (Var (fromℕ n))) ) (x ∷ args)) 
+                        
                         ≡⟨ prepLambdasEvalClose (x ∷ args) (PRecT 
                         (Lam (Lam (applyToVars3 {2} {n} {1} (App (App (raiseExP  (n + 3) h) (Var (suc zero))) (Var zero))))) 
                         ( (applyToVars { n} {1} (raiseExP (suc n) g)) )
                         (Var (fromℕ n))) ⟩ 
         
-                         {!   !} ≡⟨⟩ {!   !})
-
-evalParaTHelper1 : ∀  {n x} (args : Vec ℕ n ) → (lookup (fastReverse (x ∷ args)) (fromℕ n)) ≡ x
-evalParaTHelper1 {n} {x} args = lookupOpRev zero (x ∷ args)
-
-evalParaTHelper2 :  ∀  {n x  : ℕ} (args : Vec ℕ n ) (g : Exp zero n) → (evalST (applyToVars  { n} {1} (raiseExP (suc n) g)) (fastReverse (x ∷ args)) []) ≡ evalSTClosed g args
-evalParaTHelper2  {n} {x} args g = evalApplyToVars2 g args [ x ] 
-
--- evalApplyToVars2 :  ∀ {n m : ℕ} (exp : Exp zero n) (xs : Vec ℕ n) (ys  : Vec ℕ m) → evalST (applyToVars {n} {m} (raiseExP (n + m) exp)) (xs ++r ys) [] ≡ evalST exp [] xs
-evalParaTHelper3 : ∀  {n x : ℕ} (h : Exp zero (suc (suc n))) (args : Vec ℕ n) → (λ acc counter →
-         evalST
-         (applyToVars3 {2} {n} {1}
-          (App (App (raiseExP (suc (suc (suc n))) h) (Var (suc zero)))
-           (Var zero)))
-         (counter ∷ acc ∷ fastReverse (x ∷ args)) []) ≡ (λ acc counter  → evalSTClosed h (acc ∷ (counter ∷ args)))
-evalParaTHelper3 h args = ext2 (λ acc counter → {!   !})
+                para(λ acc counter → evalST (applyToVars3 (App (App (raiseExP (suc (suc (suc n))) h) (Var (suc zero)))(Var zero)))(counter ∷ acc ∷ fastReverse (x ∷ args)) [])(evalST (applyToVars (raiseExP (suc n) g)) (fastReverse (x ∷ args))[]) (lookup (fastReverse (x ∷ args)) (fromℕ n)) 
+                        
+                        ≡⟨ evalParaTHelper5 {n}  {x} g h args ⟩ 
+                
+                (para (λ acc counter → evalSTClosed h (acc ∷ counter ∷ args)) (evalSTClosed g args) x) ∎)
 
 
+convParaSound g h (x ∷ args) = (evalSTClosed (prToST' (P g h)) (x ∷ args))
+                                ≡⟨⟩ 
+                        evalSTClosed (paraT ((prToST'  g )) (prToST'  h)) (x ∷ args) 
+                                ≡⟨ evalParaT (prToST'  g ) (prToST'  h) args ⟩ 
+                        para (λ acc counter → evalSTClosed (prToST' h) (acc ∷ counter ∷ args)) (evalSTClosed (prToST' g) args) x 
+                                ≡⟨⟩ 
+                        paraNat' (evalSTClosed (prToST' g)) (evalSTClosed (prToST' h)) ((x ∷ args)) 
+                                ≡⟨ sym (paraNatEq (evalSTClosed (prToST' g)) (evalSTClosed (prToST' h) ) ((x ∷ args))) ⟩ 
+                        paraNat (evalSTClosed (prToST' g)) (evalSTClosed (prToST' h))(x ∷ args) 
+                                ≡⟨ cong3 { w = x ∷ args } paraNat (extensionality (λ v → sym (eqPrSTn g v))) ((extensionality (λ v → sym (eqPrSTn h v)))) refl  ⟩ 
+                        paraNat (λ z → eval g z) (λ z → eval h z) (x ∷ args) 
+                                ≡⟨⟩ 
+                        paraNat (eval g) (eval h) (x ∷ args) 
+                                ≡⟨ sym ( paraNatPR g h  (x ∷ args)) ⟩ 
+                        eval (P g h) (x ∷ args) ∎
 
 
--- evalApplyToVars3 :  ∀ {n m o : ℕ} (exp : Exp ( n + m + o) m ) (zs : Vec ℕ (o))(xs : Vec ℕ n) (ys  : Vec ℕ m) → evalST (applyToVars3 {n} {m} {o} (exp)) ( xs ++ ys ++r zs) [] ≡ evalST exp ( xs ++ ys ++r zs) ys
-
-
-evalParaTHelper4 : ∀  {n} (x : ℕ) (counter : ℕ) (acc : ℕ) (h : Exp zero (suc (suc n))) (args : Vec ℕ n) → evalST
-      (applyToVars3 {2} {n} {1}
-       (App (App (raiseExP (suc (suc (suc n))) h) (Var (suc zero)))
-        (Var zero)))
-      (counter ∷ acc ∷ fastReverse (x ∷ args)) [] ≡ evalSTClosed h (acc ∷ counter ∷ args)
-evalParaTHelper4 {n} x counter acc h args = evalST (applyToVars3 {2} {n} {1} (App (App (raiseExP (suc (suc (suc n))) h) (Var (suc zero)))(Var zero)))  (counter ∷ acc ∷ fastReverse (x ∷ args)) [] 
-                                                        ≡⟨ evalApplyToVars3 (App (App (raiseExP (suc (suc (suc n))) h) (Var (suc zero))) (Var zero)) [ x ] [ counter , acc ] args ⟩ 
-                                                {!   !} ≡⟨⟩ {!   !}
---  evalApplyToVars3 (App (App (raiseExP (suc (suc (suc n))) h) (Var (suc zero)))) [ counter, acc] args [ x ] 
+-- paraNatPR : ∀ {n : ℕ} (g : PR n) (h : PR (suc (suc n))) (vs : Vec ℕ (suc n) ) → eval (P g h) vs ≡ paraNat (eval g) (eval h) vs

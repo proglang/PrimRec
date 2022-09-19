@@ -1,4 +1,4 @@
-{-# OPTIONS --rewriting --prop -v rewriting:50 #-}
+{-# OPTIONS --rewriting #-}
 module FinProperties where
 
 open import Data.Fin using (Fin; suc; zero; fromℕ; opposite; raise; inject+; inject₁; toℕ)
