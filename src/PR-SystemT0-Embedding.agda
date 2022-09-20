@@ -20,7 +20,7 @@ open import NatProperties using (assoc-comm-suc)
 open import FinProperties using (inject+0; inject+1; inject+Add; inject+Eq)
 open import VecProperties
 
-open import System-T0 using (Exp; mkConstZero; convProj; raiseExp0Eq; raiseExP; evalSTClosed; convZeroSound; convProjSound; generalComp; evalGeneralComp; paraT; evalParaT; paraNat; para; paraNat'; cong3; extensionality; paraNatEq)
+open import System-T0 using (Exp; mkConstZero; mkProj; raiseExp0Eq; raiseExP; evalSTClosed; evalMkConstZero; evalMkProj; generalComp; evalGeneralComp; paraT; evalParaT; paraNat; para; paraNat'; cong3; extensionality; paraNatEq)
 open System-T0.Exp
 
 open import PR-Nat
@@ -42,7 +42,7 @@ convPR : ∀ {n} → PR n → PR (suc (suc n)) → Exp zero (suc n)
 prToST' : ∀ {m : ℕ} → PR m → Exp zero m 
 prToST'  {m} Z = mkConstZero m
 prToST'  σ = Suc
-prToST' (π i) = convProj ( i)
+prToST' (π i) = mkProj ( i)
 prToST' (C f gs) = convComp f gs 
 prToST'  (P g h) = convPR g h
 
@@ -56,9 +56,9 @@ convParaSound : ∀ {n : ℕ} (g : PR n) (h : PR (suc (suc n))) (args : Vec ℕ 
 
 
 eqPrSTn : ∀  {n : ℕ} ( pr : PR n) (v : Vec ℕ n ) → eval pr v ≡ evalSTClosed (prToST'   pr) v
-eqPrSTn {n} Z v = sym (convZeroSound n v)
+eqPrSTn {n} Z v = sym (evalMkConstZero n v)
 eqPrSTn  σ [ x ] = refl
-eqPrSTn  {suc n} (π i) (vs) =  sym (convProjSound i vs)
+eqPrSTn  {suc n} (π i) (vs) =  sym ( evalMkProj i vs)
 eqPrSTn  (C f gs) vs = sym (convCompSound f gs vs)
 eqPrSTn  (P g h) vs = sym (convParaSound g h vs)                
 

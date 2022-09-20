@@ -106,16 +106,16 @@ raiseExPSound (PRecT h acc counter) ctx ctx2 []  rewrite raiseExPSound acc ctx c
 
 
 
-prepLambdas' : ∀ {o} (n : ℕ) → (m : ℕ) →  Exp (m + n) o -> Exp n (o + m)
-prepLambdas' {o} n zero exp   = exp
-prepLambdas' {o} n (suc m) exp   = Lam (prepLambdas'  (suc n) m exp)
+prepLambdas : ∀ {o} (n : ℕ) → (m : ℕ) →  Exp (m + n) o -> Exp n (o + m)
+prepLambdas {o} n zero exp   = exp
+prepLambdas {o} n (suc m) exp   = Lam (prepLambdas  (suc n) m exp)
 
 
-prepLambdasEval : ∀ {ctxLen argsLen : ℕ} (ctx : Vec ℕ ctxLen ) (args : Vec ℕ argsLen ) (exp) → evalST (prepLambdas' ctxLen argsLen exp) ctx args ≡ evalST exp (args ++r ctx) []
+prepLambdasEval : ∀ {ctxLen argsLen : ℕ} (ctx : Vec ℕ ctxLen ) (args : Vec ℕ argsLen ) (exp) → evalST (prepLambdas ctxLen argsLen exp) ctx args ≡ evalST exp (args ++r ctx) []
 prepLambdasEval ctx [] exp = refl
 prepLambdasEval ctx (x ∷ args) exp = prepLambdasEval ((x ∷ ctx)) args  exp
 
-prepLambdasEvalClose : ∀ {argsLen : ℕ}  (args : Vec ℕ argsLen ) (exp : Exp argsLen zero) → evalSTClosed (prepLambdas' 0 argsLen exp) args ≡ evalST exp (fastReverse args) []
+prepLambdasEvalClose : ∀ {argsLen : ℕ}  (args : Vec ℕ argsLen ) (exp : Exp argsLen zero) → evalSTClosed (prepLambdas 0 argsLen exp) args ≡ evalST exp (fastReverse args) []
 prepLambdasEvalClose = prepLambdasEval []
 
 
@@ -124,30 +124,30 @@ prepLambdasEvalClose = prepLambdasEval []
 ------------------------------------------------------------------------------
 
 mkConstZero :   (m : ℕ) → Exp zero m 
-mkConstZero m = prepLambdas' zero m CZero
+mkConstZero m = prepLambdas zero m CZero
 
 
-convZeroSound : ∀  (n : ℕ ) (v : Vec ℕ n ) → evalSTClosed (mkConstZero n) v  ≡ 0
-convZeroSound n v = prepLambdasEvalClose v CZero 
+evalMkConstZero : ∀  (n : ℕ ) (v : Vec ℕ n ) → evalSTClosed (mkConstZero n) v  ≡ 0
+evalMkConstZero n v = prepLambdasEvalClose v CZero 
 
 ------------------------------------------------------------------------------
 -- projection
 ------------------------------------------------------------------------------
 
 
-convProj : ∀ {m} → Fin (m)  →  Exp zero m
-convProj {m} f  = prepLambdas' zero m (Var (opposite {m} f))
+mkProj : ∀ {m} → Fin (m)  →  Exp zero m
+mkProj {m} f  = prepLambdas zero m (Var (opposite {m} f))
 
 -- {-# REWRITE inject+0  #-}
 
 
-convProjSoundHelper : ∀  {m : ℕ} (f : Fin (suc m ) ) (args : Vec ℕ (suc m))  → evalSTClosed (convProj f)  args ≡ lookup (( fastReverse args) ) (opposite f)
-convProjSoundHelper f args = prepLambdasEvalClose args (Var (opposite f))
+evalMkProjHelper : ∀  {m : ℕ} (f : Fin (suc m ) ) (args : Vec ℕ (suc m))  → evalSTClosed (mkProj f)  args ≡ lookup (( fastReverse args) ) (opposite f)
+evalMkProjHelper f args = prepLambdasEvalClose args (Var (opposite f))
 
 
-convProjSound : ∀  {n : ℕ} (f : Fin ((suc n)) ) (args : Vec ℕ (suc n))  → evalSTClosed (convProj  (f)) args ≡ lookup args f
-convProjSound {n} f vs = evalST (convProj  ( f)) [] vs 
-    ≡⟨ convProjSoundHelper (f) vs ⟩ 
+evalMkProj : ∀  {n : ℕ} (f : Fin ((suc n)) ) (args : Vec ℕ (suc n))  → evalSTClosed (mkProj  (f)) args ≡ lookup args f
+evalMkProj {n} f vs = evalST (mkProj  ( f)) [] vs 
+    ≡⟨ evalMkProjHelper (f) vs ⟩ 
                         lookup (fastReverse vs) (opposite f) 
     ≡⟨ lookupOpRev f vs ⟩ 
                         (lookup vs f) ∎ 
@@ -235,7 +235,7 @@ evalApplyToVars  {n} exp vs  = evalApplyToVars'' exp vs []
 
 
 generalComp : ∀ {n : ℕ} {m : ℕ}  → (Exp zero n) → (Vec (Exp zero m) n) → Exp zero m
-generalComp {n} {m} f' gs' = prepLambdas' zero m (apply* (raiseExP m f') (map (applyToVars {m} {zero}) (map (raiseExP m)  gs')))
+generalComp {n} {m} f' gs' = prepLambdas zero m (apply* (raiseExP m f') (map (applyToVars {m} {zero}) (map (raiseExP m)  gs')))
 
 
 
@@ -272,7 +272,7 @@ evalGeneralCompHelper3 f args gs rewrite evalApplyToVarsMap args gs = refl
 
 evalGeneralComp : ∀ {n m : ℕ} (f : Exp zero n) (gs : Vec (Exp zero m) n) (args : Vec  ℕ m)  → evalSTClosed (generalComp f gs) args ≡ evalSTClosed f (map (λ g → evalSTClosed g args) gs)
 evalGeneralComp {n} {m} f gs args = (evalSTClosed (generalComp f gs) args)
-                                                ≡⟨⟩ evalSTClosed (prepLambdas' zero m (apply* (raiseExP m f) (map (applyToVars {m} {zero}) (map (raiseExP m)  gs)))) args 
+                                                ≡⟨⟩ evalSTClosed (prepLambdas zero m (apply* (raiseExP m f) (map (applyToVars {m} {zero}) (map (raiseExP m)  gs)))) args 
                                                         ≡⟨ prepLambdasEvalClose {m} args ((apply* (raiseExP m f) (map (applyToVars {m} {zero}) (map (raiseExP m)  gs)))) ⟩ 
                                                  evalST (apply* (raiseExP m f) (map (applyToVars {m} {zero})(map (raiseExP {zero} {m} m ) gs))) (fastReverse args) [] 
                                                         ≡⟨ evalApply*Eq (raiseExP m f)  (map (applyToVars {m} {zero})  (map (raiseExP {zero} {m} m) gs)) (fastReverse args) ⟩ 
@@ -308,7 +308,7 @@ paraNatEq g h (suc x ∷ args) rewrite paraNatEq  g h (x ∷ args)  = refl
 
 
 paraT : ∀ {n} → Exp zero n → Exp zero (suc (suc n)) →  Exp zero ( (suc n))
-paraT {n} g h = prepLambdas' 0 (suc n)  (PRecT 
+paraT {n} g h = prepLambdas 0 (suc n)  (PRecT 
                 (Lam (Lam (applyToVars' {2} {n} {1} (App (App (raiseExP  (n + 3) h) (Var (suc zero))) (Var zero))))) 
                 ((applyToVars {n} {1} (raiseExP (suc n) g)) )
                 (Var (fromℕ n))) 
@@ -360,7 +360,7 @@ evalParaTHelper5 {n} {x} g h args rewrite evalParaTHelper1 {n} {x} args | evalPa
 evalParaT : ∀ {n x : ℕ} (g : Exp zero n) (h : Exp zero (suc (suc n))) (args : Vec ℕ n ) → evalSTClosed (paraT g h) (x ∷ args) ≡ para (λ acc counter  → evalSTClosed h (acc ∷ (counter ∷ args))) (evalSTClosed g args) x  
 evalParaT {n} {x} g h args = (evalSTClosed (paraT g h) (x ∷ args)) 
                         ≡⟨⟩ 
-                ((evalSTClosed (prepLambdas' 0 (suc n)  (PRecT 
+                ((evalSTClosed (prepLambdas 0 (suc n)  (PRecT 
                 (Lam (Lam (applyToVars' {2} {n} {1} (App (App (raiseExP  (n + 3) h) (Var (suc zero))) (Var zero))))) 
                 ( (applyToVars {n} {1} (raiseExP (suc n) g)) )
                 (Var (fromℕ n))) ) (x ∷ args)) 
