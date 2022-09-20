@@ -1,7 +1,7 @@
 -- {-# OPTIONS --rewriting --prop -v rewriting:50 #-}
 {-# OPTIONS --rewriting  #-}
 {-# OPTIONS --allow-unsolved-metas #-}
-module System-T where
+module PR-SystemT0-Embedding where
 
 
 
