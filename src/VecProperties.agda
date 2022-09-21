@@ -14,6 +14,7 @@ open Eq.≡-Reasoning using (begin_; _≡⟨⟩_; step-≡; _∎)
 open import Agda.Builtin.Equality.Rewrite
 open import NatProperties using (assoc-comm-suc)
 open import FinProperties using (inject+0; inject+1; inject+Add; inject+Eq)
+open import Data.Vec.Properties using ()
 
 open import Utils
 
@@ -79,3 +80,11 @@ reverse (x ∷ vs) = (reverse vs) ++ [ x ]
     ((reverse xs ++ [ x ]) ++ ys) 
         ≡⟨⟩
     reverse ( x ∷ xs) ++ ys ∎
+
+
+++identityR : ∀ {A : Set} {n : ℕ}  (xs : Vec A n) →  xs ++ [] ≡ xs 
+++identityR [] = refl
+++identityR (x ∷ xs) = cong (x ∷_) (++identityR xs)
+
+reverse=fastReverse : ∀ {A : Set} {n : ℕ}  (xs : Vec A n) → fastReverse xs ≡ reverse xs
+reverse=fastReverse xs rewrite ++r-reverse' xs [] = ++identityR (reverse xs)

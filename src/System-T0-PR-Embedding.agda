@@ -40,25 +40,16 @@ toN zero = []
 toN (suc n) = zero ∷ (map suc (toN n))
 
 mToM+N : ∀  (n : ℕ)  (m : ℕ) → Vec (Fin (m + n)) n
--- mToM+N zero m    = []
--- mToM+N (suc n) m = (raise m (zero {n}) ) ∷ mToM+N n (suc m)
 mToM+N n m = map (raise m) (toN n)
 
--- zeroToM-Inject+N' : ∀  (n : ℕ)  (m : ℕ) → Vec (Fin (m + n)) m
--- zeroToM-Inject+N' n m = map (inject+ n) (mToM+N m zero)
+
+zeroToM-Inject+N : ∀  (n : ℕ)  (m : ℕ) → Vec (Fin (m + n)) m
+zeroToM-Inject+N n m = map (inject+ n) (toN m)
 
 
-zeroToM-Inject+N' : ∀  (n : ℕ)  (m : ℕ) → Vec (Fin (m + n)) m
-zeroToM-Inject+N' n zero = []
-zeroToM-Inject+N' n (suc m) = zero ∷ (map suc (zeroToM-Inject+N' n m))
-
-_ : zeroToM-Inject+N' 3 2 ≡ zero ∷ (suc zero ∷ [])
-_ = refl
-
-
-lookupRaise++r : ∀ {n m}  (f : Fin n) (ys : Vec ℕ m) (xs : Vec ℕ n) → lookup (ys ++r xs) (raise m f) ≡ lookup xs f 
-lookupRaise++r f [] xs = refl
-lookupRaise++r f (y ∷ ys) (x ∷ xs) = lookupRaise++r (suc f) ys (y ∷ (x ∷ xs))
+-- lookupRaise++r : ∀ {n m}  (f : Fin n) (ys : Vec ℕ m) (xs : Vec ℕ n) → lookup (ys ++r xs) (raise m f) ≡ lookup xs f 
+-- lookupRaise++r f [] xs = refl
+-- lookupRaise++r f (y ∷ ys) (x ∷ xs) = lookupRaise++r (suc f) ys (y ∷ (x ∷ xs))
 
 
 helperLookupConsSuc : ∀ {A : Set} {n m  : ℕ} (x : A)(xs : Vec A m)(fins : Vec  (Fin m) n) → map (lookup (x ∷ xs)) (map (suc) fins) ≡ map  (lookup ( xs)) ( fins)
@@ -68,6 +59,21 @@ helperLookupConsSuc xs x (f ∷ fins) rewrite helperLookupConsSuc xs x fins =  r
 helperLookupMapRaise : ∀ {A : Set} {n m  o : ℕ} (xs : Vec A n) (ys : Vec A m) (fins : Vec  (Fin (m)) o) → map (lookup ( xs ++ ys )) (map (raise n) fins) ≡ map  (lookup ( ys)) ( fins)
 helperLookupMapRaise xs ys [] = refl
 helperLookupMapRaise xs ys (f ∷ fins) rewrite lookup-++ʳ xs ys f = cong ((lookup ys f) ∷_) (helperLookupMapRaise xs ys fins)
+
+helperLookupMapInject : ∀ {A : Set} {n m  o : ℕ} (xs : Vec A n) (ys : Vec A m) (fins : Vec  (Fin (n)) o) → map (lookup ( xs ++ ys )) (map (inject+ m) fins) ≡ map  (lookup ( xs)) ( fins)
+helperLookupMapInject xs ys [] = refl
+helperLookupMapInject xs ys (f ∷ fins) rewrite lookup-++ˡ xs ys f = cong ((lookup xs f) ∷_) (helperLookupMapInject xs ys fins)
+
+lookupToN=id : ∀  {A : Set} {n : ℕ} (xs : Vec A n) → map (lookup xs) (toN n) ≡ xs
+lookupToN=id [] = refl
+lookupToN=id {A} {suc n} (x ∷ xs) rewrite helperLookupConsSuc x xs (toN n) = cong (x ∷_) (lookupToN=id xs)
+
+
+mapToNRaiseEq : ∀ {n m}  (ys : Vec ℕ m) (xs : Vec ℕ n) → map (λ f → lookup (ys ++ xs) f) (mToM+N n m)  ≡ xs 
+mapToNRaiseEq {n} {m} ys xs rewrite helperLookupMapRaise ys xs (toN n) = lookupToN=id xs
+
+mapToNInjectEq : ∀ {n m}  (ys : Vec ℕ m) (xs : Vec ℕ n) → map (λ f → lookup (ys ++ xs) f) (zeroToM-Inject+N n m)  ≡   ys 
+mapToNInjectEq {n} {m} ys xs rewrite helperLookupMapInject ys xs (toN m) = lookupToN=id ys
 
 convApp : ∀ {n m}  (f : Exp n (suc m)) (x : Exp n zero) → PR (n + m)
 
@@ -81,7 +87,7 @@ sTtoPR {n}{m} (App f x) = convApp f x -- C (sTtoPR f) ((map π (mkFinvec n m)) +
 sTtoPR {n} {zero} (Nat x) = natToPR x  n
 sTtoPR (PRecT h acc counter) = {!   !}
 
-convApp {n} {m} f x = C (sTtoPR f) ((map π (zeroToM-Inject+N' m n)) ++ (C (sTtoPR x) (map π (zeroToM-Inject+N' m n))) ∷ map π (mToM+N m n))  
+convApp {n} {m} f x = C (sTtoPR f) ((map π (zeroToM-Inject+N m n)) ++ (C (sTtoPR x) (map π (zeroToM-Inject+N m n))) ∷ map π (mToM+N m n))  
 
 
 natToPRSound : ∀  {n : ℕ} (m : ℕ) (args : Vec ℕ n) → eval  (natToPR m n) args ≡ m
@@ -91,67 +97,38 @@ natToPRSound (suc m) args = cong suc (natToPRSound m args)
 {-# REWRITE inject+0  #-}
 
 
+evalProjVec'=map-lookup : ∀ {n m : ℕ} (fins : Vec (Fin n) m) (args : Vec ℕ n) → map (λ p → eval p args) (map π ( fins))  ≡ map (λ f → lookup args f) fins
+evalProjVec'=map-lookup {n} {.zero} [] args = refl
+evalProjVec'=map-lookup {n} {.(suc _)} (f ∷ fins) args rewrite evalProjVec'=map-lookup fins args = refl 
 
 
-evalProjVec : ∀ {n m : ℕ} (fins : Vec (Fin n) m) (args : Vec ℕ n) → (eval* (map π fins) (args)) ≡ map (λ f → lookup args f) fins
-evalProjVec {n} {.zero} [] args = refl
-evalProjVec {n} {.(suc _)} (f ∷ fins) args rewrite evalProjVec fins args = refl 
-
-evalProjVec' :  ∀ {n m : ℕ} (args : Vec ℕ m) (ctx : Vec ℕ n) → (eval* (map π (mkFinvec n m)) (ctx ++r args)) ≡ ctx
-evalProjVec' {n} {m} args ctx = 
-        (eval* (map π (mkFinvec n m)) (ctx ++r args)) 
-    ≡⟨ evalProjVec (mkFinvec n m) (ctx ++r args) ⟩ 
-        map (lookup (ctx ++r args)) (mkFinvec n m) 
-    ≡⟨ maplookupEq [] ctx args ⟩ 
-        ctx ∎ 
-
-
--- eval*≡map-eval
-
-mapToNRaiseEq : ∀ {n m}  (ys : Vec ℕ m) (xs : Vec ℕ n) → map (λ f → lookup (ys ++r xs) f) (mToM+N n m)  ≡ xs 
-mapToNRaiseEq ys [] = refl
-mapToNRaiseEq ys (x ∷ xs)  = {!   !}
-
-mapToNRaiseEq'' : ∀ {n m}  (ys : Vec ℕ m) (xs : Vec ℕ n) → map (λ f → lookup (ys ++ xs) f) (mToM+N n m)  ≡ xs 
-mapToNRaiseEq'' ys [] = refl
-mapToNRaiseEq'' ys (x ∷ xs) rewrite lookup-++ʳ ys (x ∷ xs) zero = cong (x ∷_) {!   !}
--- mapToNRaiseEq'' [] (x ∷ xs) = cong (λ v → x ∷ v) (mapToNRaiseEq'' [ x ] xs)
--- mapToNRaiseEq'' {suc n} {suc m} (y ∷ ys) (x ∷ xs) rewrite lookup-++ʳ ys (x ∷ xs) zero  = cong (x ∷_) {!   !}
-
--- mapToNRaiseEq' : ∀ {n m} (ys : Vec ℕ m) (xs : Vec ℕ n) → eval* ( map π (mToM+N n m)) (ys ++r xs) ≡ xs
--- mapToNRaiseEq' {n} {m} ys xs = 
---     eval* (map π (mToM+N n m)) (ys ++r xs) 
---         ≡⟨ evalProjVec (mToM+N n m) (ys ++r xs) ⟩ 
---     (map (lookup (ys ++r xs)) (mToM+N n m) 
---         ≡⟨ mapToNRaiseEq ys xs ⟩ xs ∎)
-
-
-
-
-mapToNInjectEq : ∀ {n m}  (ys : Vec ℕ m) (xs : Vec ℕ n) → map (λ f → lookup (ys ++ xs) f) (zeroToM-Inject+N' n m)  ≡   ys 
-mapToNInjectEq [] (xs) = refl
-mapToNInjectEq {n} {suc m} (y ∷ ys) xs rewrite helperLookupConsSuc y (ys ++ xs)  (zeroToM-Inject+N' n m) = cong (λ v → y ∷ v) (mapToNInjectEq ys xs)
-
-
-
-
-eqSTPRn : ∀  {n m : ℕ} ( exp : Exp n m) (ctx : Vec ℕ n ) (args : Vec ℕ m ) → eval (sTtoPR exp) (ctx ++r args) ≡ evalST exp ctx args
-eqSTPRn (Var x) ctx [] = lookupOpRev x ctx
-eqSTPRn (Lam exp) ctx (x ∷ args) = eqSTPRn exp (x ∷ ctx)(args)
-eqSTPRn CZero ctx args = refl
-eqSTPRn Suc ctx [ x ] = cong suc ( lkupfromN' ctx []  )
-eqSTPRn (App f x) ctx args   = {!   !}
-eqSTPRn {n} {zero} (Nat x) ctx [] = natToPRSound x (fastReverse ctx)
-eqSTPRn (PRecT h acc counter) ctx [] = {!   !}
-
-
--- convAppSoundHelper1 :  ∀  {n m : ℕ} (f : Exp n (suc m)) (x : Exp n zero) → (eval*(map π (mkFinvec n m) ++ C (sTtoPR x) (map π (mkFinvec n m)) ∷ map π (mToM+N m n))(ctx ++r args)) ≡ 
-
-
--- rewrite evalProjVec' args ctx 
-
-injectAppSoundHelper1 :  ∀  {n m : ℕ} (args : Vec ℕ m) (ctx : Vec ℕ n) (x) → (eval* (map π (zeroToM-Inject+N' m n) ++ C (x) (map π (zeroToM-Inject+N' m n)) ∷ map π (mToM+N m n)) (ctx ++r args)) ≡ (reverse ctx) ++ ((eval x (reverse ctx)) ∷ args)
+injectAppSoundHelper1 :  ∀  {n m : ℕ} (args : Vec ℕ m) (ctx : Vec ℕ n) (x : PR n) → (eval* (map π (zeroToM-Inject+N m n) ++ C (x) (map π (zeroToM-Inject+N m n)) ∷ map π (mToM+N m n)) (ctx ++r args)) ≡ (ctx ++r (eval x (fastReverse ctx) ∷ args)) -- (reverse ctx) ++ ((eval x (reverse ctx)) ∷ args)
 injectAppSoundHelper1 {n} {m} args ctx x rewrite 
-        eval*≡map-eval  (map π (zeroToM-Inject+N' m n) ++ C x (map π (zeroToM-Inject+N' m n)) ∷ map π (mToM+N m n))  (ctx ++r args) |
-        sym(++-map (λ p → eval p (ctx ++r args)) (map π (zeroToM-Inject+N' m n)) (C x (map π (zeroToM-Inject+N' m n)) ∷ map π (mToM+N m n)))  
-        = {!   !}
+        eval*≡map-eval  (map π (zeroToM-Inject+N m n) ++ C x (map π (zeroToM-Inject+N m n)) ∷ map π (mToM+N m n))  (ctx ++r args) |
+        sym(++-map (λ p → eval p (ctx ++r args)) (map π (zeroToM-Inject+N m n)) (C x (map π (zeroToM-Inject+N m n)) ∷ map π (mToM+N m n)))  | 
+        eval*≡map-eval (map π (map (inject+ m) (toN n))) (ctx ++r args)  |
+        evalProjVec'=map-lookup (map (inject+ m) (toN n)) (ctx ++r args) |
+        ++r-reverse' ctx args |
+        mapToNInjectEq  (reverse ctx) args |
+        evalProjVec'=map-lookup ((map (raise n) (toN m))) ((reverse ctx) ++ args) |
+        mapToNRaiseEq  (reverse ctx) args |
+        sym (++r-reverse' ctx (eval x (reverse ctx) ∷ args) ) |
+        reverse=fastReverse ctx
+        = refl
+
+
+convAppSound :  ∀  {n m : ℕ}  (f : Exp n (suc m)) (x : Exp n zero) (ctx : Vec ℕ n) (args : Vec ℕ m)  → eval (convApp f x) (ctx ++r args)   ≡ evalST f ctx (evalST x ctx [] ∷ args)
+
+
+embeddST-PR-Sound : ∀  {n m : ℕ} ( exp : Exp n m) (ctx : Vec ℕ n ) (args : Vec ℕ m ) → eval (sTtoPR exp) (ctx ++r args) ≡ evalST exp ctx args
+embeddST-PR-Sound (Var x) ctx [] = lookupOpRev x ctx
+embeddST-PR-Sound (Lam exp) ctx (x ∷ args) = embeddST-PR-Sound exp (x ∷ ctx)(args)
+embeddST-PR-Sound CZero ctx args = refl
+embeddST-PR-Sound Suc ctx [ x ] = cong suc ( lkupfromN' ctx []  )
+embeddST-PR-Sound (App f x) ctx args   = convAppSound f x ctx args
+embeddST-PR-Sound {n} {zero} (Nat x) ctx [] = natToPRSound x (fastReverse ctx)
+embeddST-PR-Sound (PRecT h acc counter) ctx [] = {!   !}
+
+
+convAppSound f x ctx args rewrite injectAppSoundHelper1 args ctx (sTtoPR x) | embeddST-PR-Sound x ctx [] | embeddST-PR-Sound f ctx (evalST x ctx [] ∷ args) = refl
+
