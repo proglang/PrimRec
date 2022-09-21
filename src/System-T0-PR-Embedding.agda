@@ -20,15 +20,18 @@ open import NatProperties using (assoc-comm-suc)
 open import FinProperties using (inject+0; inject+1; inject+Add; inject+Eq; raiseSuc)
 open import VecProperties
 
-open import System-T0 using (Exp; maplookupEq; mkFinvec; mkConstZero; mkProj; raiseExp0Eq; raiseExP; evalSTClosed; evalMkConstZero; evalMkProj; generalComp; evalGeneralComp; paraT; evalParaT; paraNat; para; paraNat'; cong3; extensionality; paraNatEq; evalST)
+open import System-T0 using (Exp; ext2; maplookupEq; mkFinvec; mkConstZero; mkProj; raiseExp0Eq; raiseExP; evalSTClosed; evalMkConstZero; evalMkProj; generalComp; evalGeneralComp; paraT; evalParaT; paraNat; para; paraNat'; cong3; extensionality; paraNatEq; evalST)
 open System-T0.Exp
-
+open import PR-SystemT0-Embedding using (paraNatPR)
 open import PR-Nat
 open import Utils
 open import HVec
 
 {-# REWRITE raiseSuc  #-}
 
+-- -- ------------------------------------------------------------------------------
+-- -- -- helper
+-- -- ------------------------------------------------------------------------------
 
 
 natToPR : ℕ → (m : ℕ) → PR m
@@ -75,7 +78,20 @@ mapToNRaiseEq {n} {m} ys xs rewrite helperLookupMapRaise ys xs (toN n) = lookupT
 mapToNInjectEq : ∀ {n m}  (ys : Vec ℕ m) (xs : Vec ℕ n) → map (λ f → lookup (ys ++ xs) f) (zeroToM-Inject+N n m)  ≡   ys 
 mapToNInjectEq {n} {m} ys xs rewrite helperLookupMapInject ys xs (toN m) = lookupToN=id ys
 
+
+
+-- -- ------------------------------------------------------------------------------
+-- -- -- embedding
+-- -- ------------------------------------------------------------------------------
+
+
+
 convApp : ∀ {n m}  (f : Exp n (suc m)) (x : Exp n zero) → PR (n + m)
+
+
+convPR : (h : Exp n 2) (acc : Exp n 0) (counter : Exp n 0) → PR (n)
+
+
 
 
 sTtoPR : ∀ {n m} → Exp n m → PR (n + m)
@@ -85,9 +101,8 @@ sTtoPR CZero = Z
 sTtoPR {n}{m} Suc = C σ [ π (fromℕ n) ]
 sTtoPR {n}{m} (App f x) = convApp f x -- C (sTtoPR f) ((map π (mkFinvec n m)) ++ (C (sTtoPR x) (map π (mkFinvec n m))) ∷ map π (mToM+N m n))  
 sTtoPR {n} {zero} (Nat x) = natToPR x  n
-sTtoPR (PRecT h acc counter) = {!   !}
+sTtoPR (PRecT h acc counter) = convPR h acc counter
 
-convApp {n} {m} f x = C (sTtoPR f) ((map π (zeroToM-Inject+N m n)) ++ (C (sTtoPR x) (map π (zeroToM-Inject+N m n))) ∷ map π (mToM+N m n))  
 
 
 natToPRSound : ∀  {n : ℕ} (m : ℕ) (args : Vec ℕ n) → eval  (natToPR m n) args ≡ m
@@ -96,14 +111,24 @@ natToPRSound (suc m) args = cong suc (natToPRSound m args)
 
 {-# REWRITE inject+0  #-}
 
+-- -- ------------------------------------------------------------------------------
+-- -- -- App
+-- -- ------------------------------------------------------------------------------
+
 
 evalProjVec'=map-lookup : ∀ {n m : ℕ} (fins : Vec (Fin n) m) (args : Vec ℕ n) → map (λ p → eval p args) (map π ( fins))  ≡ map (λ f → lookup args f) fins
 evalProjVec'=map-lookup {n} {.zero} [] args = refl
 evalProjVec'=map-lookup {n} {.(suc _)} (f ∷ fins) args rewrite evalProjVec'=map-lookup fins args = refl 
 
+mkApp : ∀ {n m} → PR (n + suc m) → PR n → PR (n + m)
+mkApp {n} {m} f x = C (f) ((map π (zeroToM-Inject+N m n)) ++ (C ( x) (map π (zeroToM-Inject+N m n))) ∷ map π (mToM+N m n))
 
-injectAppSoundHelper1 :  ∀  {n m : ℕ} (args : Vec ℕ m) (ctx : Vec ℕ n) (x : PR n) → (eval* (map π (zeroToM-Inject+N m n) ++ C (x) (map π (zeroToM-Inject+N m n)) ∷ map π (mToM+N m n)) (ctx ++r args)) ≡ (ctx ++r (eval x (fastReverse ctx) ∷ args)) -- (reverse ctx) ++ ((eval x (reverse ctx)) ∷ args)
-injectAppSoundHelper1 {n} {m} args ctx x rewrite 
+convApp {n} {m} f x = mkApp {n} {m} (sTtoPR f) (sTtoPR x)
+
+
+
+evalAppHelper :  ∀  {n m : ℕ} (args : Vec ℕ m) (ctx : Vec ℕ n) (x : PR n) → (eval* (map π (zeroToM-Inject+N m n) ++ C (x) (map π (zeroToM-Inject+N m n)) ∷ map π (mToM+N m n)) (ctx ++r args)) ≡ (ctx ++r (eval x (fastReverse ctx) ∷ args)) -- (reverse ctx) ++ ((eval x (reverse ctx)) ∷ args)
+evalAppHelper {n} {m} args ctx x rewrite 
         eval*≡map-eval  (map π (zeroToM-Inject+N m n) ++ C x (map π (zeroToM-Inject+N m n)) ∷ map π (mToM+N m n))  (ctx ++r args) |
         sym(++-map (λ p → eval p (ctx ++r args)) (map π (zeroToM-Inject+N m n)) (C x (map π (zeroToM-Inject+N m n)) ∷ map π (mToM+N m n)))  | 
         eval*≡map-eval (map π (map (inject+ m) (toN n))) (ctx ++r args)  |
@@ -116,19 +141,70 @@ injectAppSoundHelper1 {n} {m} args ctx x rewrite
         reverse=fastReverse ctx
         = refl
 
+evalAppEq : ∀ {n m} (f : PR (n + suc m)) (x : PR n) (ctx : Vec ℕ n) (args : Vec ℕ m) → eval (mkApp {n} {m} f x) (ctx ++r args) ≡ eval ( f) (ctx ++r (eval ( x) (ctx ++r []) ∷ args))
+evalAppEq f x ctx args  rewrite evalAppHelper args ctx x = refl
+
 
 convAppSound :  ∀  {n m : ℕ}  (f : Exp n (suc m)) (x : Exp n zero) (ctx : Vec ℕ n) (args : Vec ℕ m)  → eval (convApp f x) (ctx ++r args)   ≡ evalST f ctx (evalST x ctx [] ∷ args)
 
 
+
 embeddST-PR-Sound : ∀  {n m : ℕ} ( exp : Exp n m) (ctx : Vec ℕ n ) (args : Vec ℕ m ) → eval (sTtoPR exp) (ctx ++r args) ≡ evalST exp ctx args
+
+
+
+convAppSound f x ctx args rewrite evalAppEq (sTtoPR f ) (sTtoPR  x) ctx args | embeddST-PR-Sound x ctx [] | embeddST-PR-Sound f ctx (evalST x ctx [] ∷ args) = refl
+
+-- convAppSound f x ctx args rewrite evalAppHelper args ctx (sTtoPR x)  = {!   !}
+
+-- -- ------------------------------------------------------------------------------
+-- -- -- PR
+-- -- ------------------------------------------------------------------------------
+
+
+
+mkPR : ∀  {n : ℕ} → PR (suc (suc n))  → PR n → PR n → PR n
+mkPR {n} h acc counter = C  (P acc h ) (counter ∷ map π (toN n))
+
+
+
+
+evalmkPr : ∀  {n : ℕ}  (h : PR (suc (suc n))) (acc : PR n) (counter : PR n) (ctx : Vec ℕ n) → eval (mkPR h acc counter) (fastReverse ctx) ≡ eval (P ( acc) ( h)) ((eval (counter) (fastReverse ctx) ∷ (fastReverse ctx)))
+evalmkPr {n} h acc counter ctx rewrite eval*≡map-eval (map π (toN n)) (fastReverse ctx)  | evalProjVec'=map-lookup (toN n) (fastReverse ctx) |  lookupToN=id  (fastReverse ctx) = refl
+
+
+convPR h acc counter = mkPR (sTtoPR h) (sTtoPR acc) (sTtoPR counter)
+
+convPRSound : ∀  {n : ℕ}  (h : Exp n 2) (acc : Exp n 0) (counter : Exp n 0) (ctx : Vec ℕ n) → eval (convPR h acc counter) (fastReverse ctx)  ≡ para (λ acc' counter' → evalST h ctx [ acc' , counter' ]) (evalST acc ctx []) (evalST counter ctx [])
+convPRSound h acc counter ctx  = 
+        (eval (convPR h acc counter) (fastReverse ctx)) 
+                ≡⟨ evalmkPr (sTtoPR h) (sTtoPR acc) (sTtoPR counter) ctx ⟩ 
+        (eval (P (sTtoPR acc) (sTtoPR h)) (eval (sTtoPR counter) (fastReverse ctx) ∷ fastReverse ctx) 
+                ≡⟨ paraNatPR (sTtoPR acc) (sTtoPR h) (eval (sTtoPR counter) (fastReverse ctx) ∷ fastReverse ctx) ⟩ 
+        paraNat (eval (sTtoPR acc)) (eval (sTtoPR h))(eval (sTtoPR counter) (fastReverse ctx) ∷ fastReverse ctx) 
+                ≡⟨ paraNatEq (eval (sTtoPR acc)) (eval (sTtoPR h)) (eval (sTtoPR counter) (fastReverse ctx) ∷ fastReverse ctx) ⟩ 
+        para(λ acc₁ n₁ → eval (sTtoPR h) (acc₁ ∷ n₁ ∷ fastReverse ctx))(eval (sTtoPR acc) (fastReverse ctx))(eval (sTtoPR counter) (fastReverse ctx)) 
+                ≡⟨⟩ {!   !} ≡⟨⟩ {!   !})
+
+convPRSound2 : ∀  {n : ℕ}  (h : Exp n 2) (acc : Exp n 0) (counter : Exp n 0) (ctx : Vec ℕ n) → 
+        para
+      (λ acc₁ n₁ → eval (sTtoPR h) (acc₁ ∷ n₁ ∷ fastReverse ctx))
+      (eval (sTtoPR acc) (fastReverse ctx))
+      (eval (sTtoPR counter) (fastReverse ctx))
+      ≡
+      para (λ acc' counter' → evalST h ctx [ acc' , counter' ])
+      (evalST acc ctx []) (evalST counter ctx [])
+convPRSound2 h acc counter ctx = cong3 para (ext2 (λ x y → {! embeddST-PR-Sound h ? ? !})) (embeddST-PR-Sound acc ctx []) (embeddST-PR-Sound counter ctx []) 
+
+-- -- ------------------------------------------------------------------------------
+-- -- -- Sound-Embedding
+-- -- ------------------------------------------------------------------------------
+
+
 embeddST-PR-Sound (Var x) ctx [] = lookupOpRev x ctx
 embeddST-PR-Sound (Lam exp) ctx (x ∷ args) = embeddST-PR-Sound exp (x ∷ ctx)(args)
 embeddST-PR-Sound CZero ctx args = refl
 embeddST-PR-Sound Suc ctx [ x ] = cong suc ( lkupfromN' ctx []  )
 embeddST-PR-Sound (App f x) ctx args   = convAppSound f x ctx args
 embeddST-PR-Sound {n} {zero} (Nat x) ctx [] = natToPRSound x (fastReverse ctx)
-embeddST-PR-Sound (PRecT h acc counter) ctx [] = {!   !}
-
-
-convAppSound f x ctx args rewrite injectAppSoundHelper1 args ctx (sTtoPR x) | embeddST-PR-Sound x ctx [] | embeddST-PR-Sound f ctx (evalST x ctx [] ∷ args) = refl
-
+embeddST-PR-Sound (PRecT h acc counter) ctx [] = convPRSound h acc counter ctx
