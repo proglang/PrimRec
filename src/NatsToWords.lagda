@@ -32,10 +32,11 @@ import PR-Words as Words
 ⟦ Nats.C f g* ⟧ = Words.C ⟦ f ⟧ (map ⟦_⟧ g*)
 ⟦ Nats.P g h ⟧  = Words.P ⟦ g ⟧ (λ{ tt → ⟦ h ⟧})
 \end{code}
-To state soundness of the embedding, we need the embedding of ℕ in \AList\ATop.
-\begin{code}
+To state soundness of the embedding, we need the embedding
+\begin{code}[inline]
 ⟦_⟧ⱽ : ℕ → List ⊤
 \end{code}
+which we extend to vectors in the natural way.
 \begin{code}[hide]
 ⟦ zero ⟧ⱽ  = []ᴸ
 ⟦ suc n ⟧ⱽ = tt ∷ᴸ ⟦ n ⟧ⱽ
@@ -44,6 +45,7 @@ To state soundness of the embedding, we need the embedding of ℕ in \AList\ATop
 sound : ∀ (p : Nats.PR n) (v* : Vec ℕ n)
   → ⟦ Nats.eval p v* ⟧ⱽ ≡ Words.eval ⟦ p ⟧ (map ⟦_⟧ⱽ v*)
 \end{code}
+The proof is by induction on the program \AgdaBound{p}.
 \begin{code}[hide]
 sound* : ∀ {m} p* (v* : Vec ℕ n)
   → map{n = m} ⟦_⟧ⱽ (Nats.eval* p* v*) ≡ Words.eval* (map ⟦_⟧ p*) (map ⟦_⟧ⱽ v*)

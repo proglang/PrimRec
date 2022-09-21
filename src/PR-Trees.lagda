@@ -10,7 +10,7 @@ open import Data.Nat using (ℕ; suc; zero; _*_; _+_)
 open import Data.Fin using (Fin; suc; zero)
 open import Data.Unit using (⊤; tt)
 open import Data.Product using (_×_; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
-open import Data.Vec using (Vec; []; _∷_; _++_; lookup; map; toList; head)
+open import Data.Vec using (Vec; []; _∷_; _++_; lookup; map; toList; head; concat)
 open import Data.Vec.Properties using (lookup-map)
 open import Data.List using (List) renaming ([] to []ᴸ; _∷_ to _∷ᴸ_; _++_ to _++ᴸ_; length to lengthᴸ; map to mapᴸ)
 open import Function using (_∘_)
@@ -60,8 +60,8 @@ data Term R : Set where
 \end{code}
 
 The syntax of pr functions gets simpler for terms as we do not have to make amends for a special $0$-function.
-Instead, there is a family of constructor operators $σ$, which is indexed by a symbol $a∈A$ and the arity of which is determined by the rank of $a$. Projection and composition remain as before, but primitive recursion generalizes.
-Instead of distinguishing between $g$-functions and $h$-functions, there is a single $A$-indexed family of functions $h$.
+Instead, there is a family of constructor operators $σ$, which is indexed by a symbol $a∈$\Asymbols{R} and the arity of which is determined by the rank of $a$. Projection and composition remain as before, but primitive recursion generalizes.
+Instead of distinguishing between $g$-functions and $h$-functions, there is a single \Asymbols{R}-indexed family of functions $h$.
 The function constructed by primitive recursion on the family $h$ takes $n+1$ arguments with the first argument being the designated recursion argument.
 The function $h_a$ handles recursion on terms starting with $a$ of rank $r_a$, say.
 As there are $r_a$ subterms, the results of $r_a$ recursive invocations, the $r_a$ subterms, and the remaining $n$ are arguments of $h_a$.
@@ -92,3 +92,11 @@ eval (P h) (con a xs ∷ v*) = eval (h a) (((map (λ x → eval (P h) (x ∷ v*)
 eval* [] v* = []
 eval* (p ∷ p*) v* = eval p v* ∷ eval* p* v*
 \end{code}
+\begin{code}[hide]
+data PR′ R : ℕ → Set where
+  P′ : (h : (a : symbols R) → PR′ R (rank R a * 2 + n)) → PR′ R (suc n)
+{-# TERMINATING #-}
+eval′ : PR′ R n → Vec (Term R) n → Term R
+eval′ (P′ h) (con a xs ∷ v*) = eval′ (h a) ((concat (map (λ x → [ eval′ (P′ h) (x ∷ v*) , x ]) xs)) ++ v*)
+\end{code}
+

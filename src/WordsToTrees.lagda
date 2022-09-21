@@ -43,7 +43,7 @@ The translation for primitive recursion merges the functions $g$ and $h$ into a 
 ⟦ Words.C f g* ⟧ = Trees.C ⟦ f ⟧ (map ⟦_⟧ g*)
 ⟦ Words.P g h ⟧  = Trees.P λ{ nothing → ⟦ g ⟧ ; (just a) → ⟦ h a ⟧}
 \end{code}
-It is again straightforward to prove the soundness of this embedding.
+It is again straightforward to prove the soundness of this embedding by induction on \AgdaBound{p}.
 \begin{code}
 sound : ∀ (p : Words.PR A n) (v* : Vec (List A) n)
   → ⟦ Words.eval p v* ⟧ⱽ ≡ Trees.eval ⟦ p ⟧ (map ⟦_⟧ⱽ v*)
