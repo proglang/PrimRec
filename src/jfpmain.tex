@@ -26,10 +26,12 @@
 \newunicodechar{⟦}{\ensuremath{\llbracket}}
 \newunicodechar{⊤}{\ensuremath{\top}}
 \newunicodechar{₁}{\ensuremath{_1}}
+\newunicodechar{₂}{\ensuremath{_2}}
 \newunicodechar{∈}{\ensuremath{\in}}
 \newunicodechar{₀}{\ensuremath{_0}}
 \newunicodechar{′}{\ensuremath{'}}
 \newunicodechar{ᴬ}{\ensuremath{^A}}
+\newunicodechar{∘}{\ensuremath{\circ}}
 \newcommand\Nat{ℕ}
 
 \input{jfpmacros}
@@ -159,14 +161,22 @@ $1$. This mapping of types also determines the embedding of values.
 \subsection{Primitive recursion on many-sorted terms}
 \label{sec:prim-recurs-sort}
 
-Many-sorted terms are closely related to mutually recursive algebraic
-datatypes without parameters. They generalize terms, which are akin to
-singly recursive algebraic datatypes.
+A close look at the definition of the datatype \ATerm{R} shows that
+terms are akin to singly recursive algebraic datatypes. To see that,
+imagine that we specialize the single constructor {\Acon} with respect
+to its first argument $a\in{}$\Asymbols{R}. This specialization yields
+an algebraic datatype with constructors \Acon$_a$, one for each
+element of \Asymbols{R}. The arity of such a constructor is given by
+the rank of $a$.
 
-To define many-sorted terms, we start with a set of sorts $S$. An
-$S$-sorted alphabet consists of a set of symbols and a sorting
+Many-sorted terms are closely related to \emph{mutually recursive} algebraic
+datatypes. To define many-sorted terms, we start with a set of sorts
+$S$. The cardinality of $S$ determines the number of mutually
+recursive types. 
+An $S$-sorted alphabet consists of a set of symbols and a sorting
 function that assigns each symbol an arity of the form $(w, s)$ where
-$w \in S^*$ and $s \in S$.
+$w \in S^*$ and $s \in S$. This definition translates roughly to:
+every constructor has a simple first-order type.
 \input{latex/PR-HTrees}
 
 \section{Vector-valued primitive recursion}
