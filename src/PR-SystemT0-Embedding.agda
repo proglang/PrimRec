@@ -1,31 +1,20 @@
--- {-# OPTIONS --rewriting --prop -v rewriting:50 #-}
 {-# OPTIONS --rewriting  #-}
 {-# OPTIONS --allow-unsolved-metas #-}
 module PR-SystemT0-Embedding where
 
 
 
-open import Data.Fin using (Fin; suc; zero; fromℕ; opposite; raise; inject+; inject₁; toℕ)
-open import Data.Nat using (ℕ; suc; zero; _∸_; _+_)
-open import Data.Nat.Properties using (+-suc; +-identityʳ; +-comm; +-assoc)
-open import Data.Vec using (Vec; []; _∷_; _++_; lookup; map; toList; head; init; reverse; last; foldl) -- ; _ʳ++_) 
-open import Data.Vec.Properties using (lookup-++ˡ; map-cong; lookup-++ʳ)
-open import Function.Base using (const; _∘′_; id; _∘_; flip)
-open import Data.Fin.Properties using (toℕ-fromℕ; fromℕ-toℕ) -- (++-assoc)
+open import Data.Nat using (ℕ; suc; zero)
+open import Data.Vec using (Vec; []; _∷_; map) 
 import Relation.Binary.PropositionalEquality as Eq
-open Eq using (_≡_; refl; cong; sym; cong₂; _≗_)
+open Eq using (_≡_; refl; cong; sym)
 open Eq.≡-Reasoning using (begin_; _≡⟨⟩_; step-≡; _∎)
-open import Agda.Builtin.Equality.Rewrite
-open import NatProperties using (assoc-comm-suc)
-open import FinProperties using (inject+0; inject+1; inject+Add; inject+Eq)
-open import VecProperties
 
 open import System-T0 using (Exp; mkConstZero; mkProj; raiseExp0Eq; raiseExP; evalSTClosed; evalMkConstZero; evalMkProj; generalComp; evalGeneralComp; paraT; evalParaT; paraNat; para; paraNat'; cong3; extensionality; paraNatEq)
 open System-T0.Exp
 
 open import PR-Nat
 open import Utils
-open import HVec
 
 
 -- ------------------------------------------------------------------------------

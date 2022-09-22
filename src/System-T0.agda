@@ -179,7 +179,7 @@ evalApply*Eq {n} {suc m } exp (arg ∷ args) ctx rewrite evalApply*Eq {n} {m} (A
 
 maplookupEq :  {o n m  : ℕ}  (zs : Vec ℕ o) (xs : Vec ℕ n) (ys : Vec ℕ m) → (map (λ x → lookup (zs ++ xs ++r ys) x) (mkFinvec' n m o)) ≡ xs
 maplookupEq zs [] ys  = refl
-maplookupEq {o} {suc n} {m}  zs (x ∷ xs) ys   rewrite lookup-++ʳ zs (xs ++r (x ∷ ys))  (inject+ m (fromℕ n)) | lookupOP' zero  (x ∷ xs) ys = cong (λ vec → x ∷ vec) (maplookupEq  zs xs (x ∷ ys) )
+maplookupEq {o} {suc n} {m}  zs (x ∷ xs) ys   rewrite lookup-++ʳ zs (xs ++r (x ∷ ys))  (inject+ m (fromℕ n)) | lookupOP zero  (x ∷ xs) ys = cong (λ vec → x ∷ vec) (maplookupEq  zs xs (x ∷ ys) )
 
 
 mapEvalVarsEq : ∀ {o n m : ℕ} (zs : Vec ℕ o) (xs : Vec ℕ n) (ys : Vec ℕ m) →  (map (λ arg → evalST arg (zs ++ xs ++r ys) []) (map Var (mkFinvec' n m o))) ≡ xs 

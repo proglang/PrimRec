@@ -15,7 +15,7 @@ open Eq.≡-Reasoning using (begin_; _≡⟨⟩_; step-≡; _∎)
 open import Agda.Builtin.Equality.Rewrite
 
 open import FinProperties using (inject+0; raiseSuc)
-open import VecProperties using (_++r_; fastReverse; ++r-reverse'; reverse; reverse=fastReverse; lookupOpRev; lkupfromN')
+open import VecProperties using (_++r_; fastReverse; ++r=reverse++; reverse; reverse=fastReverse; lookupOpRev; lkupfromN)
 open import System-T0 using (Exp; ext2; maplookupEq; evalSTClosed; paraNat; para; cong3; paraNatEq; evalST)
 open System-T0.Exp
 open import PR-SystemT0-Embedding using (paraNatPR)
@@ -119,11 +119,11 @@ evalAppHelper {n} {m} args ctx x rewrite
         sym(++-map (λ p → eval p (ctx ++r args)) (map π (zeroToM-Inject+N m n)) (C x (map π (zeroToM-Inject+N m n)) ∷ map π (mToM+N m n)))  | 
         eval*≡map-eval (map π (map (inject+ m) (toN n))) (ctx ++r args)  |
         evalProjVec=map-lookup (map (inject+ m) (toN n)) (ctx ++r args) |
-        ++r-reverse' ctx args |
+        ++r=reverse++ ctx args |
         mapToNInjectEq  (reverse ctx) args |
         evalProjVec=map-lookup ((map (raise n) (toN m))) ((reverse ctx) ++ args) |
         mapToNRaiseEq  (reverse ctx) args |
-        sym (++r-reverse' ctx (eval x (reverse ctx) ∷ args) ) |
+        sym (++r=reverse++ ctx (eval x (reverse ctx) ∷ args) ) |
         reverse=fastReverse ctx
         = refl
 
@@ -163,7 +163,7 @@ convPR h acc counter = mkPR (sTtoPR h) (sTtoPR acc) (sTtoPR counter)
 
 
 convPRSoundHelper : ∀  {n : ℕ} (x) (y) (h : Exp n 2) (ctx : Vec ℕ n) → eval (sTtoPR h) (eval* (swapArgs n) (x ∷ y ∷ fastReverse ctx)) ≡ evalST h ctx [ x , y ]
-convPRSoundHelper x y h ctx rewrite eval*swapArgs x y (fastReverse ctx) | reverse=fastReverse ctx | sym(++r-reverse' ctx [ x , y ]  ) = embeddST-PR-Sound h ctx [ x , y ]
+convPRSoundHelper x y h ctx rewrite eval*swapArgs x y (fastReverse ctx) | reverse=fastReverse ctx | sym(++r=reverse++ ctx [ x , y ]  ) = embeddST-PR-Sound h ctx [ x , y ]
 
 
 
@@ -202,7 +202,7 @@ convPRSound {n} h acc counter ctx  =
 embeddST-PR-Sound (Var x) ctx [] = lookupOpRev x ctx
 embeddST-PR-Sound (Lam exp) ctx (x ∷ args) = embeddST-PR-Sound exp (x ∷ ctx)(args)
 embeddST-PR-Sound CZero ctx args = refl
-embeddST-PR-Sound Suc ctx [ x ] = cong suc ( lkupfromN' ctx []  )
+embeddST-PR-Sound Suc ctx [ x ] = cong suc ( lkupfromN ctx []  )
 embeddST-PR-Sound (App f x) ctx args   = convAppSound f x ctx args
 embeddST-PR-Sound {n} {zero} (Nat x) ctx [] = natToPRSound x (fastReverse ctx)
 embeddST-PR-Sound (PRecT h acc counter) ctx [] = convPRSound h acc counter ctx -- 
