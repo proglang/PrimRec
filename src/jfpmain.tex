@@ -3,6 +3,8 @@
 
 \usepackage{graphicx}
 \usepackage{amssymb}
+ \usepackage{amsmath}
+\usepackage{amsfonts}
 \usepackage{stmaryrd}
 \usepackage{latex/agda}
 % \usepackage{unicode-math}
@@ -33,6 +35,8 @@
 \newunicodechar{ᴬ}{\ensuremath{^A}}
 \newunicodechar{∘}{\ensuremath{\circ}}
 \newcommand\Nat{ℕ}
+
+\newcommand{\xn}{(x_1,\dots,x_n) }
 
 \input{jfpmacros}
 
@@ -88,7 +92,39 @@ Primitive recursive functions are a standard topic in any class on
 computability. 
 Here is a typical textbook definition:
 
-FILL IN
+
+The primitive recursive functions are the smallest set of functions  from ${ℕ}^n$  to ${ℕ}$ that contains the following basic functions
+
+\begin{align*}
+	Z^n  &\colon \mathbb{N}^n \rightarrow \mathbb{N}  & \textnormal{constant zero functions}  \\
+	Z^n    \xn &= 0  & \\
+	\\
+	S &\colon \mathbb{N} \rightarrow \mathbb{N} & \textnormal{successor function} \\
+	S  (x)  &=  x + 1 \\
+	\\
+	\pi^{n}_{i} &\colon \mathbb{N}^n \rightarrow \mathbb{N} & \textnormal{projections}\\
+	\pi^{n}_{i}  (x_1,\dots,x_i,\dots,x_n)  &= x_i &
+\end{align*} \\
+
+and is closed unter the operations \emph{composition} and \emph{primitive recursion}, that are defined as follows.
+
+If $h$ is a primitive recursive function with arity $m$ and $g_1 \dots g_m$ are primitive recursive functions with arity $n$ then the compostion $$f := C (h,(g_1,g_2,\dots, g_m))$$ with 
+
+\begin{align*}
+	f &\colon \mathbb{N}^n \rightarrow \mathbb{N} \\
+	f  \xn  &= h (g_1\xn,g_2\xn,\dots,g_m\xn) \\
+\end{align*}
+is also a primitive recursive function.
+
+If $g$ and $h$ are primitve recursive functions with aritys $n$ and $n+2$ then $f := P (g,h)$ is also a primitve recursive functions that is defined as follows.
+
+\begin{align*}
+	f&\colon \mathbb{N}^{n+1} \rightarrow \mathbb{N} \\
+	f  (0,x_1,\dots,x_{n})  &= g \xn \\
+	f  (y + 1,x_1,\dots,x_{n}) &= h(  f(y,x_1,\dots,x_{n}),y,x_1,\dots,x_n     )
+\end{align*}
+
+ 
 
 In programming languages terminology, primitive
 recursive functions are given as a domain-specific language that

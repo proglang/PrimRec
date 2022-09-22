@@ -7,3 +7,4 @@ latex
 *.ptb
 *.rel
 *.synctex.gz
+*.pdf
