@@ -161,40 +161,68 @@ convAppSound f x ctx args rewrite evalAppEq (sTtoPR f ) (sTtoPR  x) ctx args | e
 -- -- -- PR
 -- -- ------------------------------------------------------------------------------
 
-
+swapArgs : ∀ (n) → Vec (PR (n + 2))(n + 2)
+swapArgs n = map π ((mToM+N n 2) ++ zeroToM-Inject+N n 2)
 
 mkPR : ∀  {n : ℕ} → PR (suc (suc n))  → PR n → PR n → PR n
-mkPR {n} h acc counter = C  (P acc h ) (counter ∷ map π (toN n))
+mkPR {n} h acc counter = C  (P acc (C h (swapArgs n)) ) (counter ∷ map π (toN n))
 
 
-
-
-evalmkPr : ∀  {n : ℕ}  (h : PR (suc (suc n))) (acc : PR n) (counter : PR n) (ctx : Vec ℕ n) → eval (mkPR h acc counter) (fastReverse ctx) ≡ eval (P ( acc) ( h)) ((eval (counter) (fastReverse ctx) ∷ (fastReverse ctx)))
+evalmkPr : ∀  {n : ℕ}  (h : PR (suc (suc n))) (acc : PR n) (counter : PR n) (ctx : Vec ℕ n) → eval (mkPR h acc counter) (fastReverse ctx) ≡ eval (P acc (C h (swapArgs n)) ) ((eval (counter) (fastReverse ctx) ∷ (fastReverse ctx)))
 evalmkPr {n} h acc counter ctx rewrite eval*≡map-eval (map π (toN n)) (fastReverse ctx)  | evalProjVec'=map-lookup (toN n) (fastReverse ctx) |  lookupToN=id  (fastReverse ctx) = refl
 
 
 convPR h acc counter = mkPR (sTtoPR h) (sTtoPR acc) (sTtoPR counter)
 
-convPRSound : ∀  {n : ℕ}  (h : Exp n 2) (acc : Exp n 0) (counter : Exp n 0) (ctx : Vec ℕ n) → eval (convPR h acc counter) (fastReverse ctx)  ≡ para (λ acc' counter' → evalST h ctx [ acc' , counter' ]) (evalST acc ctx []) (evalST counter ctx [])
-convPRSound h acc counter ctx  = 
-        (eval (convPR h acc counter) (fastReverse ctx)) 
-                ≡⟨ evalmkPr (sTtoPR h) (sTtoPR acc) (sTtoPR counter) ctx ⟩ 
-        (eval (P (sTtoPR acc) (sTtoPR h)) (eval (sTtoPR counter) (fastReverse ctx) ∷ fastReverse ctx) 
-                ≡⟨ paraNatPR (sTtoPR acc) (sTtoPR h) (eval (sTtoPR counter) (fastReverse ctx) ∷ fastReverse ctx) ⟩ 
-        paraNat (eval (sTtoPR acc)) (eval (sTtoPR h))(eval (sTtoPR counter) (fastReverse ctx) ∷ fastReverse ctx) 
-                ≡⟨ paraNatEq (eval (sTtoPR acc)) (eval (sTtoPR h)) (eval (sTtoPR counter) (fastReverse ctx) ∷ fastReverse ctx) ⟩ 
-        para(λ acc₁ n₁ → eval (sTtoPR h) (acc₁ ∷ n₁ ∷ fastReverse ctx))(eval (sTtoPR acc) (fastReverse ctx))(eval (sTtoPR counter) (fastReverse ctx)) 
-                ≡⟨⟩ {!   !} ≡⟨⟩ {!   !})
+
+
+eval*swapArgs : ∀ {n : ℕ} (x y : ℕ)(xs : Vec ℕ n) → (eval* (swapArgs n) (x ∷ y ∷ xs)) ≡ xs ++ [ x , y ]
+eval*swapArgs {n} x y xs 
+        rewrite eval*≡map-eval (swapArgs n) (x ∷ y ∷ xs)  | 
+        sym (++-map π (mToM+N n 2) (zeroToM-Inject+N n 2)) | 
+        sym (++-map (λ p → eval p (x ∷ y ∷ xs))  (map π  (mToM+N n 2))  (map π (zeroToM-Inject+N n 2))) | 
+        evalProjVec'=map-lookup (map (λ i → suc (suc i)) (toN n))  (x ∷ y ∷ xs) |
+        helperLookupMapRaise [ x , y ]  xs ( (toN n))  = cong (λ v → v ++ [ x , y ]) (lookupToN=id xs)
+
+
+helper : ∀  {n : ℕ} (x) (y) (h : Exp n 2) (ctx : Vec ℕ n) → eval (sTtoPR h) (eval* (swapArgs n) (x ∷ y ∷ fastReverse ctx)) ≡ evalST h ctx [ x , y ]
+helper x y h ctx rewrite eval*swapArgs x y (fastReverse ctx) | reverse=fastReverse ctx | sym(++r-reverse' ctx [ x , y ]  ) = embeddST-PR-Sound h ctx [ x , y ]
+
+
 
 convPRSound2 : ∀  {n : ℕ}  (h : Exp n 2) (acc : Exp n 0) (counter : Exp n 0) (ctx : Vec ℕ n) → 
         para
-      (λ acc₁ n₁ → eval (sTtoPR h) (acc₁ ∷ n₁ ∷ fastReverse ctx))
-      (eval (sTtoPR acc) (fastReverse ctx))
-      (eval (sTtoPR counter) (fastReverse ctx))
+    (λ acc₁ n₁ →
+       eval (sTtoPR h) (eval* (swapArgs n) (acc₁ ∷ n₁ ∷ fastReverse ctx)))
+    (eval (sTtoPR acc) (fastReverse ctx))
+    (eval (sTtoPR counter) (fastReverse ctx))
       ≡
       para (λ acc' counter' → evalST h ctx [ acc' , counter' ])
       (evalST acc ctx []) (evalST counter ctx [])
-convPRSound2 h acc counter ctx = cong3 para (ext2 (λ x y → {! embeddST-PR-Sound h ? ? !})) (embeddST-PR-Sound acc ctx []) (embeddST-PR-Sound counter ctx []) 
+convPRSound2 h acc counter ctx  = cong3 para (ext2 (λ x y → helper x y h ctx)) (embeddST-PR-Sound acc ctx []) (embeddST-PR-Sound counter ctx []) 
+
+
+convPRSound : ∀  {n : ℕ}  (h : Exp n 2) (acc : Exp n 0) (counter : Exp n 0) (ctx : Vec ℕ n) → eval (convPR h acc counter) (fastReverse ctx)  ≡ para (λ acc' counter' → evalST h ctx [ acc' , counter' ]) (evalST acc ctx []) (evalST counter ctx [])
+convPRSound {n} h acc counter ctx  = 
+        (eval (convPR h acc counter) (fastReverse ctx)) 
+                ≡⟨ evalmkPr (sTtoPR h) (sTtoPR acc) (sTtoPR counter) ctx ⟩ 
+        (eval (P (sTtoPR acc) (C (sTtoPR h) (swapArgs n))) (eval (sTtoPR counter) (fastReverse ctx) ∷ fastReverse ctx) 
+                ≡⟨ paraNatPR (sTtoPR acc) (C (sTtoPR h) (swapArgs n)) (eval (sTtoPR counter) (fastReverse ctx) ∷ fastReverse ctx) ⟩ 
+        paraNat (eval (sTtoPR acc)) (eval ((C (sTtoPR h) (swapArgs n))))(eval (sTtoPR counter) (fastReverse ctx) ∷ fastReverse ctx) 
+                 ≡⟨ paraNatEq (eval (sTtoPR acc)) (eval ((C (sTtoPR h) (swapArgs n)))) (eval (sTtoPR counter) (fastReverse ctx) ∷ fastReverse ctx) ⟩ 
+        para (λ acc₁ n₁ → eval (sTtoPR h) (eval* (swapArgs n) (acc₁ ∷ n₁ ∷ fastReverse ctx)))(eval (sTtoPR acc) (fastReverse ctx))(eval (sTtoPR counter) (fastReverse ctx))
+        -- para(λ acc₁ n₁ → eval (sTtoPR h) (acc₁ ∷ n₁ ∷ fastReverse ctx))(eval (sTtoPR acc) (fastReverse ctx))(eval (sTtoPR counter) (fastReverse ctx)) 
+                ≡⟨ convPRSound2 h acc counter ctx ⟩ 
+        (para (λ acc' counter' → evalST h ctx [ acc' , counter' ])(evalST acc ctx []) (evalST counter ctx [])) ∎  )
+
+
+-- rewrite eval*swapArgs x y fastReverse ctx
+
+
+
+-- (sym ++-map (λ p → eval p (x ∷ y ∷ xs))) () [ zero , suc zero ] 
+--swapArgs n = map π ((mToM+N n 2) ++ zeroToM-Inject+N n 2)
+
 
 -- -- ------------------------------------------------------------------------------
 -- -- -- Sound-Embedding
@@ -207,4 +235,4 @@ embeddST-PR-Sound CZero ctx args = refl
 embeddST-PR-Sound Suc ctx [ x ] = cong suc ( lkupfromN' ctx []  )
 embeddST-PR-Sound (App f x) ctx args   = convAppSound f x ctx args
 embeddST-PR-Sound {n} {zero} (Nat x) ctx [] = natToPRSound x (fastReverse ctx)
-embeddST-PR-Sound (PRecT h acc counter) ctx [] = convPRSound h acc counter ctx
+embeddST-PR-Sound (PRecT h acc counter) ctx [] = convPRSound h acc counter ctx -- 
