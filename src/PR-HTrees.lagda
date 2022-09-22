@@ -127,6 +127,14 @@ data PR′ (Sig : Sorted S) : Vec S n × S → Set where
     → (h : (a : symbols Sig) → PR′ Sig ⟨ concat (map (λ s → [ res s , s ]) (sin* Sig a)) ++ ss , res (sout Sig a) ⟩)
     → PR′ Sig ⟨ s₀ ∷ ss , res s₀ ⟩
 
--- eval′ : ∀ {Sig}{ssin : Vec S n}{sout : S} → PR′ Sig ⟨ ssin , sout ⟩ → Term* Sig ssin → Term Sig sout
--- eval′ (P′ res h) (con a xs ∷ v*) = eval′ (h a) ({!mapᴬ ? xs!} ++ᴬ v*)
+concmapᴬ : ∀ {Sig} {ss : Vec S n} {res : S → S}
+  → (∀ {i : Fin n} → Term Sig (lookup ss i) → Term Sig (res (lookup ss i)) × Term Sig (lookup ss i))
+  → Term* Sig ss → Term* Sig (concat (map (λ s → [ res s , s ]) ss))
+concmapᴬ f [] = []
+concmapᴬ f (v ∷ v*) with f {Fin.zero} v
+... | ⟨ fv , v ⟩ = fv ∷ (v ∷ (concmapᴬ (λ{i} → f {Fin.suc i}) v*))
+
+{-# TERMINATING #-}
+eval′ : ∀ {Sig}{ssin : Vec S n}{sout : S} → PR′ Sig ⟨ ssin , sout ⟩ → Term* Sig ssin → Term Sig sout
+eval′ (P′ res h) (con a xs ∷ v*) = eval′ (h a) (concmapᴬ (λ x → ⟨ (eval′ (P′ res h) (x ∷ v*)) , x ⟩) xs ++ᴬ v*)
 \end{code}
