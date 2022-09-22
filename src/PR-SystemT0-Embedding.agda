@@ -10,7 +10,7 @@ import Relation.Binary.PropositionalEquality as Eq
 open Eq using (_≡_; refl; cong; sym)
 open Eq.≡-Reasoning using (begin_; _≡⟨⟩_; step-≡; _∎)
 
-open import System-T0 using (Exp; mkConstZero; mkProj; raiseExp0Eq; raiseExP; evalSTClosed; evalMkConstZero; evalMkProj; generalComp; evalGeneralComp; paraT; evalParaT; paraNat; para; paraNat'; cong3; extensionality; paraNatEq)
+open import System-T0 using (Exp; mkConstZero; mkProj; raseExp0=id; raiseExP; evalSTClosed; evalMkConstZero; evalMkProj; generalComp; evalGeneralComp; paraT; evalParaT; paraNat; para; paraNat'; cong3; extensionality; paraNatEq)
 open System-T0.Exp
 
 open import PR-Nat
@@ -58,26 +58,26 @@ eqPrSTn  (P g h) vs = sym (convParaSound g h vs)
 
 
 
-prToSt* : ∀ {m : ℕ} (o : ℕ)   → Vec (PR m) n → Vec (Exp (o) m) n
-prToSt* o  [] = []
-prToSt* {m} o  (x ∷ vs) = (prToST (o) x) ∷ (prToSt* o  vs)
+prToSt* : ∀ {m : ℕ}    → Vec (PR m) n → Vec (Exp zero m) n
+prToSt*  [] = []
+prToSt* {m}  (x ∷ vs) = (prToST'  x) ∷ (prToSt*  vs)
 
 
-convComp {n} {m} f gs = generalComp (prToST' f) (prToSt* zero gs)
+convComp {n} {m} f gs = generalComp (prToST' f) (prToSt*  gs)
 
 
-eval*≡evalPrToST* : ∀ {n m}  (vs : Vec ℕ m) (gs : Vec (PR m) n) → (map (λ g → evalSTClosed g vs) (prToSt* zero gs)) ≡ (eval* gs vs)
+eval*≡evalPrToST* : ∀ {n m}  (vs : Vec ℕ m) (gs : Vec (PR m) n) → (map (λ g → evalSTClosed g vs) (prToSt* gs)) ≡ (eval* gs vs)
 eval*≡evalPrToST* vs [] = refl
-eval*≡evalPrToST* vs (g ∷ gs) rewrite eqPrSTn  g vs | eval*≡evalPrToST* vs gs | raiseExp0Eq (prToST' g) = refl
+eval*≡evalPrToST* vs (g ∷ gs) rewrite eqPrSTn  g vs | eval*≡evalPrToST* vs gs | raseExp0=id (prToST' g) = refl
 
-convCompSoundHelper : ∀ {n m} (f : PR n) (vs : Vec ℕ m) (gs : Vec (PR m) n) → evalSTClosed (prToST' f) (map (λ g → evalSTClosed g vs) (prToSt* zero gs))≡ eval f (eval* gs vs)
+convCompSoundHelper : ∀ {n m} (f : PR n) (vs : Vec ℕ m) (gs : Vec (PR m) n) → evalSTClosed (prToST' f) (map (λ g → evalSTClosed g vs) (prToSt* gs))≡ eval f (eval* gs vs)
 convCompSoundHelper f vs gs rewrite eval*≡evalPrToST* vs gs | eqPrSTn f (eval* gs vs) = refl
 
 convCompSound f gs vs = (evalSTClosed (convComp f gs) vs) 
         ≡⟨⟩ 
-                (((evalSTClosed (generalComp (prToST' f) (prToSt* zero gs)) vs)) 
-        ≡⟨ evalGeneralComp (prToST' f) (prToSt* zero gs) vs ⟩ 
-                (evalSTClosed (prToST' f)  (map (λ g → evalSTClosed g vs) (prToSt* zero gs)) 
+                (((evalSTClosed (generalComp (prToST' f) (prToSt* gs)) vs)) 
+        ≡⟨ evalGeneralComp (prToST' f) (prToSt* gs) vs ⟩ 
+                (evalSTClosed (prToST' f)  (map (λ g → evalSTClosed g vs) (prToSt* gs)) 
         ≡⟨ convCompSoundHelper f  vs gs ⟩ 
                 (eval f (eval* gs vs)) ∎ ))
 

@@ -5,24 +5,19 @@ module System-T0 where
 
 
 
-open import Data.Fin using (Fin; suc; zero; fromℕ; opposite; raise; inject+; inject₁; toℕ)
-open import Data.Nat using (ℕ; suc; zero; _∸_; _+_)
-open import Data.Nat.Properties using (+-suc; +-identityʳ; +-comm; +-assoc)
-open import Data.Vec using (Vec; []; _∷_; _++_; lookup; map; toList; head; init; reverse; last; foldl) -- ; _ʳ++_) 
+open import Data.Fin using (Fin; suc; zero; fromℕ; opposite; raise; inject+)
+open import Data.Nat using (ℕ; suc; zero; _+_)
+open import Data.Vec using (Vec; []; _∷_; _++_; lookup; map)
 open import Data.Vec.Properties using (lookup-++ˡ; map-cong; lookup-++ʳ)
-open import Function.Base using (const; _∘′_; id; _∘_; flip)
-open import Data.Fin.Properties using (toℕ-fromℕ; fromℕ-toℕ) -- (++-assoc)
+open import Function.Base using (id; _∘_; flip)
 import Relation.Binary.PropositionalEquality as Eq
-open Eq using (_≡_; refl; cong; sym; cong₂; _≗_)
+open Eq using (_≡_; refl; cong; sym; _≗_)
 open Eq.≡-Reasoning using (begin_; _≡⟨⟩_; step-≡; _∎)
 open import Agda.Builtin.Equality.Rewrite
-open import NatProperties using (assoc-comm-suc)
-open import FinProperties using (inject+0; inject+1; inject+Add; inject+Eq)
+open import FinProperties using (inject+0)
 open import VecProperties
 
--- open import PR-Nat
 open import Utils
-open import HVec
 
 
 
@@ -37,9 +32,11 @@ data Exp : ℕ → ℕ  → Set where
     Nat : ℕ  → Exp n zero
     PRecT : Exp n 2 → Exp n zero → Exp n zero → Exp n zero
 
+
 para : ∀ {A : Set} (h : A → ℕ → A) → A → ℕ → A
 para h acc zero = acc
 para h acc (suc counter) = h (para h acc counter) counter
+
 
 evalST : ∀ {n m : ℕ} → Exp n m → Vec ℕ n → Vec ℕ m → ℕ 
 evalST (Var x) ctx args = lookup ctx x
@@ -51,13 +48,12 @@ evalST (Nat n) _ [] = n
 evalST (PRecT h acc counter) ctx [] = para (λ acc counter → (evalST h ctx) [ acc , counter ]) (evalST acc ctx []) (evalST counter ctx []) 
 
 
-
-
 evalSTClosed : Exp zero m → Vec ℕ m → ℕ
 evalSTClosed exp args = evalST exp [] args
 
+
 raiseExP : ∀ {m n} (o) → Exp m n → Exp (m + o) n
-raiseExP  {m} {n} o (Var x) =  Var (inject+ o  x   ) --rewrite +-comm m o 
+raiseExP  {m} {n} o (Var x) =  Var (inject+ o x)
 raiseExP o (Lam exp) = Lam (raiseExP o exp)
 raiseExP o CZero = CZero
 raiseExP o Suc = Suc
@@ -65,14 +61,15 @@ raiseExP o (App f x) = App (raiseExP o f) (raiseExP o x)
 raiseExP o (Nat x) = Nat x
 raiseExP o ((PRecT h acc counter)) = PRecT (raiseExP o h) (raiseExP o acc) (raiseExP o counter)
 
-raiseExp0Eq : ∀ {m n}  (exp : Exp m n) → raiseExP 0 exp ≡ exp 
-raiseExp0Eq (Var x) = cong Var (inject+0 x)
-raiseExp0Eq (Lam exp) = cong Lam (raiseExp0Eq exp)
-raiseExp0Eq CZero = refl
-raiseExp0Eq Suc = refl
-raiseExp0Eq (App f x) rewrite raiseExp0Eq f |  raiseExp0Eq x = refl
-raiseExp0Eq (Nat x) = refl
-raiseExp0Eq ((PRecT h acc counter)) rewrite raiseExp0Eq h | raiseExp0Eq acc | raiseExp0Eq counter = refl
+
+raseExp0=id : ∀ {m n}  (exp : Exp m n) → raiseExP 0 exp ≡ exp 
+raseExp0=id (Var x) = cong Var (inject+0 x)
+raseExp0=id (Lam exp) = cong Lam (raseExp0=id exp)
+raseExp0=id CZero = refl
+raseExp0=id Suc = refl
+raseExp0=id (App f x) rewrite raseExp0=id f |  raseExp0=id x = refl
+raseExp0=id (Nat x) = refl
+raseExp0=id ((PRecT h acc counter)) rewrite raseExp0=id h | raseExp0=id acc | raseExp0=id counter = refl
 
 cong3 : ∀ {A B C D : Set} {x y u v w z} (f : A → B → C → D)  → x ≡ y → u ≡ v → w ≡ z → f x u w ≡ f y v z
 cong3 f refl refl refl = refl
@@ -137,8 +134,6 @@ evalMkConstZero n v = prepLambdasEvalClose v CZero
 
 mkProj : ∀ {m} → Fin (m)  →  Exp zero m
 mkProj {m} f  = prepLambdas zero m (Var (opposite {m} f))
-
--- {-# REWRITE inject+0  #-}
 
 
 evalMkProjHelper : ∀  {m : ℕ} (f : Fin (suc m ) ) (args : Vec ℕ (suc m))  → evalSTClosed (mkProj f)  args ≡ lookup (( fastReverse args) ) (opposite f)
