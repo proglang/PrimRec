@@ -28,9 +28,7 @@ open import Utils
 -- -- ------------------------------------------------------------------------------
 
 
-natToPR : ℕ → (m : ℕ) → PR m
-natToPR zero m = Z
-natToPR (suc n) m = C σ ( [ natToPR n m ])
+
 
 toN : (n : ℕ) → Vec (Fin n) n
 toN zero = []
@@ -72,6 +70,9 @@ mapToNInjectEq {n} {m} ys xs rewrite helperLookupMapInject ys xs (toN m) = looku
 -- -- ------------------------------------------------------------------------------
 -- -- -- embedding
 -- -- ------------------------------------------------------------------------------
+natToPR : ℕ → (m : ℕ) → PR m
+natToPR zero m = Z
+natToPR (suc n) m = C σ ( [ natToPR n m ])
 
 convApp : ∀ {n m}  (f : Exp n (suc m)) (x : Exp n zero) → PR (n + m)
 
