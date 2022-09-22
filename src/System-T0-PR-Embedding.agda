@@ -22,7 +22,6 @@ open import PR-SystemT0-Embedding using (paraNatPR)
 open import PR-Nat
 open import Utils
 
-{-# REWRITE raiseSuc  #-}
 
 -- -- ------------------------------------------------------------------------------
 -- -- -- helper
@@ -43,11 +42,6 @@ mToM+N n m = map (raise m) (toN n)
 
 zeroToM-Inject+N : ∀  (n : ℕ)  (m : ℕ) → Vec (Fin (m + n)) m
 zeroToM-Inject+N n m = map (inject+ n) (toN m)
-
-
--- lookupRaise++r : ∀ {n m}  (f : Fin n) (ys : Vec ℕ m) (xs : Vec ℕ n) → lookup (ys ++r xs) (raise m f) ≡ lookup xs f 
--- lookupRaise++r f [] xs = refl
--- lookupRaise++r f (y ∷ ys) (x ∷ xs) = lookupRaise++r (suc f) ys (y ∷ (x ∷ xs))
 
 
 helperLookupConsSuc : ∀ {A : Set} {n m  : ℕ} (x : A)(xs : Vec A m)(fins : Vec  (Fin m) n) → map (lookup (x ∷ xs)) (map (suc) fins) ≡ map  (lookup ( xs)) ( fins)
@@ -83,8 +77,6 @@ convApp : ∀ {n m}  (f : Exp n (suc m)) (x : Exp n zero) → PR (n + m)
 
 
 convPR : (h : Exp n 2) (acc : Exp n 0) (counter : Exp n 0) → PR (n)
-
-
 
 
 sTtoPR : ∀ {n m} → Exp n m → PR (n + m)
