@@ -15,6 +15,11 @@
 \newcommand{\Arank}[1]{\AgdaField{rank}\AgdaSpace{}\AgdaBound{#1}}
 \newcommand{\Asin}[1]{\AgdaField{sin*}\AgdaSpace{}\AgdaBound{#1}}
 \newcommand{\Asout}[1]{\AgdaField{sout}\AgdaSpace{}\AgdaBound{#1}}
+\newcommand{\Anil}{\AgdaInductiveConstructor{[]}}
+\newcommand{\Aone}[1]{\AgdaInductiveConstructor{[}\AgdaSpace{}#1\AgdaSpace{}\AgdaInductiveConstructor{]}}
+\newcommand{\Atwo}[2]{\AgdaInductiveConstructor{[}\AgdaSpace{}%
+  #1\AgdaSpace{}\AgdaInductiveConstructor{,}\AgdaSpace{}%
+  #2\AgdaSpace{}\AgdaInductiveConstructor{]}}
 
 %%% Local Variables:
 %%% mode: latex

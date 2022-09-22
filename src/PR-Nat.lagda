@@ -16,8 +16,9 @@ open import Utils
 ----------------------------------------------------------------------
 \end{code}
 The datatype \APR{n} defines an abstract syntax for $n$-ary primitive recursive functions.
-The type \AFin{n} comprises the elements $\{0, 1, \dots, n-1\}$.
 The type \AVec{A}{n} contains vectors of size $n$ with elements of type $A$.
+The type \AFin{n} comprises the elements $\{0, 1, \dots, n-1\}$, which are exactly the valid indices for a vector of type \AVec{A}{n}.
+The function \AgdaFunction{lookup v* i} accesses such a vector at index $i$.
 \begin{code}
 data PR : ℕ → Set where
   Z : PR n                      -- zero
@@ -32,7 +33,7 @@ data PR : ℕ → Set where
     → PR (suc n)
 \end{code}
 The function \AgdaFunction{eval} maps a pr function to its semantics.
-We represent ${ℕ}^n$ by the vector type \AVec{ℕ}n.
+We represent ${ℕ}^n$ by the vector type \AVec{ℕ}n and use the bracket notation for vectors: \Anil, \Aone{x}, \Atwo{x}{y}, etc.
 \begin{code}
 eval  : PR n → (Vec ℕ n → ℕ)
 eval* : Vec (PR n) m → Vec ℕ n → Vec ℕ m

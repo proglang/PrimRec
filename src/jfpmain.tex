@@ -36,7 +36,7 @@
 \newunicodechar{∘}{\ensuremath{\circ}}
 \newcommand\Nat{ℕ}
 
-\newcommand{\xn}{(x_1,\dots,x_n) }
+\newcommand{\xn}{x_1,\dots,x_n }
 
 \input{jfpmacros}
 
@@ -93,43 +93,59 @@ computability.
 Here is a typical textbook definition:
 
 
-The primitive recursive functions are the smallest set of functions  from ${ℕ}^n$  to ${ℕ}$ that contains the following basic functions
-
+The primitive recursive functions is the smallest family PR of functions
+from ${ℕ}^n$  to ${ℕ}$, for $n\in {ℕ}$, that contains the following
+basic functions:
+\begin{itemize}
+\item for all $n\in {ℕ}$ the $n$-ary constant zero function
+  \begin{align*}
+	Z^n  &\colon \mathbb{N}^n \rightarrow \mathbb{N}  &
+	Z^n    (\xn) &= 0  
+  \end{align*}
+\item the successor function
+  \begin{align*}
+	S &\colon \mathbb{N} \rightarrow \mathbb{N} &
+	S  (x)  &=  x + 1
+  \end{align*}
+\item for all $n\in {ℕ}$ and $1\le i\le n$ the $n$-ary projection on
+  the $i$-th argument
 \begin{align*}
-	Z^n  &\colon \mathbb{N}^n \rightarrow \mathbb{N}  & \textnormal{constant zero functions}  \\
-	Z^n    \xn &= 0  & \\
-	\\
-	S &\colon \mathbb{N} \rightarrow \mathbb{N} & \textnormal{successor function} \\
-	S  (x)  &=  x + 1 \\
-	\\
-	\pi^{n}_{i} &\colon \mathbb{N}^n \rightarrow \mathbb{N} & \textnormal{projections}\\
-	\pi^{n}_{i}  (x_1,\dots,x_i,\dots,x_n)  &= x_i &
-\end{align*} \\
-
-and is closed unter the operations \emph{composition} and \emph{primitive recursion}, that are defined as follows.
-
-If $h$ is a primitive recursive function with arity $m$ and $g_1 \dots g_m$ are primitive recursive functions with arity $n$ then the compostion $$f := C (h,(g_1,g_2,\dots, g_m))$$ with 
-
-\begin{align*}
-	f &\colon \mathbb{N}^n \rightarrow \mathbb{N} \\
-	f  \xn  &= h (g_1\xn,g_2\xn,\dots,g_m\xn) \\
+	\pi^{n}_{i} &\colon \mathbb{N}^n \rightarrow \mathbb{N} &
+	\pi^{n}_{i}  (x_1,\dots,x_i,\dots,x_n)  &= x_i
 \end{align*}
-is also a primitive recursive function.
+\end{itemize}
+PR is closed unter the operations \emph{composition} and \emph{primitive recursion}.
+\begin{description}
+\item[Composition] 
+If $f$ is a primitive recursive function with arity $m \in {ℕ}$ and $g_1,
+\dots, g_m$ are primitive recursive functions with arity $n$ then the
+composition of $f$ and $g_1, \dots, g_m$ is an $n$-ary primitive recursive function
+$h := C (h,(g_1,\dots, g_m)) \colon \mathbb{N}^n \rightarrow \mathbb{N} $ defined by
+\begin{align*}
+	h  (\xn)  &= f (g_1(\xn),\dots,g_m(\xn)) \\
+\end{align*}
 
-If $g$ and $h$ are primitve recursive functions with aritys $n$ and $n+2$ then $f := P (g,h)$ is also a primitve recursive functions that is defined as follows.
-
+\item[Primitive recursion] 
+If $g$ and $h$ are primitve recursive functions with aritys $n$ and
+$n+2$ then $f := P (g,h)$ is a primitive recursive function of arity $n+1$ that is defined as follows.
 \begin{align*}
 	f&\colon \mathbb{N}^{n+1} \rightarrow \mathbb{N} \\
-	f  (0,x_1,\dots,x_{n})  &= g \xn \\
-	f  (y + 1,x_1,\dots,x_{n}) &= h(  f(y,x_1,\dots,x_{n}),y,x_1,\dots,x_n     )
+	f  (0,\xn)  &= g (\xn) \\
+	f  (y + 1,\xn) &= h(  f(y,\xn),y,\xn)
 \end{align*}
+
+\end{description}
 
  
 
 In programming languages terminology, primitive
-recursive functions are given as a domain-specific language that
-defines defines functions of type ${ℕ}^n \to {ℕ}$ in a pointfree
-style. As an additional bonus, the following Agda definition separates syntax and semantics.
+recursive functions are given by a domain-specific language that
+defines functions of type ${ℕ}^n \to {ℕ}$ in a pointfree
+style. Moreover, the boundary between syntax and semantics is not
+clear.
+
+The following Agda definition formalizes syntax and semantics of pr
+functions precisely (and strictly separated).
 \input{latex/PR-Nat}
 
 It is a good exercise to remind ourselves that the standard arithmetic
@@ -137,11 +153,12 @@ functions are pr defineable and correspond to their definitions in
 Agda. Here is the easy case for addition; the online supplement
 considers further operations. 
 \input{latex/PR-Nat-Example}
-The equivalence proof is a
-straightforward induction because the structure of the definitions
-matches. \AgdaFunction{addP} is defined by primitive recursion, which
+The function \AgdaFunction{addP} is defined by primitive recursion, which
 decomposes the first argument. The $g$-function is just the identity;
 the $h$-function composes the successor with inductive result.
+The equivalence proof is a
+straightforward induction because the structure of the definitions
+matches.
 
 \section{From numbers to words, terms, and many-sorted algebras}
 \label{sec:from-numbers-words}
