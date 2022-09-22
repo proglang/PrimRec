@@ -2,19 +2,14 @@
 
 module VecProperties where
 
-open import Data.Fin using (Fin; suc; zero; fromℕ; opposite; raise; inject+; inject₁; toℕ)
-open import Data.Nat using (ℕ; suc; zero; _∸_; _+_)
-open import Data.Nat.Properties using (+-suc; +-identityʳ; +-comm; +-assoc)
-open import Data.Vec using (Vec; []; _∷_; _++_; lookup; map; toList; head; init; last; foldl) -- ; _ʳ++_) 
-open import Function.Base using (const; _∘′_; id; _∘_)
-open import Data.Fin.Properties using (toℕ-fromℕ; fromℕ-toℕ) -- (++-assoc)
+open import Data.Fin using (Fin; suc; zero; fromℕ; opposite; raise; inject+)
+open import Data.Nat using (ℕ; suc; zero; _+_)
+open import Data.Vec using (Vec; []; _∷_; _++_; lookup) 
 import Relation.Binary.PropositionalEquality as Eq
 open Eq using (_≡_; refl; cong; sym)
 open Eq.≡-Reasoning using (begin_; _≡⟨⟩_; step-≡; _∎)
 open import Agda.Builtin.Equality.Rewrite
-open import NatProperties using (assoc-comm-suc)
-open import FinProperties using (inject+0; inject+1; inject+Add; inject+Eq)
-open import Data.Vec.Properties using ()
+open import FinProperties using (inject+0; inject+Eq)
 
 open import Utils
 

@@ -14,7 +14,7 @@ open Eq using (_≡_; refl; cong; sym)
 open Eq.≡-Reasoning using (begin_; _≡⟨⟩_; step-≡; _∎)
 open import Agda.Builtin.Equality.Rewrite
 
-open import FinProperties using (inject+0; raiseSuc)
+open import FinProperties using (inject+0)
 open import VecProperties using (_++r_; fastReverse; ++r=reverse++; reverse; reverse=fastReverse; lookupOpRev; lkupfromN)
 open import System-T0 using (Exp; ext2; maplookupEq; evalSTClosed; paraNat; para; cong3; paraNatEq; evalST)
 open System-T0.Exp
