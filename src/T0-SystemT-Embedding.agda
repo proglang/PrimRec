@@ -3,9 +3,9 @@
 
 open import Data.Fin using (Fin; suc; zero)
 open import Data.Nat using (ℕ; suc; zero; _∸_)
-open import Data.Vec using (Vec; []; _∷_; _++_; lookup; map; init; last) -- ; _ʳ++_) 
+open import Data.Vec using (Vec; []; _∷_; lookup)
 import Relation.Binary.PropositionalEquality as Eq
-open Eq using (_≡_; refl; cong; sym; cong₂; _≗_)
+open Eq using (_≡_; refl; cong; sym; cong₂)
 open Eq.≡-Reasoning using (begin_; _≡⟨⟩_; step-≡; _∎)
 open import Agda.Builtin.Equality.Rewrite
 open import System-T0 using (Exp; para; evalST; evalSTClosed; ext2)
@@ -91,7 +91,7 @@ getArgs (ty ⇒ tyB) = ty ∷ getArgs tyB
 init' : ∀  {n : ℕ} {A : Set} → Vec A n → Vec A (n ∸ 1 )
 init' [] = []
 init' [ x ] = []
-init' (x ∷ y ∷ vs) = x ∷ init (y ∷ vs)
+init' (x ∷ y ∷ vs) = x ∷ init' (y ∷ vs)
 
 uncurryH : ∀ {ty : Ty} → evalTy ty → HVec evalTy ( (getArgs ty))  → ℕ
 uncurryH {TyNat} exp hxs = exp
@@ -102,28 +102,22 @@ toHVec' [] = []ᴴ
 toHVec' (x ∷ v) = x ∷ᴴ toHVec' v
 
 
-
 evalExp'' : ∀ {n : ℕ} {ctx : Ctx n} {ty : Ty}  → Exp' ctx ty → HVec evalTy ctx → HVec evalTy (getArgs ty) → ℕ
 evalExp'' exp ctx = uncurryH (evalExp' exp ctx)
 
-helper' : ∀ (m : ℕ ) → repeat (countArgs (ℕtoTy m)) TyNat ≡ getArgs (ℕtoTy m) 
-helper' zero = refl
-helper' (suc n) = cong (λ xs → TyNat ∷ xs) (helper' n)
 
-helper''' : ∀ {m} → (countArgs (ℕtoTy m)) ≡ m 
-helper''' {zero} = refl
-helper''' {suc m} = cong suc (helper''' {m})
+countArgs-ℕtoTy=id : ∀ {m} → (countArgs (ℕtoTy m)) ≡ m 
+countArgs-ℕtoTy=id {zero} = refl
+countArgs-ℕtoTy=id {suc m} = cong suc (countArgs-ℕtoTy=id {m})
 
+{-# REWRITE  countArgs-ℕtoTy=id #-}
 
-{-# REWRITE helper' helper''' #-}
-
-helper3 : ∀ (n : ℕ) → repeat n TyNat ≡ getArgs (ℕtoTy n)
-helper3 zero = refl
-helper3 (suc n) = cong (λ vs → TyNat ∷ vs) (helper3 n)
+repeatCountArgs=getArgs : ∀ (m : ℕ ) → repeat (m) TyNat ≡ getArgs (ℕtoTy m) 
+repeatCountArgs=getArgs zero = refl
+repeatCountArgs=getArgs (suc n) = cong (λ xs → TyNat ∷ xs) (repeatCountArgs=getArgs n)
 
 
-{-# REWRITE helper3  #-}
-
+{-# REWRITE repeatCountArgs=getArgs  #-}
 
 convVarSound : ∀ {n : ℕ} (ctx : Vec ℕ n) (x : Fin n)  → lookup ctx x ≡ evalExp'' (Var' (finToDBI x)) (toHVec' ctx) ([]ᴴ)
 convVarSound  (x ∷ ctx) zero = refl
@@ -138,3 +132,4 @@ sound-embedd Suc ctx [ n ] = refl
 sound-embedd (App f x) ctx args rewrite sound-embedd x ctx []  | sound-embedd f ctx ( (evalExp' (embedd x) (toHVec' ctx)) ∷ args) = refl
 sound-embedd (Nat n) ctx [] = refl
 sound-embedd (PRecT h acc n) ctx [] rewrite sound-embedd acc ctx [] | sound-embedd n ctx [] | ext2 (λ x y → sound-embedd h ctx [ x , y ]) = refl
+ 
