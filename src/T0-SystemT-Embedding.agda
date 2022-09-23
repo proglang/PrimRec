@@ -8,13 +8,13 @@ import Relation.Binary.PropositionalEquality as Eq
 open Eq using (_≡_; refl; cong; sym; cong₂)
 open Eq.≡-Reasoning using (begin_; _≡⟨⟩_; step-≡; _∎)
 open import Agda.Builtin.Equality.Rewrite
-open import System-T0 using (Exp; para; evalST; evalSTClosed; ext2)
+open import System-T0 using (Exp; evalST; evalSTClosed; ext2)
 
 open System-T0.Exp
 open import PR-Nat
 open import Utils
 open import HVec
-
+open import evalPConstructor using (para)
 -- -- ------------------------------------------------------------------------------
 -- -- -- embedding
 -- -- ------------------------------------------------------------------------------

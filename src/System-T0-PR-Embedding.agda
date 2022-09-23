@@ -16,11 +16,11 @@ open import Agda.Builtin.Equality.Rewrite
 
 open import FinProperties using (inject+0)
 open import VecProperties using (_++r_; fastReverse; ++r=reverse++; reverse; reverse=fastReverse; lookupOpRev; lkupfromN)
-open import System-T0 using (Exp; ext2; maplookupEq; evalSTClosed; paraNat; para; cong3; paraNatEq; evalST)
+open import System-T0 using (Exp; ext2; maplookupEq; evalSTClosed; cong3; evalST)
 open System-T0.Exp
-open import PR-SystemT0-Embedding using (paraNatPR)
 open import PR-Nat
 open import Utils
+open import evalPConstructor using (para; paraNatEq; paraNatPR; paraNat)
 
 
 -- -- ------------------------------------------------------------------------------

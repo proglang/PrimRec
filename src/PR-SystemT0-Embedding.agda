@@ -10,8 +10,10 @@ import Relation.Binary.PropositionalEquality as Eq
 open Eq using (_≡_; refl; cong; sym)
 open Eq.≡-Reasoning using (begin_; _≡⟨⟩_; step-≡; _∎)
 
-open import System-T0 using (Exp; mkConstZero; mkProj; raseExp0=id; raiseExP; evalSTClosed; evalMkConstZero; evalMkProj; generalComp; evalGeneralComp; paraT; evalParaT; paraNat; para; paraNat'; cong3; extensionality; paraNatEq)
+open import System-T0 using (Exp; mkConstZero; mkProj; raseExp0=id; raiseExP; evalSTClosed; evalMkConstZero; evalMkProj; generalComp; evalGeneralComp; paraT; evalParaT; cong3; extensionality)
 open System-T0.Exp
+open import evalPConstructor using (para; paraNat'; paraNatPR; paraNatEq; paraNat)
+
 
 open import PR-Nat
 open import Utils
@@ -85,11 +87,6 @@ convCompSound f gs vs = (evalSTClosed (convComp f gs) vs)
 -- -- ------------------------------------------------------------------------------
 -- -- -- primitive recursion
 -- -- ------------------------------------------------------------------------------
-
-
-paraNatPR : ∀ {n : ℕ} (g : PR n) (h : PR (suc (suc n))) (vs : Vec ℕ (suc n) ) → eval (P g h) vs ≡ paraNat (eval g) (eval h) vs
-paraNatPR g h (zero ∷ vs) = refl
-paraNatPR g h (suc x ∷ vs) rewrite paraNatPR  g h (x ∷ vs)  = refl 
 
 
 

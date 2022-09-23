@@ -16,6 +16,8 @@ open Eq.≡-Reasoning using (begin_; _≡⟨⟩_; step-≡; _∎)
 open import Agda.Builtin.Equality.Rewrite
 open import FinProperties using (inject+0)
 open import VecProperties
+open import evalPConstructor using (para)
+
 
 open import Utils
 
@@ -32,10 +34,6 @@ data Exp : ℕ → ℕ  → Set where
     Nat : ℕ  → Exp n zero
     PRecT : Exp n 2 → Exp n zero → Exp n zero → Exp n zero
 
-
-para : ∀ {A : Set} (h : A → ℕ → A) → A → ℕ → A
-para h acc zero = acc
-para h acc (suc counter) = h (para h acc counter) counter
 
 
 evalST : ∀ {n m : ℕ} → Exp n m → Vec ℕ n → Vec ℕ m → ℕ 
@@ -258,20 +256,6 @@ evalGeneralComp {n} {m} f gs args = (evalSTClosed (generalComp f gs) args)
 -- -- ------------------------------------------------------------------------------
 -- -- -- primitive recursion
 -- -- ------------------------------------------------------------------------------
-
-
-paraNat : ∀ {n} → (Vec ℕ n → ℕ) → (Vec ℕ (suc (suc n)) → ℕ) → Vec ℕ ( (suc n)) → ℕ
-paraNat g h (zero ∷ args) = g args
-paraNat g h (suc x ∷ args) = h (paraNat g h (x ∷ args) ∷ (x ∷ args))
-
-paraNat' : ∀ {n} → (Vec ℕ n → ℕ) → (Vec ℕ (suc (suc n)) → ℕ) → Vec ℕ ( (suc n)) → ℕ
-paraNat' g h (x ∷ args) = para (λ acc n → h (acc ∷ (n ∷ args))) (g args) x
-
-paraNatEq : ∀ {n} → (g : Vec ℕ n → ℕ) → (h : Vec ℕ (suc (suc n)) → ℕ) → (args : Vec ℕ ( (suc n))) → paraNat g h args ≡ paraNat' g h args
-paraNatEq g h (zero ∷ args) = refl
-paraNatEq g h (suc x ∷ args) rewrite paraNatEq  g h (x ∷ args)  = refl
-
-
 
 paraT : ∀ {n} → Exp zero n → Exp zero (suc (suc n)) →  Exp zero ( (suc n))
 paraT {n} g h = prepLambdas 0 (suc n)  (PRecT 
