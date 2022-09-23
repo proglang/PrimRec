@@ -7,6 +7,7 @@
 \usepackage{amsfonts}
 \usepackage{stmaryrd}
 \usepackage{latex/agda}
+%\usepackage{biblatex}
 % \usepackage{unicode-math}
 % \setmathfont{XITS Math}
 % \setmathfont{XITSMath-Regular}
@@ -90,7 +91,26 @@ primitive recursion, system-T, inductive types, algebras
 
 Primitive recursive functions are a standard topic in any class on
 computability. 
-Here is a typical textbook definition:
+
+
+
+These functions are a model for computable functions for which an upper bound of the runtime can be specifyed . Particulary they are total.
+They are as powerful as  \emph{Loop-Programms}  \cite{loopsRitchie} for which the same can be stated.
+
+The primitiv recursive functions are a proper subset of the  total recursive functions. An example of a function, that is recursive but not primitiv recursiv, is the \emph{Ackermannfunction} \cite{szasz1991machine}.
+
+In the definiton of recursive functions, there is a aditional construct called $\mu$\emph{-Operator}, that can be used to define partial functions.
+
+Recursive functions are as powerful as the untyped lambda calculus and touring-machines \cite{threeModels} \cite[92-94]{ziegler2017godelsche}.
+
+Although  only a few constructors can be used to define primitiv recursive functions, it is possible to define the basic arithmetic functions and also interesting functions like  \emph{nthPrime} with these consturctors.
+
+
+
+Usually primitiv recursive functions are defined as a subset of $Fun(\mathbb{N}^n, \mathbb{N})$ definiert. If bigger domains and codomains are used, it is possible to define functions like the ackermann function. Interestingly these functions are still total \cite{DBLP:journals/corr/Widemann16} 
+
+
+Here is a typical textbook definition\cite{martin2019logik} \cite{wiki:Primitive_recursive_function} :
 
 
 The primitive recursive functions is the smallest family PR of functions
