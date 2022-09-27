@@ -91,6 +91,9 @@ sTtoPR (PRecT h acc counter) = convPR h acc counter
 
 embeddST-PR-Sound : ∀  {n m : ℕ} ( exp : Exp n m) (ctx : Vec ℕ n ) (args : Vec ℕ m ) → eval (sTtoPR exp) (ctx ++r args) ≡ evalST exp ctx args
 
+embeddST-PR-SoundClose : ∀  {m : ℕ} ( exp : Exp 0 m)(args : Vec ℕ m ) → eval (sTtoPR exp) args ≡ evalSTClosed exp  args
+embeddST-PR-SoundClose exp args  rewrite embeddST-PR-Sound exp [] args = refl
+
 
 natToPRSound : ∀  {n : ℕ} (m : ℕ) (args : Vec ℕ n) → eval  (natToPR m n) args ≡ m
 natToPRSound zero args = refl

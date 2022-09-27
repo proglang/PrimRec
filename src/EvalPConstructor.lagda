@@ -1,3 +1,4 @@
+\begin{code}[hide]
 {-# OPTIONS --rewriting  #-}
 {-# OPTIONS --allow-unsolved-metas #-}
 
@@ -22,12 +23,17 @@ open import Relation.Nullary
 open import Relation.Nullary.Decidable
 -- open import Data.Bool hiding (_≟_)
 open Data.Nat._≤‴_
+\end{code}
 
-
+\newcommand{\para}{%
+\begin{code}
 para : ∀ {A : Set} (h : A → ℕ → A) → A → ℕ → A
 para h acc zero = acc
 para h acc (suc counter) = h (para h acc counter) counter
+\end{code}
+}
 
+\begin{code}[hide]
 
 paraNat' : ∀ {n} → (Vec ℕ n → ℕ) → (Vec ℕ (suc (suc n)) → ℕ) → Vec ℕ ( (suc n)) → ℕ
 paraNat' g h (x ∷ args) = para (λ acc n → h (acc ∷ (n ∷ args))) (g args) x
@@ -122,3 +128,4 @@ para'≡para acc (suc n) h rewrite N-N≡0 n | sym (para'≡para  (h acc n) n h)
      {!    !} ≡⟨⟩ {!   !} ≡⟨⟩ ({!   !} ≡⟨⟩ {!   !})
 
 
+\end{code}

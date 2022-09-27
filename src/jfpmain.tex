@@ -258,12 +258,33 @@ every constructor has a simple first-order type.
 \section{System-T and beyond}
 \label{sec:system-t-beyond}
 
-$$\lambda x_1 \dots x_{n} \rightarrow 0 $$
-$$\lambda x_1 \dots x_i \dots x_{n} \rightarrow x_i $$
+In this section we define a version of System-T that only allows first order arguments and show that this version is exactly as powerful as primitve recursive functions on natural numbers.
 
-$$\lambda x_1 \dots x_{n+1} \rightarrow \mathtt{PRecTC} \ (\lambda a b . h \, a \, b \, x_2 \dots x_{n+1}) \ (g \, x_2 \dots x_{n+1}) \ x_1 $$
+The first index of this datatype is the size of the context, the second one is the number of arguments. 
+\input{latex/System-T0}
+\defSTZero
 
-$$\lambda \xn \rightarrow  f \ (g_1 \ \xn) \dots (g_m \ \xn) $$
+To evaluate the iterator of this language we define paramorphisms for natural numbers. 
+
+\input{latex/EvalPConstructor}
+\para
+\evalST
+
+
+First we define functions that return closed terms, that hat have a similiar semantic as the constructors of the primitive recursion.
+It is straight forward to define them in Agda, but to get a understanding of the idea of this proof it is enough to know, what we want to express with them.
+\begin{enumerate}
+	\item $$\lambda x_1 \dots x_{n} \rightarrow 0 $$
+	\item $$\lambda x_1 \dots x_i \dots x_{n} \rightarrow x_i $$
+	\item $$\lambda \xn \rightarrow  f \ (g_1 \ \xn) \dots (g_m \ \xn) $$
+	\item $$\lambda x_1 \dots x_{n+1} \rightarrow \mathtt{PRecTC} \ (\lambda a b . h \, a \, b \, x_2 \dots x_{n+1}) \ (g \, x_2 \dots x_{n+1}) \ x_1 $$
+\end{enumerate}
+
+That we prooved, that they work as expected. The function that generates the term that mimics the composition is called \AgdaFunction{generalComp}
+
+\evalGeneralComp
+
+
 
 
 \section{Conclusions}

@@ -1,3 +1,4 @@
+\begin{code}[hide]
 -- {-# OPTIONS --rewriting --prop -v rewriting:50 #-}
 {-# OPTIONS --rewriting  #-}
 {-# OPTIONS --allow-unsolved-metas #-}
@@ -22,9 +23,10 @@ open import EvalPConstructor using (para)
 open import Utils
 
 
+\end{code}
 
-
-
+\newcommand{\defSTZero}{%
+\begin{code}
 data Exp : ℕ → ℕ  → Set where
     Var : Fin n → Exp   n zero
     Lam : Exp (suc n) m → Exp n (suc m)
@@ -33,9 +35,10 @@ data Exp : ℕ → ℕ  → Set where
     App : Exp n (suc m) → Exp n (zero) → Exp n m
     Nat : ℕ  → Exp n zero
     PRecT : Exp n 2 → Exp n zero → Exp n zero → Exp n zero
+\end{code}}
 
-
-
+\newcommand{\evalST}{%
+\begin{code}
 evalST : ∀ {n m : ℕ} → Exp n m → Vec ℕ n → Vec ℕ m → ℕ 
 evalST (Var x) ctx args = lookup ctx x
 evalST (Lam exp) ctx (x ∷ args) = evalST exp (x ∷ ctx) args
@@ -43,12 +46,14 @@ evalST CZero ctx args = 0
 evalST Suc ctx [ x ] = suc x
 evalST (App f x) ctx args = evalST f ctx ( evalST x ctx [] ∷ args)
 evalST (Nat n) _ [] = n
-evalST (PRecT h acc counter) ctx [] = para (λ acc counter → (evalST h ctx) [ acc , counter ]) (evalST acc ctx []) (evalST counter ctx []) 
-
+evalST (PRecT h acc counter) ctx [] = para (λ acc counter → (evalST h ctx) [ acc , counter ]) 
+                                                (evalST acc ctx []) (evalST counter ctx []) 
 
 evalSTClosed : Exp zero m → Vec ℕ m → ℕ
 evalSTClosed exp args = evalST exp [] args
+\end{code}}
 
+\begin{code}[hide]
 
 raiseExP : ∀ {m n} (o) → Exp m n → Exp (m + o) n
 raiseExP  {m} {n} o (Var x) =  Var (inject+ o x)
@@ -238,9 +243,15 @@ evalGeneralCompHelper {n} {m} args gs =
                         map((λ x → evalST (applyToVars x) (fastReverse args) []) ∘ raiseExP m)gs 
                                 ≡⟨ evalApplyToVarsMap args gs ⟩ 
                         ((map (λ exp → evalSTClosed exp args) gs) ∎))
+\end{code}
 
+\newcommand{\evalGeneralComp}{%
+\begin{code}
+evalGeneralComp : ∀ {n m : ℕ} (f : Exp zero n) (gs : Vec (Exp zero m) n) (args : Vec  ℕ m)  → 
+        evalSTClosed (generalComp f gs) args ≡ evalSTClosed f (map (λ g → evalSTClosed g args) gs)
+\end{code}}
 
-evalGeneralComp : ∀ {n m : ℕ} (f : Exp zero n) (gs : Vec (Exp zero m) n) (args : Vec  ℕ m)  → evalSTClosed (generalComp f gs) args ≡ evalSTClosed f (map (λ g → evalSTClosed g args) gs)
+\begin{code}[hide]
 evalGeneralComp {n} {m} f gs args = (evalSTClosed (generalComp f gs) args)
                                                 ≡⟨⟩ evalSTClosed (prepLambdas zero m (apply* (raiseExP m f) (map (applyToVars {m} {zero}) (map (raiseExP m)  gs)))) args 
                                                         ≡⟨ prepLambdasEvalClose {m} args ((apply* (raiseExP m f) (map (applyToVars {m} {zero}) (map (raiseExP m)  gs)))) ⟩ 
@@ -340,3 +351,4 @@ evalParaT {n} {x} g h args = (evalSTClosed (paraT g h) (x ∷ args))
                 
                 (para (λ acc counter → evalSTClosed h (acc ∷ counter ∷ args)) (evalSTClosed g args) x) ∎)
 
+\end{code}
