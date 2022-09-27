@@ -100,14 +100,7 @@ convParaSound g h (x ∷ args) = (evalSTClosed (prToST' (P g h)) (x ∷ args))
                         para (λ acc counter → evalSTClosed (prToST' h) (acc ∷ counter ∷ args)) (evalSTClosed (prToST' g) args) x 
                                 ≡⟨⟩ 
                         paraNat' (evalSTClosed (prToST' g)) (evalSTClosed (prToST' h)) ((x ∷ args)) 
-                        -- ≡⟨ sym (evalP≡paraNat' ⟩ {!   !} 
-                                ≡⟨ sym (paraNatEq (evalSTClosed (prToST' g)) (evalSTClosed (prToST' h) ) ((x ∷ args))) ⟩ 
-                        paraNat (evalSTClosed (prToST' g)) (evalSTClosed (prToST' h))(x ∷ args) 
-                                ≡⟨ cong3 { w = x ∷ args } paraNat (extensionality (λ v → sym (eqPrSTn g v))) ((extensionality (λ v → sym (eqPrSTn h v)))) refl  ⟩ 
-                        paraNat (λ z → eval g z) (λ z → eval h z) (x ∷ args) 
-                                ≡⟨⟩ 
-                        paraNat (eval g) (eval h) (x ∷ args) 
-                                ≡⟨ sym ( paraNatPR g h  (x ∷ args)) ⟩ 
-                        eval (P g h) (x ∷ args) ∎
-
-
+                                ≡⟨ cong3 { w = x ∷ args } paraNat'  ((extensionality (λ v → sym (eqPrSTn g v)))) (((extensionality (λ v → sym (eqPrSTn h v))))) refl  ⟩  
+                        (para (λ acc n₁ → eval h (acc ∷ n₁ ∷ args)) (eval g args) x) 
+                                ≡⟨ sym (evalP≡paraNat' g h (x ∷ args) ) ⟩ 
+                        (eval (P g h) (x ∷ args)) ∎
