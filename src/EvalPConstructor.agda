@@ -1,7 +1,7 @@
 {-# OPTIONS --rewriting  #-}
 {-# OPTIONS --allow-unsolved-metas #-}
 
-module evalPConstructor where
+module EvalPConstructor where
 
 
 open import Data.Fin using (Fin; suc; zero; fromℕ; opposite; raise; inject+)
@@ -28,22 +28,33 @@ para : ∀ {A : Set} (h : A → ℕ → A) → A → ℕ → A
 para h acc zero = acc
 para h acc (suc counter) = h (para h acc counter) counter
 
+
+paraNat' : ∀ {n} → (Vec ℕ n → ℕ) → (Vec ℕ (suc (suc n)) → ℕ) → Vec ℕ ( (suc n)) → ℕ
+paraNat' g h (x ∷ args) = para (λ acc n → h (acc ∷ (n ∷ args))) (g args) x
+
+
 paraNat : ∀ {n} → (Vec ℕ n → ℕ) → (Vec ℕ (suc (suc n)) → ℕ) → Vec ℕ ( (suc n)) → ℕ
 paraNat g h (zero ∷ args) = g args
 paraNat g h (suc x ∷ args) = h (paraNat g h (x ∷ args) ∷ (x ∷ args))
 
-paraNat' : ∀ {n} → (Vec ℕ n → ℕ) → (Vec ℕ (suc (suc n)) → ℕ) → Vec ℕ ( (suc n)) → ℕ
-paraNat' g h (x ∷ args) = para (λ acc n → h (acc ∷ (n ∷ args))) (g args) x
 
 paraNatPR : ∀ {n : ℕ} (g : PR n) (h : PR (suc (suc n))) (vs : Vec ℕ (suc n) ) → eval (P g h) vs ≡ paraNat (eval g) (eval h) vs
 paraNatPR g h (zero ∷ vs) = refl
 paraNatPR g h (suc x ∷ vs) rewrite paraNatPR  g h (x ∷ vs)  = refl 
 
-
-
 paraNatEq : ∀ {n} → (g : Vec ℕ n → ℕ) → (h : Vec ℕ (suc (suc n)) → ℕ) → (args : Vec ℕ ( (suc n))) → paraNat g h args ≡ paraNat' g h args
 paraNatEq g h (zero ∷ args) = refl
 paraNatEq g h (suc x ∷ args) rewrite paraNatEq  g h (x ∷ args)  = refl
+
+
+evalP≡paraNat' : ∀ {n : ℕ} (g : PR n) (h : PR (suc (suc n))) (vs : Vec ℕ (suc n) ) → eval (P g h) vs ≡ paraNat' (eval g) (eval h) vs  -- para (eval g vs) (?) vs 
+evalP≡paraNat' g h vs =  (eval (P g h) vs) 
+                              ≡⟨ paraNatPR g h vs ⟩ 
+                         (paraNat (eval g) (eval h) vs 
+                              ≡⟨ paraNatEq (eval g) (eval h) vs ⟩ 
+                         (paraNat' (eval g) (eval h) vs) ∎)
+
+
 
 
 -- _<b_ : ℕ → ℕ → Bool

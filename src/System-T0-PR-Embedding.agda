@@ -20,7 +20,7 @@ open import System-T0 using (Exp; ext2; maplookupEq; evalSTClosed; cong3; evalST
 open System-T0.Exp
 open import PR-Nat
 open import Utils
-open import evalPConstructor using (para; paraNatEq; paraNatPR; paraNat)
+open import EvalPConstructor using (para; paraNatEq; paraNatPR; paraNat; evalP≡paraNat')
 
 
 -- -- ------------------------------------------------------------------------------
@@ -185,9 +185,7 @@ convPRSound {n} h acc counter ctx  =
         (eval (convPR h acc counter) (fastReverse ctx)) 
                 ≡⟨ evalmkPr (sTtoPR h) (sTtoPR acc) (sTtoPR counter) ctx ⟩ 
         (eval (P (sTtoPR acc) (C (sTtoPR h) (swapArgs n))) (eval (sTtoPR counter) (fastReverse ctx) ∷ fastReverse ctx) 
-                ≡⟨ paraNatPR (sTtoPR acc) (C (sTtoPR h) (swapArgs n)) (eval (sTtoPR counter) (fastReverse ctx) ∷ fastReverse ctx) ⟩ 
-        paraNat (eval (sTtoPR acc)) (eval ((C (sTtoPR h) (swapArgs n))))(eval (sTtoPR counter) (fastReverse ctx) ∷ fastReverse ctx) 
-                 ≡⟨ paraNatEq (eval (sTtoPR acc)) (eval ((C (sTtoPR h) (swapArgs n)))) (eval (sTtoPR counter) (fastReverse ctx) ∷ fastReverse ctx) ⟩ 
+                ≡⟨ evalP≡paraNat' (sTtoPR acc) (C (sTtoPR h) (swapArgs n)) (eval (sTtoPR counter) (fastReverse ctx) ∷ fastReverse ctx) ⟩ 
         para (λ acc₁ n₁ → eval (sTtoPR h) (eval* (swapArgs n) (acc₁ ∷ n₁ ∷ fastReverse ctx)))(eval (sTtoPR acc) (fastReverse ctx))(eval (sTtoPR counter) (fastReverse ctx))
                 ≡⟨ cong3 para (ext2 (λ x y → convPRSoundHelper x y h ctx)) (embeddST-PR-Sound acc ctx []) (embeddST-PR-Sound counter ctx [])  ⟩ 
         (para (λ acc' counter' → evalST h ctx [ acc' , counter' ])(evalST acc ctx []) (evalST counter ctx [])) ∎  )

@@ -16,7 +16,7 @@ open Eq.≡-Reasoning using (begin_; _≡⟨⟩_; step-≡; _∎)
 open import Agda.Builtin.Equality.Rewrite
 open import FinProperties using (inject+0)
 open import VecProperties
-open import evalPConstructor using (para)
+open import EvalPConstructor using (para)
 
 
 open import Utils

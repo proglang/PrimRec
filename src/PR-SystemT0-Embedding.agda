@@ -12,7 +12,7 @@ open Eq.≡-Reasoning using (begin_; _≡⟨⟩_; step-≡; _∎)
 
 open import System-T0 using (Exp; mkConstZero; mkProj; raseExp0=id; raiseExP; evalSTClosed; evalMkConstZero; evalMkProj; generalComp; evalGeneralComp; paraT; evalParaT; cong3; extensionality)
 open System-T0.Exp
-open import evalPConstructor using (para; paraNat'; paraNatPR; paraNatEq; paraNat)
+open import EvalPConstructor using (para; paraNat'; paraNatPR; paraNatEq; paraNat; evalP≡paraNat')
 
 
 open import PR-Nat
@@ -100,6 +100,7 @@ convParaSound g h (x ∷ args) = (evalSTClosed (prToST' (P g h)) (x ∷ args))
                         para (λ acc counter → evalSTClosed (prToST' h) (acc ∷ counter ∷ args)) (evalSTClosed (prToST' g) args) x 
                                 ≡⟨⟩ 
                         paraNat' (evalSTClosed (prToST' g)) (evalSTClosed (prToST' h)) ((x ∷ args)) 
+                        -- ≡⟨ sym (evalP≡paraNat' ⟩ {!   !} 
                                 ≡⟨ sym (paraNatEq (evalSTClosed (prToST' g)) (evalSTClosed (prToST' h) ) ((x ∷ args))) ⟩ 
                         paraNat (evalSTClosed (prToST' g)) (evalSTClosed (prToST' h))(x ∷ args) 
                                 ≡⟨ cong3 { w = x ∷ args } paraNat (extensionality (λ v → sym (eqPrSTn g v))) ((extensionality (λ v → sym (eqPrSTn h v)))) refl  ⟩ 
