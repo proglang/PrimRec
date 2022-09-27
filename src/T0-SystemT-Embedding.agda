@@ -14,7 +14,7 @@ open System-T0.Exp
 open import PR-Nat
 open import Utils
 open import HVec
-open import evalPConstructor using (para)
+open import EvalPConstructor using (para)
 -- -- ------------------------------------------------------------------------------
 -- -- -- embedding
 -- -- ------------------------------------------------------------------------------
