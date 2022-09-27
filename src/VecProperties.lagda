@@ -1,3 +1,4 @@
+\begin{code}[hide]
 {-# OPTIONS --rewriting  #-}
 
 module VecProperties where
@@ -14,15 +15,20 @@ open import FinProperties using (inject+0; inject+Eq)
 open import Utils
 
 
+\end{code}
 
+\newcommand{\appendR}{%
+\begin{code}
 _++r_ : ∀ {A : Set}{m n} → Vec A m → Vec A n → Vec A (m + n)
 (x ∷ xs)      ++r ys = xs ++r (x ∷ ys)
 [] ++r ys =  ys
 
 fastReverse : ∀ {A : Set} {m : ℕ} → Vec A m → Vec A m
 fastReverse vs = vs ++r []
+\end{code}}
 
 
+\begin{code}[hide]
  
 {-# REWRITE inject+Eq #-}
 
@@ -38,11 +44,16 @@ lkupfromN {A} {n} {m} {v} (xs) (ys) = lkupfromN' {A} {n} xs (v ∷ ys )
 lookupOP : ∀  {A} {n m : ℕ} (f : Fin ((n)) ) (vs : Vec A (n)) (ys : Vec A (m))  → lookup (vs ++r ys) (inject+ m (opposite f)) ≡ lookup vs f
 lookupOP zero (v ∷ vs) ys = lkupfromN vs ys
 lookupOP (suc f) (x ∷ vs) (ys) = lookupOP f (vs) ((x ∷ ys))
+\end{code}
 
-lookupOpRev :  ∀ {A : Set} {n} (f : Fin n) (xs : Vec A n) → lookup (fastReverse xs) (opposite f)  ≡ lookup  (xs) f
+\newcommand{\lookupOpRev}{
+\begin{code}[]
+lookupOpRev :  ∀ {A : Set} {n} (f : Fin n) (xs : Vec A n) → 
+    lookup (fastReverse xs) (opposite f)  ≡ lookup  (xs) f
 lookupOpRev f xs rewrite sym(inject+0 (opposite f)) = lookupOP f xs []
+\end{code}}
 
-
+\begin{code}[hide]
 assoc++ : ∀ {A : Set} {n m o : ℕ} → (xs : Vec A n) (ys : Vec A m)(zs : Vec A o) → xs ++ (ys ++ zs) ≡ (xs ++ ys) ++ zs
 assoc++ [] ys zs = refl
 assoc++ {A} {suc n} {m} {o} (x ∷ xs) ys zs = cong (λ v → x ∷ v) (assoc++ {A}{n} {m} {o} xs ys zs)
@@ -71,3 +82,4 @@ reverse (x ∷ vs) = (reverse vs) ++ [ x ]
 
 reverse=fastReverse : ∀ {A : Set} {n : ℕ}  (xs : Vec A n) → fastReverse xs ≡ reverse xs
 reverse=fastReverse xs rewrite ++r=reverse++ xs [] = ++identityR (reverse xs)
+\end{code}

@@ -41,6 +41,9 @@
 
 \input{jfpmacros}
 
+\newunicodechar{∎}{\ensuremath{\mathnormal\blacksquare}}
+
+
 \begin{document}
 
 \journaltitle{JFP}
@@ -271,16 +274,37 @@ To evaluate the iterator of this language we define paramorphisms for natural nu
 \evalST
 
 
-First we define functions that return closed terms, that hat have a similiar semantic as the constructors of the primitive recursion.
-It is straight forward to define them in Agda, but to get a understanding of the idea of this proof it is enough to know, what we want to express with them.
+First we define functions that return closed terms, that hat have a similiar semantic as the constructors of the primitive recursion. Than we proove, that they work as expected. 
+
+
+We give a detailed example for the projection and sketch the proof for the general composition.
+
+The following functions and lemmas are useful in all parts of this proof.
+
+\prepLambdas
+
+\input{latex/VecProperties}
+
+Here \AgdaFunction{++r} is takes two vectors, reverses the first and appends the second.
+\appendR
+
+This shows that if we evaluate a closed term generated with \AgdaFunction{prepLambdas}, we have to evaluate the wrapped expression with the reversed arguments as the context.
+
+This implies that we also need to take the opposite of the index of projection as the DeBruijn-Index of the term, that we use to mimic the projection.
+
+\mkProj
+
+\lookupOpRev
+
+It is straight forward to define the remaing functions in Agda, but to get a understanding of the idea of this proof it is enough to know, what we want to express with them. The terms that we use to express the zero functions, composition and primitive recursion are enumerated below.
+
 \begin{enumerate}
 	\item $$\lambda x_1 \dots x_{n} \rightarrow 0 $$
-	\item $$\lambda x_1 \dots x_i \dots x_{n} \rightarrow x_i $$
 	\item $$\lambda \xn \rightarrow  f \ (g_1 \ \xn) \dots (g_m \ \xn) $$
 	\item $$\lambda x_1 \dots x_{n+1} \rightarrow \mathtt{PRecTC} \ (\lambda a b . h \, a \, b \, x_2 \dots x_{n+1}) \ (g \, x_2 \dots x_{n+1}) \ x_1 $$
 \end{enumerate}
 
-That we prooved, that they work as expected. The function that generates the term that mimics the composition is called \AgdaFunction{generalComp}
+The function that generates the term that mimics the composition is called \AgdaFunction{generalComp}. The following theorem states that the semantic of the returning function is similiar  than the composition operator.
 
 \evalGeneralComp
 

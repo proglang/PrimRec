@@ -104,19 +104,24 @@ raiseExPSound (PRecT h acc counter) ctx ctx2 []  rewrite raiseExPSound acc ctx c
 -- helper
 ------------------------------------------------------------------------------
 
-
-
-prepLambdas : ∀ {o} (n : ℕ) → (m : ℕ) →  Exp (m + n) o -> Exp n (o + m)
+\end{code}
+\newcommand{\prepLambdas}{%
+\begin{code}
+prepLambdas : ∀ {o} (n : ℕ) → (m : ℕ) →  Exp (m + n) o → Exp n (o + m)
 prepLambdas {o} n zero exp   = exp
 prepLambdas {o} n (suc m) exp   = Lam (prepLambdas  (suc n) m exp)
 
 
-prepLambdasEval : ∀ {ctxLen argsLen : ℕ} (ctx : Vec ℕ ctxLen ) (args : Vec ℕ argsLen ) (exp) → evalST (prepLambdas ctxLen argsLen exp) ctx args ≡ evalST exp (args ++r ctx) []
+prepLambdasEval : ∀ {ctxLen argsLen : ℕ} (ctx : Vec ℕ ctxLen ) (args : Vec ℕ argsLen ) (exp : Exp (argsLen + ctxLen) 0) → 
+        evalST (prepLambdas ctxLen argsLen exp) ctx args ≡ evalST exp (args ++r ctx) []
 prepLambdasEval ctx [] exp = refl
 prepLambdasEval ctx (x ∷ args) exp = prepLambdasEval ((x ∷ ctx)) args  exp
 
-prepLambdasEvalClose : ∀ {argsLen : ℕ}  (args : Vec ℕ argsLen ) (exp : Exp argsLen zero) → evalSTClosed (prepLambdas 0 argsLen exp) args ≡ evalST exp (fastReverse args) []
+prepLambdasEvalClose : ∀ {argsLen : ℕ}  (args : Vec ℕ argsLen ) (exp : Exp argsLen zero) → 
+        evalSTClosed (prepLambdas 0 argsLen exp) args ≡ evalST exp (fastReverse args) []
 prepLambdasEvalClose = prepLambdasEval []
+\end{code}}
+\begin{code}[hide]
 
 
 ------------------------------------------------------------------------------
@@ -134,22 +139,22 @@ evalMkConstZero n v = prepLambdasEvalClose v CZero
 -- projection
 ------------------------------------------------------------------------------
 
+\end{code}
 
+\newcommand{\mkProj}{%
+\begin{code}
 mkProj : ∀ {m} → Fin (m)  →  Exp zero m
 mkProj {m} f  = prepLambdas zero m (Var (opposite {m} f))
 
-
-evalMkProjHelper : ∀  {m : ℕ} (f : Fin (suc m ) ) (args : Vec ℕ (suc m))  → evalSTClosed (mkProj f)  args ≡ lookup (( fastReverse args) ) (opposite f)
-evalMkProjHelper f args = prepLambdasEvalClose args (Var (opposite f))
-
-
-evalMkProj : ∀  {n : ℕ} (f : Fin ((suc n)) ) (args : Vec ℕ (suc n))  → evalSTClosed (mkProj  (f)) args ≡ lookup args f
+evalMkProj : ∀  {n : ℕ} (f : Fin ((suc n)) ) (args : Vec ℕ (suc n))  → 
+        evalSTClosed (mkProj  (f)) args ≡ lookup args f
 evalMkProj {n} f vs = evalST (mkProj  ( f)) [] vs 
-    ≡⟨ evalMkProjHelper (f) vs ⟩ 
+    ≡⟨ prepLambdasEvalClose vs (Var (opposite f)) ⟩ 
                         lookup (fastReverse vs) (opposite f) 
     ≡⟨ lookupOpRev f vs ⟩ 
                         (lookup vs f) ∎ 
-
+\end{code}}
+\begin{code}[hide]
 -- -- ------------------------------------------------------------------------------
 -- -- -- composition
 -- -- ------------------------------------------------------------------------------
