@@ -1,3 +1,5 @@
+
+\begin{code}[hide]
 {-# OPTIONS --rewriting  #-}
 {-# OPTIONS --allow-unsolved-metas #-}
 module PR-SystemT0-Embedding where
@@ -28,12 +30,25 @@ convComp : ∀  {n m : ℕ }→ PR n → Vec (PR m) n → Exp zero m
 
 convPR : ∀ {n} → PR n → PR (suc (suc n)) → Exp zero (suc n)
 
+\end{code}
+
+\newcommand{\prToStSig}{%
+\begin{code}
+prToST' : ∀ {m : ℕ} → PR m → Exp zero m
+\end{code}}
 
 
-prToST' : ∀ {m : ℕ} → PR m → Exp zero m 
+\begin{code}[hide]
 prToST'  {m} Z = mkConstZero m
 prToST'  σ = Suc
+\end{code}
+
+\newcommand{\prToStProj}{%
+\begin{code}
 prToST' (π i) = mkProj ( i)
+\end{code}}
+
+\begin{code}[hide]
 prToST' (C f gs) = convComp f gs 
 prToST'  (P g h) = convPR g h
 
@@ -45,13 +60,27 @@ convCompSound : ∀ {n m} (f : PR n)  (gs : Vec  (PR m) n ) (vs : Vec ℕ m) →
 
 convParaSound : ∀ {n : ℕ} (g : PR n) (h : PR (suc (suc n))) (args : Vec ℕ (suc n) ) → evalSTClosed (prToST' (P g h)) args ≡ eval (P g h) args
 
+\end{code}
 
-eqPrSTn : ∀  {n : ℕ} ( pr : PR n) (v : Vec ℕ n ) → eval pr v ≡ evalSTClosed (prToST'   pr) v
-eqPrSTn {n} Z v = sym (evalMkConstZero n v)
-eqPrSTn  σ [ x ] = refl
-eqPrSTn  {suc n} (π i) (vs) =  sym ( evalMkProj i vs)
-eqPrSTn  (C f gs) vs = sym (convCompSound f gs vs)
-eqPrSTn  (P g h) vs = sym (convParaSound g h vs)                
+\newcommand{\embedPRSTSoundSig}{%
+\begin{code}
+embeddPR-ST-Sound : ∀ {n : ℕ} (pr : PR n) (vs : Vec ℕ n) → 
+        evalSTClosed (prToST'   pr) vs ≡ eval pr vs
+\end{code}}
+
+\begin{code}[hide]
+embeddPR-ST-Sound {n} Z v =  evalMkConstZero n v
+\end{code}
+
+\newcommand{\embedPRSTSoundProj}{%
+\begin{code}
+embeddPR-ST-Sound {suc n} (π i) vs = evalMkProj i vs
+\end{code}}
+
+\begin{code}[hide]
+embeddPR-ST-Sound  σ [ x ] = refl
+embeddPR-ST-Sound  (C f gs) vs =  convCompSound f gs vs
+embeddPR-ST-Sound  (P g h) vs = convParaSound g h vs            
 
 
 -- -- ------------------------------------------------------------------------------
@@ -70,10 +99,10 @@ convComp {n} {m} f gs = generalComp (prToST' f) (prToSt*  gs)
 
 eval*≡evalPrToST* : ∀ {n m}  (vs : Vec ℕ m) (gs : Vec (PR m) n) → (map (λ g → evalSTClosed g vs) (prToSt* gs)) ≡ (eval* gs vs)
 eval*≡evalPrToST* vs [] = refl
-eval*≡evalPrToST* vs (g ∷ gs) rewrite eqPrSTn  g vs | eval*≡evalPrToST* vs gs | raseExp0=id (prToST' g) = refl
+eval*≡evalPrToST* vs (g ∷ gs) rewrite embeddPR-ST-Sound  g vs | eval*≡evalPrToST* vs gs | raseExp0=id (prToST' g) = refl
 
 convCompSoundHelper : ∀ {n m} (f : PR n) (vs : Vec ℕ m) (gs : Vec (PR m) n) → evalSTClosed (prToST' f) (map (λ g → evalSTClosed g vs) (prToSt* gs))≡ eval f (eval* gs vs)
-convCompSoundHelper f vs gs rewrite eval*≡evalPrToST* vs gs | eqPrSTn f (eval* gs vs) = refl
+convCompSoundHelper f vs gs rewrite eval*≡evalPrToST* vs gs | embeddPR-ST-Sound f (eval* gs vs) = refl
 
 convCompSound f gs vs = (evalSTClosed (convComp f gs) vs) 
         ≡⟨⟩ 
@@ -100,7 +129,8 @@ convParaSound g h (x ∷ args) = (evalSTClosed (prToST' (P g h)) (x ∷ args))
                         para (λ acc counter → evalSTClosed (prToST' h) (acc ∷ counter ∷ args)) (evalSTClosed (prToST' g) args) x 
                                 ≡⟨⟩ 
                         paraNat' (evalSTClosed (prToST' g)) (evalSTClosed (prToST' h)) ((x ∷ args)) 
-                                ≡⟨ cong3 { w = x ∷ args } paraNat'  ((extensionality (λ v → sym (eqPrSTn g v)))) (((extensionality (λ v → sym (eqPrSTn h v))))) refl  ⟩  
+                                ≡⟨ cong3 { w = x ∷ args } paraNat'  ((extensionality (λ v →  embeddPR-ST-Sound g v))) (((extensionality (λ v →  (embeddPR-ST-Sound h v))))) refl  ⟩  
                         (para (λ acc n₁ → eval h (acc ∷ n₁ ∷ args)) (eval g args) x) 
                                 ≡⟨ sym (evalP≡paraNat' g h (x ∷ args) ) ⟩ 
                         (eval (P g h) (x ∷ args)) ∎
+\end{code}

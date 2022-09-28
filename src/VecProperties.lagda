@@ -50,10 +50,12 @@ lookupOP (suc f) (x ∷ vs) (ys) = lookupOP f (vs) ((x ∷ ys))
 \begin{code}[]
 lookupOpRev :  ∀ {A : Set} {n} (f : Fin n) (xs : Vec A n) → 
     lookup (fastReverse xs) (opposite f)  ≡ lookup  (xs) f
-lookupOpRev f xs rewrite sym(inject+0 (opposite f)) = lookupOP f xs []
 \end{code}}
 
 \begin{code}[hide]
+lookupOpRev f xs rewrite sym(inject+0 (opposite f)) = lookupOP f xs []
+
+
 assoc++ : ∀ {A : Set} {n m o : ℕ} → (xs : Vec A n) (ys : Vec A m)(zs : Vec A o) → xs ++ (ys ++ zs) ≡ (xs ++ ys) ++ zs
 assoc++ [] ys zs = refl
 assoc++ {A} {suc n} {m} {o} (x ∷ xs) ys zs = cong (λ v → x ∷ v) (assoc++ {A}{n} {m} {o} xs ys zs)

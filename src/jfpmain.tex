@@ -274,7 +274,14 @@ To evaluate the iterator of this language we define paramorphisms for natural nu
 \evalST
 
 
-First we define functions that return closed terms, that hat have a similiar semantic as the constructors of the primitive recursion. Than we proove, that they work as expected. 
+First we define functions that return closed terms, that hat have a similiar semantic as the constructors of the primitive recursion. We combine them in the following function.
+
+\input{latex/PR-SystemT0-Embedding}
+\prToStSig
+
+Than we proove, that these terms work as excpected.
+Again we combine these proofs in this theorem: 
+\embedPRSTSoundSig
 
 
 We give a detailed example for the projection and sketch the proof for the general composition.
@@ -296,6 +303,10 @@ This implies that we also need to take the opposite of the index of projection a
 
 \lookupOpRev
 
+We can use this in the prove of our theorem.
+\prToStProj
+\embedPRSTSoundProj
+
 It is straight forward to define the remaing functions in Agda, but to get a understanding of the idea of this proof it is enough to know, what we want to express with them. The terms that we use to express the zero functions, composition and primitive recursion are enumerated below.
 
 \begin{enumerate}
@@ -304,9 +315,12 @@ It is straight forward to define the remaing functions in Agda, but to get a und
 	\item $$\lambda x_1 \dots x_{n+1} \rightarrow \mathtt{PRecTC} \ (\lambda a b . h \, a \, b \, x_2 \dots x_{n+1}) \ (g \, x_2 \dots x_{n+1}) \ x_1 $$
 \end{enumerate}
 
-The function that generates the term that mimics the composition is called \AgdaFunction{generalComp}. The following theorem states that the semantic of the returning function is similiar  than the composition operator.
 
-\evalGeneralComp
+It is a well known fact, that some fuctions that can be expressed with System-T, like the Ackermann function, are not primitiv recursive. 
+
+%The function that generates the term that mimics the composition is called \AgdaFunction{generalComp}. The following theorem states that the semantic of the returning function is similiar  than the composition operator.
+%
+%\evalGeneralComp
 
 
 

@@ -112,13 +112,13 @@ prepLambdas {o} n zero exp   = exp
 prepLambdas {o} n (suc m) exp   = Lam (prepLambdas  (suc n) m exp)
 
 
-prepLambdasEval : ∀ {ctxLen argsLen : ℕ} (ctx : Vec ℕ ctxLen ) (args : Vec ℕ argsLen ) (exp : Exp (argsLen + ctxLen) 0) → 
-        evalST (prepLambdas ctxLen argsLen exp) ctx args ≡ evalST exp (args ++r ctx) []
+prepLambdasEval : ∀ {n m : ℕ} (ctx : Vec ℕ n ) (args : Vec ℕ m ) (exp : Exp (m + n) 0) → 
+        evalST (prepLambdas n m exp) ctx args ≡ evalST exp (args ++r ctx) []
 prepLambdasEval ctx [] exp = refl
 prepLambdasEval ctx (x ∷ args) exp = prepLambdasEval ((x ∷ ctx)) args  exp
 
-prepLambdasEvalClose : ∀ {argsLen : ℕ}  (args : Vec ℕ argsLen ) (exp : Exp argsLen zero) → 
-        evalSTClosed (prepLambdas 0 argsLen exp) args ≡ evalST exp (fastReverse args) []
+prepLambdasEvalClose : ∀ {m : ℕ}  (args : Vec ℕ m ) (exp : Exp m zero) → 
+        evalSTClosed (prepLambdas 0 m exp) args ≡ evalST exp (fastReverse args) []
 prepLambdasEvalClose = prepLambdasEval []
 \end{code}}
 \begin{code}[hide]
