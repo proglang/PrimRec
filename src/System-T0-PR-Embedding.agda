@@ -84,8 +84,8 @@ sTtoPR : ∀ {n m} → Exp n m → PR (n + m)
 sTtoPR (Var x) = π (opposite x)
 sTtoPR (Lam exp) = sTtoPR exp
 sTtoPR CZero = Z
-sTtoPR {n}{m} Suc = C σ [ π (fromℕ n) ]
-sTtoPR {n}{m} (App f x) = convApp f x
+sTtoPR {n}{1} Suc = C σ [ π (fromℕ n) ]
+sTtoPR (App f x) = convApp f x
 sTtoPR {n} {zero} (Nat x) = natToPR x  n
 sTtoPR (PRecT h acc counter) = convPR h acc counter
 
