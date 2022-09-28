@@ -97,20 +97,20 @@ computability.
 
 
 
-These functions are a model for computable functions for which an upper bound of the runtime can be specifyed . Particulary they are total.
+These functions are a model for computable functions for which an upper bound of the runtime can be specified . Particularly they are total.
 They are as powerful as  \emph{Loop-Programms}  \cite{loopsRitchie} for which the same can be stated.
 
-The primitiv recursive functions are a proper subset of the  total recursive functions. An example of a function, that is recursive but not primitiv recursiv, is the \emph{Ackermannfunction} \cite{szasz1991machine}.
+The primitive recursive functions are a proper subset of the  total recursive functions. An example of a function, that is recursive but not primitive recursive, is the \emph{Ackermann function} \cite{szasz1991machine}.
 
-In the definiton of recursive functions, there is a aditional construct called $\mu$\emph{-Operator}, that can be used to define partial functions.
+In the definition of recursive functions, there is a additional construct called $\mu$\emph{-Operator}, that can be used to define partial functions.
 
 Recursive functions are as powerful as the untyped lambda calculus and touring-machines \cite{threeModels} \cite[92-94]{ziegler2017godelsche}.
 
-Although  only a few constructors can be used to define primitiv recursive functions, it is possible to define the basic arithmetic functions and also interesting functions like  \emph{nthPrime} with these consturctors.
+Although  only a few constructors can be used to define primitive recursive functions, it is possible to define the basic arithmetic functions and also interesting functions like  \emph{nthPrime} with these constructors.
 
 
 
-Usually primitiv recursive functions are defined as a subset of $Fun(\mathbb{N}^n, \mathbb{N})$ definiert. If bigger domains and codomains are used, it is possible to define functions like the ackermann function. Interestingly these functions are still total \cite{DBLP:journals/corr/Widemann16} 
+Usually primitiv recursive functions are defined as a subset of $Fun(\mathbb{N}^n, \mathbb{N})$. If bigger domains and codomains are used, it is possible to define functions like the Ackermann function. Interestingly these functions are still total \cite{DBLP:journals/corr/Widemann16} 
 
 
 Here is a typical textbook definition\cite{martin2019logik} \cite{wiki:Primitive_recursive_function} :
@@ -137,7 +137,7 @@ basic functions:
 	\pi^{n}_{i}  (x_1,\dots,x_i,\dots,x_n)  &= x_i
 \end{align*}
 \end{itemize}
-PR is closed unter the operations \emph{composition} and \emph{primitive recursion}.
+PR is closed under the operations \emph{composition} and \emph{primitive recursion}.
 \begin{description}
 \item[Composition] 
 If $f$ is a primitive recursive function with arity $m \in {ℕ}$ and $g_1,
@@ -149,7 +149,7 @@ $h := C (h,(g_1,\dots, g_m)) \colon \mathbb{N}^n \rightarrow \mathbb{N} $ define
 \end{align*}
 
 \item[Primitive recursion] 
-If $g$ and $h$ are primitve recursive functions with aritys $n$ and
+If $g$ and $h$ are primitive recursive functions with aritys $n$ and
 $n+2$ then $f := P (g,h)$ is a primitive recursive function of arity $n+1$ that is defined as follows.
 \begin{align*}
 	f&\colon \mathbb{N}^{n+1} \rightarrow \mathbb{N} \\
