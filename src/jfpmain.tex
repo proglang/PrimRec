@@ -350,6 +350,11 @@ The translation of the reaming constructors is either very simply or very techni
 	
 	$$ (App \ f \ x) \ \rightarrow \ C \ f' \ (\pi_{1}\dots\pi_{n}, C \ x' \ (Z_{n}),\pi_{n + 1}\dots\pi_{n + m}  ) $$ 
 \end{itemize}
+
+For the translation of \AgdaFunction{App}, \AgdaFunction{Lam} and \AgdaFunction{Var} only \AgdaFunction{C} and \AgdaFunction{π} are needed and vice versa. This means this theorem is not only true for a language with a Nat-Iterator or primitive recursion. 
+
+
+
 %The function that generates the term that mimics the composition is called \AgdaFunction{generalComp}. The following theorem states that the semantic of the returning function is similiar  than the composition operator.
 %
 %\evalGeneralComp
