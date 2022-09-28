@@ -1,5 +1,5 @@
 PREFIX= latex
-TARGET_MODULES= PR-Nat PR-Words PR-Trees PR-HTrees NatsToWords WordsToTrees TreesToHTrees NatsVec-CC PR-CC PR-Nat-Example PR-Trees-Examples PR-NatsVec Utils System-T0 EvalPConstructor VecProperties PR-SystemT0-Embedding
+TARGET_MODULES= PR-Nat PR-Words PR-Trees PR-HTrees NatsToWords WordsToTrees TreesToHTrees NatsVec-CC PR-CC PR-Nat-Example PR-Trees-Examples PR-NatsVec Utils System-T0 EvalPConstructor VecProperties PR-SystemT0-Embedding System-T0-PR-Embedding
 TARGET_BROKEN=  PrimRecWord
 TARGET_FILES= $(addprefix $(PREFIX)/, $(addsuffix .tex, $(TARGET_MODULES)))
 

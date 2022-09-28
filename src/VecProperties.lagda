@@ -37,7 +37,15 @@ lkupfromN' : ∀  {A}{m n o :  ℕ}(xs : Vec A m) (ys : Vec A ((suc n) + (o))) �
 lkupfromN' [] (x ∷ ys) = refl
 lkupfromN' {A} {suc m} {n} {o} (x ∷ xs) (y ∷ ys) = lkupfromN' {A} {m} {suc n} {o} xs (x ∷ (y ∷ ys))
 
-lkupfromN : ∀  {A} {n m v}(vs : Vec A (n)) (ys : Vec A (m))   → lookup (vs ++r (v ∷ ys)) (inject+ m (fromℕ n)) ≡ v
+\end{code}
+
+\newcommand{\lookupFromN}{%
+\begin{code}[]
+lkupfromN : ∀ {A} {n m v}(vs : Vec A n) (ys : Vec A m) → 
+    lookup (vs ++r (v ∷ ys)) (inject+ m (fromℕ n)) ≡ v
+\end{code}}
+
+\begin{code}[hide]
 lkupfromN {A} {n} {m} {v} (xs) (ys) = lkupfromN' {A} {n} xs (v ∷ ys ) 
 
 
@@ -46,7 +54,7 @@ lookupOP zero (v ∷ vs) ys = lkupfromN vs ys
 lookupOP (suc f) (x ∷ vs) (ys) = lookupOP f (vs) ((x ∷ ys))
 \end{code}
 
-\newcommand{\lookupOpRev}{
+\newcommand{\lookupOpRev}{%
 \begin{code}[]
 lookupOpRev :  ∀ {A : Set} {n} (f : Fin n) (xs : Vec A n) → 
     lookup (fastReverse xs) (opposite f)  ≡ lookup  (xs) f

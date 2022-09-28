@@ -1,3 +1,4 @@
+\begin{code}[hide]
 -- {-# OPTIONS --rewriting --prop -v rewriting:50 #-}
 {-# OPTIONS --rewriting  #-}
 {-# OPTIONS --allow-unsolved-metas #-}
@@ -79,18 +80,37 @@ convApp : ∀ {n m}  (f : Exp n (suc m)) (x : Exp n zero) → PR (n + m)
 
 convPR : (h : Exp n 2) (acc : Exp n 0) (counter : Exp n 0) → PR (n)
 
-
+\end{code}
+\newcommand{\sTtoPRSignature}{%
+\begin{code}
 sTtoPR : ∀ {n m} → Exp n m → PR (n + m)
+\end{code}}
+\begin{code}[hide]
 sTtoPR (Var x) = π (opposite x)
+\end{code}
+\newcommand{\sTtoPRLam}{%
+\begin{code}
 sTtoPR (Lam exp) = sTtoPR exp
+\end{code}}
+\begin{code}[hide]
 sTtoPR CZero = Z
+\end{code}
+\newcommand{\sTtoPRSuc}{%
+\begin{code}
 sTtoPR {n}{1} Suc = C σ [ π (fromℕ n) ]
+\end{code}}
+\begin{code}[hide]
 sTtoPR (App f x) = convApp f x
 sTtoPR {n} {zero} (Nat x) = natToPR x  n
 sTtoPR (PRecT h acc counter) = convPR h acc counter
+\end{code}
 
-embeddST-PR-Sound : ∀  {n m : ℕ} ( exp : Exp n m) (ctx : Vec ℕ n ) (args : Vec ℕ m ) → eval (sTtoPR exp) (ctx ++r args) ≡ evalST exp ctx args
-
+\newcommand{\sTtoPRSoundSig}{%
+\begin{code}[]
+embeddST-PR-Sound : ∀  {n m : ℕ} (exp : Exp n m) (ctx : Vec ℕ n) (args : Vec ℕ m) → 
+        eval (sTtoPR exp) (ctx ++r args) ≡ evalST exp ctx args
+\end{code}}
+\begin{code}[hide]
 embeddST-PR-SoundClose : ∀  {m : ℕ} ( exp : Exp 0 m)(args : Vec ℕ m ) → eval (sTtoPR exp) args ≡ evalSTClosed exp  args
 embeddST-PR-SoundClose exp args  rewrite embeddST-PR-Sound exp [] args = refl
 
@@ -202,9 +222,20 @@ convPRSound {n} h acc counter ctx  =
 
 
 embeddST-PR-Sound (Var x) ctx [] = lookupOpRev x ctx
+\end{code}
+\newcommand{\sTtoPRSoundLam}{%
+\begin{code}
 embeddST-PR-Sound (Lam exp) ctx (x ∷ args) = embeddST-PR-Sound exp (x ∷ ctx)(args)
+\end{code}}
+\begin{code}[hide]
 embeddST-PR-Sound CZero ctx args = refl
-embeddST-PR-Sound Suc ctx [ x ] = cong suc ( lkupfromN ctx []  )
+\end{code}
+\newcommand{\sTtoPRSoundSuc}{%
+\begin{code}
+embeddST-PR-Sound Suc ctx [ x ] = cong suc (lkupfromN ctx [])
+\end{code}}
+\begin{code}[hide]
 embeddST-PR-Sound (App f x) ctx args   = convAppSound f x ctx args
 embeddST-PR-Sound {n} {zero} (Nat x) ctx [] = natToPRSound x (fastReverse ctx)
 embeddST-PR-Sound (PRecT h acc counter) ctx [] = convPRSound h acc counter ctx -- 
+\end{code}

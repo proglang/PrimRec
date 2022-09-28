@@ -284,15 +284,15 @@ Again we combine these proofs in this theorem:
 \embedPRSTSoundSig
 
 
-We give a detailed example for the projection and sketch the proof for the general composition.
+We give a detailed explanation for the projection and sketch the ideas for the other constructors.
 
-The following functions and lemmas are useful in all parts of this proof.
+The following functions and lemmas are useful in all parts of this proof. They relate the evaluation of term and the term behind some binders.
 
 \prepLambdas
 
 \input{latex/VecProperties}
 
-Here \AgdaFunction{++r} is takes two vectors, reverses the first and appends the second.
+Here \AgdaFunction{++r} is takes two vectors, reverses the first and appends it to the second.
 \appendR
 
 This shows that if we evaluate a closed term generated with \AgdaFunction{prepLambdas}, we have to evaluate the wrapped expression with the reversed arguments as the context.
@@ -303,7 +303,7 @@ This implies that we also need to take the opposite of the index of projection a
 
 \lookupOpRev
 
-We can use this in the prove of our theorem.
+We can use this in the proof of our theorem.
 \prToStProj
 \embedPRSTSoundProj
 
@@ -319,6 +319,31 @@ It is straight forward to define the remaing functions in Agda, but to get a und
 It is a well known fact, that some fuctions that can be expressed with System-T, like the Ackermann function, are not primitiv recursive. 
 
 Because the implementation above is restricted to first-order types. We can show that for every term of this language, there is a primitv recursiv function with the same semantic. 
+
+We can't restrict the function that maps expressions in the restricted System-T to primitive recursive functions to closed term, because than that function could not be called on the body of a lambda expression, that is defined in a context of size one.  
+
+
+So we have to define and more general embedding and soundness-theorem.
+\input{latex/System-T0-PR-Embedding}
+
+\sTtoPRSignature
+
+\sTtoPRSoundSig
+
+The idea behind these defintions is that every element of \AgdaDatatype{Exp n m} can be transformed to a closed term by wrapping the term behind \AgdaBound{n} binders. By the theorem \AgdaFunction{prepLambdasEval} we that evaluating this  expression on reverse-concatenation of the context and the arguments gives the same result as evaluating the old expression.
+
+%now about the semantic of this new term. 
+
+When we define the function \AgdaFunction{sTtoPR} we have to consider that the returning primtive recursive functions will be evaluated not only on the arguments but on the reverse-concatenation of the context and the arguments.
+
+For example the sucessor function has to explicitly ignore the context.
+\sTtoPRSuc
+That is done with a projection that returns the last argument of the input.
+\sTtoPRSoundSuc
+
+Then the proof can be reduced to a simple therem about vectors.
+\lookupFromN
+
 
 %The function that generates the term that mimics the composition is called \AgdaFunction{generalComp}. The following theorem states that the semantic of the returning function is similiar  than the composition operator.
 %
