@@ -338,13 +338,18 @@ When we define the function \AgdaFunction{sTtoPR} we have to consider that the r
 
 For example the successor function has to explicitly ignore the context.
 \sTtoPRSuc
-That is done with a projection that returns the last argument of the input.
+That is done with a projection that returns the last argument of the input, which is the first element that was not in context.
 \sTtoPRSoundSuc
 
 Then this part of the proof can be reduced to a simple theorem about vectors.
 \lookupFromN
 
-
+The translation of the reaming constructors is either very simply or very technical. So we just give the example of the \AgdaFunction{App} Constructor.
+\begin{itemize}
+	\item If f is an element of \AgdaDatatype{Exp (n + 1) m} and x is an element \AgdaDatatype{Exp 0 m} then the App Constructor can be expressed like this. A prime means that this is a translated sub expression.
+	
+	$$ (App \ f \ x) \ \rightarrow \ C \ f' \ (\pi_{1}\dots\pi_{n}, C \ x' \ (Z_{n}),\pi_{n + 1}\dots\pi_{n + m}  ) $$ 
+\end{itemize}
 %The function that generates the term that mimics the composition is called \AgdaFunction{generalComp}. The following theorem states that the semantic of the returning function is similiar  than the composition operator.
 %
 %\evalGeneralComp
