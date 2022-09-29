@@ -28,8 +28,8 @@ Ctx : ℕ → Set
 Ctx n  = Vec (Ty) n
 
 
-DBI : ∀ {n : ℕ} -> Ctx n  -> Ty -> Set
-DBI = HIndex
+-- DBI : ∀ {n : ℕ} -> Ctx n  -> Ty -> Set
+-- DBI = HIndex
 
 
 -- data DBI : ∀ {n : ℕ} -> Ctx n  -> Ty -> Set where
@@ -37,7 +37,7 @@ DBI = HIndex
 --     SDB : ∀ {n : ℕ} {ts : Ctx n} {t t' : Ty} → DBI (ts) t → DBI (t' ∷ ts) t
 
 data Exp : ∀ {n : ℕ} -> Ctx n  -> Ty -> Set where
-    Var : ∀ {n : ℕ} {ctx : Ctx n} {ty} → DBI ctx ty → Exp ctx ty
+    Var : ∀ {n : ℕ} {ctx : Ctx n}  → (f : Fin n) → Exp ctx (lookup ctx f)
     Lam  : ∀ {n : ℕ} {ctx : Ctx n} { tyA tyB} → Exp (tyA ∷ ctx) tyB → Exp ctx  (tyA ⇒ tyB)
     CZero :   ∀ {n : ℕ} {ctx : Ctx n} → Exp ctx TyNat
     Suc : ∀ {n : ℕ} {ctx : Ctx n} → Exp ctx (TyNat ⇒ TyNat)
@@ -54,12 +54,19 @@ data Exp : ∀ {n : ℕ} -> Ctx n  -> Ty -> Set where
 ℕtoCtx n = repeat n TyNat
 
 
-finToDBI : ∀ {n : ℕ} → (Fin n) → DBI (ℕtoCtx n) TyNat
-finToDBI zero = ZI
-finToDBI (suc f) = SI (finToDBI f)
+-- finToDBI : ∀ {n : ℕ} → (Fin n) → DBI (ℕtoCtx n) TyNat
+-- finToDBI zero = ZI
+-- finToDBI (suc f) = SI (finToDBI f)
+
+lookupRepeat=id : ∀ {A : Set}{n : ℕ}(f : Fin n) (x : A) → lookup (repeat n x) f ≡ x
+lookupRepeat=id  zero x = refl
+lookupRepeat=id (suc f) x = lookupRepeat=id f x
+
+{-# REWRITE  lookupRepeat=id #-}
+
 
 embedd : ∀ {n m} → T0.Exp n m → Exp {n} (ℕtoCtx n) (ℕtoTy m) 
-embedd (T0.Var x) = Var (finToDBI x)
+embedd (T0.Var x)  =   Var x   -- Var x -- (finToDBI x)
 embedd (T0.Lam exp) = Lam (embedd exp)
 embedd T0.CZero = CZero
 embedd T0.Suc = Suc
@@ -72,7 +79,7 @@ evalTy TyNat = ℕ
 evalTy (tyA ⇒ tyB) = (evalTy tyA) → (evalTy tyB)
 
 evalExp : ∀ {n : ℕ} {ctx : Ctx n} {ty : Ty}  → Exp ctx ty → HVec evalTy ctx → (evalTy ty)
-evalExp (Var x) ctx = lkupH x ctx -- hlookup x ctx
+evalExp (Var x) ctx = hlookup  ctx x -- hlookup x ctx
 evalExp (Lam exp) ctx = λ x → evalExp exp (x ∷ᴴ ctx)
 evalExp CZero ctx = 0
 evalExp Suc ctx = λ x → suc x
@@ -119,17 +126,27 @@ repeatCountArgs=getArgs (suc n) = cong (λ xs → TyNat ∷ xs) (repeatCountArgs
 
 {-# REWRITE repeatCountArgs=getArgs  #-}
 
-convVarSound : ∀ {n : ℕ} (ctx : Vec ℕ n) (x : Fin n)  → lookup ctx x ≡ evalExp' (Var (finToDBI x)) (toHVec' ctx) ([]ᴴ)
-convVarSound  (x ∷ ctx) zero = refl
-convVarSound (x₁ ∷ ctx) (suc x) rewrite convVarSound  ctx x  = refl
+-- convVarSound : ∀ {n : ℕ} (ctx : Vec ℕ n) (x : Fin n)  → lookup ctx x ≡ evalExp' (Var (finToDBI x)) (toHVec' ctx) ([]ᴴ)
+-- convVarSound  (x ∷ ctx) zero = refl
+-- convVarSound (x₁ ∷ ctx) (suc x) rewrite convVarSound  ctx x  = refl
 
- 
+helper : ∀ {n : ℕ}(f : Fin n) → evalTy (lookup (getArgs (ℕtoTy n)) f) ≡ ℕ
+helper  zero = refl
+helper (suc f) = helper f
+
+{-# REWRITE helper  #-}
+
+
+convVarSound : ∀  {n : ℕ} (ctx : Vec ℕ n) (x : Fin n)  → lookup ctx x ≡ hlookup (toHVec' ctx) x
+convVarSound (x₁ ∷ ctx) zero = refl
+convVarSound (x₁ ∷ ctx) (suc x) = convVarSound ctx x
+
 sound-embedd : ∀ {n m : ℕ} (exp : T0.Exp n m)  (ctx : Vec ℕ n) (args : Vec ℕ m) → (T0.evalST exp ctx args)  ≡  (evalExp' (embedd  exp) (toHVec' ctx) ) ( (toHVec'   ( args)))
-sound-embedd (T0.Var x) ctx []   = convVarSound ctx x
+sound-embedd {suc n} (T0.Var x) ctx []   = convVarSound ctx x 
 sound-embedd {n} {suc m} (T0.Lam exp) (ctx) (x ∷ args) rewrite sound-embedd exp (x ∷ ctx) args = refl
 sound-embedd T0.CZero ctx args = refl
 sound-embedd T0.Suc ctx [ n ] = refl 
 sound-embedd (T0.App f x) ctx args rewrite sound-embedd x ctx []  | sound-embedd f ctx ( (evalExp (embedd x) (toHVec' ctx)) ∷ args) = refl
 sound-embedd (T0.Nat n) ctx [] = refl
 sound-embedd (T0.PRecT h acc n) ctx [] rewrite sound-embedd acc ctx [] | sound-embedd n ctx [] | T0.ext2 (λ x y → sound-embedd h ctx [ x , y ]) = refl
- 
+  

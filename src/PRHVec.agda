@@ -21,14 +21,14 @@ import T0-SystemT-Embedding as T
 
 
 data PR : ∀ {n : ℕ} -> T.Ctx n → T.Ty → Set where
-        Z : ∀ {n : ℕ} {ctx : T.Ctx n} → PR ctx T.TyNat                    -- zero
-        σ : PR [ T.TyNat ] T.TyNat            -- successor
-        π : ∀ {n : ℕ} {ctx : T.Ctx n}{ty}(i : T.DBI ctx ty)               -- i-th projection
+        Z : ∀ {n : ℕ} {ctx : T.Ctx n} → PR ctx T.TyNat                                  -- zero
+        σ : PR [ T.TyNat ] T.TyNat                                                      -- successor
+        π : ∀ {n : ℕ} {ctx : T.Ctx n}{ty}(i : T.DBI ctx ty)                             -- i-th projection
             → PR ctx ty
-        C : ∀ {n m : ℕ} {argsGS : T.Ctx n}{resGi : T.Ctx m}{tyF}(f : PR resGi tyF)                -- composition
+        C : ∀ {n m : ℕ} {argsGS : T.Ctx n}{resGi : T.Ctx m}{tyF}(f : PR resGi tyF)      -- composition
             → (g* : HVec (λ t → PR argsGS t) resGi)
             → PR argsGS tyF
-        P :  ∀ {n : ℕ} {argsG : T.Ctx n}{tyG} (g : PR argsG tyG)                -- primitive recursion
+        P :  ∀ {n : ℕ} {argsG : T.Ctx n}{tyG} (g : PR argsG tyG)                        -- primitive recursion
             → (h : PR  (tyG ∷ (T.TyNat ∷ argsG)) tyG)
             → PR (T.TyNat ∷ argsG) tyG
 
