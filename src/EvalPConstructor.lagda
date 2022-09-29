@@ -23,13 +23,16 @@ open import Relation.Nullary
 open import Relation.Nullary.Decidable
 -- open import Data.Bool hiding (_≟_)
 open Data.Nat._≤‴_
+
+variable
+  A : Set
 \end{code}
 
 \newcommand{\para}{%
 \begin{code}
-para : ∀ {A : Set} (h : A → ℕ → A) → A → ℕ → A
-para h acc zero = acc
-para h acc (suc counter) = h (para h acc counter) counter
+para : (h : A → ℕ → A) → A → ℕ → A
+para h z zero = z
+para h z (suc n) = h (para h z n) n
 \end{code}
 }
 

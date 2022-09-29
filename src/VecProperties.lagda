@@ -5,7 +5,7 @@ module VecProperties where
 
 open import Data.Fin using (Fin; suc; zero; fromℕ; opposite; raise; inject+)
 open import Data.Nat using (ℕ; suc; zero; _+_)
-open import Data.Vec using (Vec; []; _∷_; _++_; lookup) 
+open import Data.Vec using (Vec; []; _∷_; _++_; lookup)
 import Relation.Binary.PropositionalEquality as Eq
 open Eq using (_≡_; refl; cong; sym)
 open Eq.≡-Reasoning using (begin_; _≡⟨⟩_; step-≡; _∎)
@@ -14,21 +14,24 @@ open import FinProperties using (inject+0; inject+Eq)
 
 open import Utils
 
+-- the next one should be Data.Vec._ʳ++_
+-- but it's not there...
 
 \end{code}
-
 \newcommand{\appendR}{%
 \begin{code}
-_++r_ : ∀ {A : Set}{m n} → Vec A m → Vec A n → Vec A (m + n)
+_++r_ : Vec A m → Vec A n → Vec A (m + n)
 (x ∷ xs)      ++r ys = xs ++r (x ∷ ys)
 [] ++r ys =  ys
 
-fastReverse : ∀ {A : Set} {m : ℕ} → Vec A m → Vec A m
+fastReverse : Vec A m → Vec A m
 fastReverse vs = vs ++r []
 \end{code}}
 
 
 \begin{code}[hide]
+_ᴿ : Vec A m → Vec A m
+_ᴿ = fastReverse
  
 {-# REWRITE inject+Eq #-}
 
@@ -56,8 +59,8 @@ lookupOP (suc f) (x ∷ vs) (ys) = lookupOP f (vs) ((x ∷ ys))
 
 \newcommand{\lookupOpRev}{%
 \begin{code}[]
-lookupOpRev :  ∀ {A : Set} {n} (f : Fin n) (xs : Vec A n) → 
-    lookup (fastReverse xs) (opposite f)  ≡ lookup  (xs) f
+lookupOpRev : (i : Fin n) (xs : Vec A n) → 
+    lookup (xs ᴿ) (opposite i)  ≡ lookup xs i
 \end{code}}
 
 \begin{code}[hide]
