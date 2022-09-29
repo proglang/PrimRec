@@ -72,7 +72,7 @@ evalTy TyNat = ℕ
 evalTy (tyA ⇒ tyB) = (evalTy tyA) → (evalTy tyB)
 
 evalExp : ∀ {n : ℕ} {ctx : Ctx n} {ty : Ty}  → Exp ctx ty → HVec evalTy ctx → (evalTy ty)
-evalExp (Var x) ctx = lkupH x ctx
+evalExp (Var x) ctx = lkupH x ctx -- hlookup x ctx
 evalExp (Lam exp) ctx = λ x → evalExp exp (x ∷ᴴ ctx)
 evalExp CZero ctx = 0
 evalExp Suc ctx = λ x → suc x
