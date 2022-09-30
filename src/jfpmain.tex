@@ -346,10 +346,13 @@ It is a well known fact, that some functions that can be expressed with System-T
 
 Because the implementation above is restricted to first-order types. We can show that for every term of this language, there is a primitive recursive function with the same semantic. 
 
-We can't restrict the function, that maps expressions in the restricted System-T to primitive recursive functions, to closed term, because than that function could not be called on the body of a lambda expression, that is defined in a context of size one.  
+First we have to define a function, that maps expressions in the restricted System-T to primitive recursive functions.
+We can't restrict these function to closed terms, because than that function could not be recursively called on the body of a lambda expression, that is defined in a context of size one.  
 
 
-So we have to define and more general embedding and soundness-theorem.
+So we have to define and more general embedding and soundness-theorem, in which we add the number of arguments and the size of the context, to get the arity of the primitive recursive function.
+
+
 \input{latex/System-T0-PR-Embedding}
 
 \sTtoPRSignature
