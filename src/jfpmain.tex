@@ -359,15 +359,17 @@ So we have to define and more general embedding and soundness-theorem, in which 
 
 \sTtoPRSoundSig
 
-The idea behind these definitions is that every element of \AgdaDatatype{Exp n m} can be transformed to a closed term by wrapping the term behind \AgdaBound{n} binders. By the theorem \AgdaFunction{prepLambdasEval}, we know that evaluating this  expression on reverse-concatenation of the context and the arguments gives the same result as evaluating the old expression.
+The idea behind these definitions is that every element of \AgdaDatatype{Exp n m} can be transformed to a closed term with type \AgdaDatatype{Exp 0 (n + m)} by wrapping the term behind \AgdaBound{n} binders. By the lemma \AgdaFunction{prepLambdasEval}, we know that evaluating this  expression on reverse-concatenation of the context and the arguments gives the same result as evaluating the inner expression with the context and the arguments.
+So \AgdaFunction{sTtoPR} map an expression of System-T0 to 
+a primitive recursive function, that has the same semantic than the an expression, that was made closed with  \AgdaFunction{prepLambdas}
+%%%now about the semantic of this new term. 
 
-%now about the semantic of this new term. 
-
-When we define the function \AgdaFunction{sTtoPR} we have to consider that the returning primitive recursive functions will be evaluated not only on the arguments but on the reverse-concatenation of the context and the arguments.
-
-For example the successor function has to explicitly ignore the context.
+When we define the function \AgdaFunction{sTtoPR} we have to consider that in the soundness-theorem above, for an expression the corresponding primitive recursive function
+doesn't get evaluated just with the arguments of this expression but with the reverse-concatenation of the context and the arguments.
+%
+For example the successor function in System-T0 can be evaluated with an context of an arbitrary size $n$ and one argument. When we map this function to a primitive recursive function, we can evaluate it with $n + 1$ arguments. Only the last of these arguments is needed to compute the result, so we have to ignore all other arguments.
 \sTtoPRSuc
-That is done with a projection that returns the last argument of the input, which is the first element that was not in context.
+That is done with a projection that returns the last argument of the input of the primitive recursive function, which is the first element that was not in context of the expression in System-T0.
 \sTtoPRSoundSuc
 
 Then this part of the proof can be reduced to a simple theorem about vectors.
