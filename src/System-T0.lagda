@@ -16,7 +16,7 @@ open Eq using (_≡_; refl; cong; sym; _≗_)
 open Eq.≡-Reasoning using (begin_; _≡⟨⟩_; step-≡; _∎)
 open import Agda.Builtin.Equality.Rewrite
 open import FinProperties using (inject+0)
-open import VecProperties using (_++r_; fastReverse; lookupOpRev; lkupfromN)
+open import VecProperties using (_++r_; fastReverse; _ᴿ; lookupOpRev; lkupfromN)
 open import EvalPConstructor using (para)
 
 
@@ -27,7 +27,7 @@ open import Utils
 
 \newcommand{\defSTZero}{%
 \begin{code}
-data Exp : ℕ → ℕ  → Set where
+data Exp n : ℕ → Set where
     Var : Fin n → Exp   n zero
     Lam : Exp (suc n) m → Exp n (suc m)
     CZero :  Exp n zero
@@ -39,18 +39,18 @@ data Exp : ℕ → ℕ  → Set where
 
 \newcommand{\evalST}{%
 \begin{code}
-evalST : ∀ {n m : ℕ} → Exp n m → Vec ℕ n → Vec ℕ m → ℕ 
+evalST : Exp n m → Vec ℕ n → Vec ℕ m → ℕ 
 evalST (Var x) ctx args = lookup ctx x
-evalST (Lam exp) ctx (x ∷ args) = evalST exp (x ∷ ctx) args
+evalST (Lam e) ctx (x ∷ args) = evalST e (x ∷ ctx) args
 evalST CZero ctx args = 0
 evalST Suc ctx [ x ] = suc x
-evalST (App f x) ctx args = evalST f ctx ( evalST x ctx [] ∷ args)
+evalST (App f e) ctx args = evalST f ctx ( evalST e ctx [] ∷ args)
 evalST (Nat n) _ [] = n
-evalST (PRecT h acc counter) ctx [] = para (λ acc counter → (evalST h ctx) [ acc , counter ]) 
-                                                (evalST acc ctx []) (evalST counter ctx []) 
+evalST (PRecT h e₀ en) ctx [] = para (λ acc counter → (evalST h ctx) [ acc , counter ]) 
+                                                (evalST e₀ ctx []) (evalST en ctx []) 
 
 evalSTClosed : Exp zero m → Vec ℕ m → ℕ
-evalSTClosed exp args = evalST exp [] args
+evalSTClosed e = evalST e []
 \end{code}}
 
 \begin{code}[hide]
@@ -107,18 +107,17 @@ raiseExPSound (PRecT h acc counter) ctx ctx2 []  rewrite raiseExPSound acc ctx c
 \end{code}
 \newcommand{\prepLambdas}{%
 \begin{code}
-prepLambdas : ∀ {o} (n : ℕ) → (m : ℕ) →  Exp (m + n) o → Exp n (o + m)
-prepLambdas {o} n zero exp   = exp
-prepLambdas {o} n (suc m) exp   = Lam (prepLambdas  (suc n) m exp)
+prepLambdas : ∀ {o} n m →  Exp (m + n) o → Exp n (o + m)
+prepLambdas n zero    e = e
+prepLambdas n (suc m) e = Lam (prepLambdas (suc n) m e)
 
-
-prepLambdasEval : ∀ {n m : ℕ} (ctx : Vec ℕ n ) (args : Vec ℕ m ) (exp : Exp (m + n) 0) → 
+prepLambdasEval : (ctx : Vec ℕ n) (args : Vec ℕ m) (exp : Exp (m + n) 0) → 
         evalST (prepLambdas n m exp) ctx args ≡ evalST exp (args ++r ctx) []
 prepLambdasEval ctx [] exp = refl
-prepLambdasEval ctx (x ∷ args) exp = prepLambdasEval ((x ∷ ctx)) args  exp
+prepLambdasEval ctx (x ∷ args) exp = prepLambdasEval (x ∷ ctx) args  exp
 
-prepLambdasEvalClose : ∀ {m : ℕ}  (args : Vec ℕ m ) (exp : Exp m zero) → 
-        evalSTClosed (prepLambdas 0 m exp) args ≡ evalST exp (fastReverse args) []
+prepLambdasEvalClose : (args : Vec ℕ m) (exp : Exp m zero) → 
+        evalSTClosed (prepLambdas 0 m exp) args ≡ evalST exp (args ᴿ) []
 prepLambdasEvalClose = prepLambdasEval []
 \end{code}}
 \begin{code}[hide]
@@ -143,16 +142,17 @@ evalMkConstZero n v = prepLambdasEvalClose v CZero
 
 \newcommand{\mkProj}{%
 \begin{code}
-mkProj : ∀ {m} → Fin (m)  →  Exp zero m
-mkProj {m} f  = prepLambdas zero m (Var (opposite {m} f))
+mkProj : Fin m  →  Exp zero m
+mkProj i = prepLambdas zero _ (Var (opposite i))
 
-evalMkProj : ∀  {n : ℕ} (f : Fin ((suc n)) ) (args : Vec ℕ (suc n))  → 
-        evalSTClosed (mkProj  (f)) args ≡ lookup args f
-evalMkProj {n} f vs = evalST (mkProj  ( f)) [] vs 
-    ≡⟨ prepLambdasEvalClose vs (Var (opposite f)) ⟩ 
-                        lookup (fastReverse vs) (opposite f) 
-    ≡⟨ lookupOpRev f vs ⟩ 
-                        (lookup vs f) ∎ 
+evalMkProj : (i : Fin (suc n)) (args : Vec ℕ (suc n))  → 
+        evalSTClosed (mkProj i) args ≡ lookup args i
+evalMkProj i vs = evalST (mkProj i) [] vs 
+    ≡⟨ prepLambdasEvalClose vs (Var (opposite i)) ⟩ 
+                        lookup (vs ᴿ) (opposite i) 
+    ≡⟨ lookupOpRev i vs ⟩ 
+                        lookup vs i
+    ∎ 
 \end{code}}
 \begin{code}[hide]
 -- -- ------------------------------------------------------------------------------

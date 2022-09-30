@@ -24,6 +24,8 @@
 \newunicodechar{≡}{\ensuremath{\equiv}}
 \newunicodechar{∀}{\ensuremath{\forall}}
 \newunicodechar{ᴸ}{\ensuremath{^L}}
+\newunicodechar{ᴿ}{\ensuremath{^R}}
+\newunicodechar{ʳ}{\ensuremath{^r}}
 \newunicodechar{ⱽ}{\ensuremath{^V}}
 \newunicodechar{⟧}{\ensuremath{\rrbracket}}
 \newunicodechar{⟦}{\ensuremath{\llbracket}}
@@ -38,6 +40,7 @@
 \newcommand\Nat{ℕ}
 
 \newcommand{\xn}{x_1,\dots,x_n }
+\newcommand{\xs}[1]{x_1\dots x_{#1}}
 
 \input{jfpmacros}
 
@@ -206,7 +209,7 @@ Compared with the natural numbers, we can say that a word is
 constructed from one nullary constructor, typically called
 $\varepsilon$, and then a successor, $\sigma_a$, for each symbol $a\in A$.
 
-Rosza Peter~\cite{xxx} defines primitive recursion on words
+Rosza Peter~\cite{peter35:_uber_zusam_begrif_funkt} defines primitive recursion on words
 accordingly. The $n$-ary $0$-function becomes the $n$-ary
 $\varepsilon$-function; the single successor $\sigma$ generalizes to a
 family of successors $\sigma_a$; projection and composition do not
@@ -258,62 +261,85 @@ every constructor has a simple first-order type.
 \section{Vector-valued primitive recursion}
 \label{sec:vect-valu-prim}
 
-\section{System-T and beyond}
+\section{System~T and beyond}
 \label{sec:system-t-beyond}
 
-In this section we define a version of System-T that only allows first order arguments and show that this version is exactly as powerful as primitive recursive functions on natural numbers.
+Gödel's System~T comprises the simply-typed lambda calculus extended
+with natural numbers and a primitive recursor. While this calculus
+enjoys strong normalisation, it is nevertheless possible to encode the
+Ackermann function, as well as other fast-growing functions (see
+\cite{DBLP:books/cu/Ha2016,DBLP:journals/corr/Widemann16}), which are known not 
+to be primitive recursive. These definitions are possible because
+System~T admits primitive recursive definitions at higher-order types.
 
-The first index of this datatype is the size of the context, the second one is the number of arguments. 
+If we restrict System~T to first-order functions, then we can show
+that this version is equally expressive as primitive recursive
+functions on natural numbers. 
+
+To define this restriction, we use an intrinsic representation of
+lambda terms as a datatype \AExp{n}{m} where first index is the size
+of the context (number of free variables) and the second one is the
+number of arguments. All variables and arguments will have type \ANat.
 \input{latex/System-T0}
 \defSTZero
 
-To evaluate the iterator of this language we define paramorphisms for natural numbers. 
+To evaluate the iterator of this language we define paramorphisms for
+natural numbers \cite{DBLP:conf/fpca/MeijerFP91}. 
 
 \input{latex/EvalPConstructor}
 \para
 \evalST
 
 
-First we define functions that return closed terms, that hat have a similar semantic as the constructors of the primitive recursion. We combine them in the following function.
+To prove equivalence with standard primitive recursion, we start by defining a
+function that returns closed lambda terms and prove that their
+semantics matches the corresponding constructors of primitive recursion.
 
 \input{latex/PR-SystemT0-Embedding}
 \prToStSig
-
-Than we prove, that these terms work as expected.
-Again we combine these proofs in this theorem: 
 \embedPRSTSoundSig
 
 
 We give a detailed explanation for the projection and sketch the ideas for the other constructors.
 
-The following functions and lemmas are useful in all parts of this proof. They relate the evaluation of a term and the same term behind some binders.
+The following functions and lemmas are useful in all parts of this
+proof. They relate the evaluation of a term and the same term weakened
+under some binders.
 
 \prepLambdas
 
 \input{latex/VecProperties}
 
-Here \AgdaFunction{++r} is takes two vectors, reverses the first and appends it to the second.
-\appendR
 
-This shows that if we evaluate a closed term generated with \AgdaFunction{prepLambdas}, we have to evaluate the wrapped expression with the reversed arguments as the context.
+These lemmas prove that evaluation of a closed expression generated with
+\AgdaFunction{prepLambdas} corresponds to evaluation of the wrapped
+expression with the reversed arguments as the context.\footnote{
+The function \AgdaFunction{++r} takes two vectors, reverses the first,
+and prepends it to the second. We write $^R$ for a function that
+reverses a vector using \AgdaFunction{++r}.
+% \appendR 
+}
 
-This implies that we also need to take the opposite ($n - i$ ) of the index of projection as the DeBruijn-Index of the term, that we use to mimic the projection.
+Getting back to the case of projection, we need to take the opposite ($n - i$) of the index of a
+projection as the deBruijn index in the term used to mimic the projection.
 
 \mkProj
 
 \lookupOpRev
 
-We can use this in the proof of our theorem.
+It remains to state the corresponding lines in the definition of the
+translation and the proof of the embedding:
 \prToStProj
 \embedPRSTSoundProj
 
-It is straight forward to define the remaining functions in Agda, but to get a understanding of the idea of this proof it is enough to know, what we want to express with them. The terms that we use to express the zero functions, composition and primitive recursion are enumerated below.
-
-\begin{enumerate}
-	\item $$\lambda x_1 \dots x_{n} \rightarrow 0 $$
-	\item $$\lambda \xn \rightarrow  f \ (g_1 \ \xn) \dots (g_m \ \xn) $$
-	\item $$\lambda x_1 \dots x_{n+1} \rightarrow \mathtt{PRecTC} \ (\lambda a b . h \, a \, b \, x_2 \dots x_{n+1}) \ (g \, x_2 \dots x_{n+1}) \ x_1 $$
-\end{enumerate}
+It is not difficult to define the remaining cases in Agda, so we just
+give a high-level overview of the expressions we use to represent the zero functions, composition, and primitive recursion.
+\begin{align*}
+  \text{$n$-ary zero: } & \lambda \xs{n} \rightarrow 0 \\
+  \text{composition: } & \lambda \xs{n} \rightarrow  f \ (g_1 \ \xs{n})
+                        \dots (g_m \ \xs{n}) \\
+  \text{primitive recursion: } & \lambda \xs{n+1} \rightarrow \mathtt{PRecTC} \ (\lambda a b . h \, a \, b \, x_2 \dots x_{n+1}) \ (g \, x_2 \dots x_{n+1}) \ x_1 
+\end{align*}
 
 
 It is a well known fact, that some functions that can be expressed with System-T, like the Ackermann function, are not primitive recursive. 
