@@ -1,10 +1,12 @@
+{-# OPTIONS --rewriting --prop -v rewriting:50 #-}
+{-# OPTIONS --allow-unsolved-metas #-}
 module HVec where
 
 open import Data.Fin using (Fin; suc; zero)
 open import Data.List using (List) renaming ([] to []ᴸ; _∷_ to _∷ᴸ_; _++_ to _++ᴸ_; length to lengthᴸ; map to mapᴸ)
 open import Data.Vec using (Vec ;replicate; lookup; _++_; map) -- ; [],_∷_) -- renaming ([] to []ⱽ; _∷_ to _∷ⱽ_ ) --  _++_; lookup; map; toList; head)
 open import Data.Nat using (ℕ; suc; zero; _*_; _+_)
-
+open import VecProperties
 open Vec
 
 open import Utils
@@ -43,6 +45,10 @@ data HIndex : ∀ {n : ℕ}  → Vec  S n → S → Set where
 lkupH : ∀ {n : ℕ} {xs : Vec S n} {F : S → Set} {x} →   HIndex xs x → HVec F xs → F x
 lkupH ZI (x ∷ᴴ xs) = x
 lkupH (SI i) (x ∷ᴴ xs) = lkupH i xs
+
+_++rᴴ_ : ∀ {F : S → Set}{m n : ℕ}   {xs : Vec S m}{ys : Vec S n}→ HVec F xs → HVec F ys → HVec F (xs ++r ys)
+(x ∷ᴴ xs)      ++rᴴ ys = xs ++rᴴ (x ∷ᴴ ys)
+[]ᴴ ++rᴴ ys = ys
 
 -- data HVec (F : S → Set) : ∀ {n : ℕ}  → Vec  S n → Set where
 --   []ᴴ  : HVec F []ⱽ

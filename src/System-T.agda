@@ -3,7 +3,7 @@
 
 open import Data.Fin using (Fin; suc; zero)
 open import Data.Nat using (ℕ; suc; zero; _∸_)
-open import Data.Vec using (Vec; []; _∷_; lookup)
+open import Data.Vec using (Vec; []; _∷_; lookup; foldr;_++_)
 import Relation.Binary.PropositionalEquality as Eq
 open Eq using (_≡_; refl; cong; sym; cong₂)
 open Eq.≡-Reasoning using (begin_; _≡⟨⟩_; step-≡; _∎)
@@ -15,7 +15,7 @@ open import PR-Nat
 open import Utils
 open import HVec
 open import EvalPConstructor using (para)
-
+open import VecProperties
 
 
 data Ty : Set where
@@ -88,3 +88,37 @@ uncurryH {tyA ⇒ tyB} f (x ∷ᴴ hxs) = uncurryH (f x) hxs
 
 evalExp' : ∀ {n : ℕ} {ctx : Ctx n} {ty : Ty}  → Exp ctx ty → HVec evalTy ctx → HVec evalTy (getArgs ty) → ℕ
 evalExp' exp ctx = uncurryH (evalExp exp ctx)
+
+
+
+------------------------------------------------------------------------------
+-- helper
+------------------------------------------------------------------------------
+
+prepArgs : ∀ {n : ℕ} → Ctx n → Ty → Ty
+prepArgs ctx ty = foldr (λ x → Ty) (λ x acc → x ⇒ acc) ty ctx
+
+prepLambdas : ∀ {m n}{ty} (xs :  Ctx n) (ys : Ctx m) →  Exp (ys ++r xs) ty → Exp xs (prepArgs ys ty)
+prepLambdas xs [] exp = exp
+prepLambdas xs (x ∷ ys) exp = Lam (prepLambdas (x ∷ xs) ys exp)
+
+
+
+-- \end{code}
+-- \newcommand{\prepLambdas}{%
+-- \begin{code}
+-- prepLambdas : ∀ {o} (n : ℕ) → (m : ℕ) →  Exp (m + n) o → Exp n (o + m)
+-- prepLambdas {o} n zero exp   = exp
+-- prepLambdas {o} n (suc m) exp   = Lam (prepLambdas  (suc n) m exp)
+
+
+-- prepLambdasEval : ∀ {n m : ℕ} (ctx : Vec ℕ n ) (args : Vec ℕ m ) (exp : Exp (m + n) 0) → 
+--         evalST (prepLambdas n m exp) ctx args ≡ evalST exp (args ++r ctx) []
+-- prepLambdasEval ctx [] exp = refl
+-- prepLambdasEval ctx (x ∷ args) exp = prepLambdasEval ((x ∷ ctx)) args  exp
+
+-- prepLambdasEvalClose : ∀ {m : ℕ}  (args : Vec ℕ m ) (exp : Exp m zero) → 
+--         evalSTClosed (prepLambdas 0 m exp) args ≡ evalST exp (fastReverse args) []
+-- prepLambdasEvalClose = prepLambdasEval []
+-- \end{code}}
+-- \begin{code}[hide]
