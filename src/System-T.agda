@@ -1,8 +1,8 @@
 {-# OPTIONS --rewriting --prop -v rewriting:50 #-}
 {-# OPTIONS --allow-unsolved-metas #-}
 
-open import Data.Fin using (Fin; suc; zero)
-open import Data.Nat using (ℕ; suc; zero; _∸_)
+open import Data.Fin using (Fin; suc; zero; opposite)
+open import Data.Nat using (ℕ; suc; zero; _∸_; _+_)
 open import Data.Vec using (Vec; []; _∷_; lookup; foldr;_++_)
 import Relation.Binary.PropositionalEquality as Eq
 open Eq using (_≡_; refl; cong; sym; cong₂)
@@ -104,21 +104,55 @@ prepLambdas xs (x ∷ ys) exp = Lam (prepLambdas (x ∷ xs) ys exp)
 
 
 
--- \end{code}
--- \newcommand{\prepLambdas}{%
--- \begin{code}
--- prepLambdas : ∀ {o} (n : ℕ) → (m : ℕ) →  Exp (m + n) o → Exp n (o + m)
--- prepLambdas {o} n zero exp   = exp
--- prepLambdas {o} n (suc m) exp   = Lam (prepLambdas  (suc n) m exp)
+helper3 : ∀ (n : ℕ) (ty : Ty)(xs : Vec Ty n ) → countArgs (foldr (λ x → Ty) _⇒_ ty xs)  ≡ n + countArgs ty 
+helper3 _ _ [] = refl
+helper3 (suc n) ty (x ∷ xs) = cong suc (helper3 n ty xs)
+
+{-# REWRITE helper3 #-}
+
+helper2 : ∀ {n : ℕ} {ty : Ty} (xs : Vec Ty n ) →  (getArgs (prepArgs xs ty)) ≡ xs ++ getArgs ty
+helper2 [] = refl
+helper2 (x ∷ xs) = cong (λ v → x ∷ v) (helper2 xs)
+
+{-# REWRITE helper2 #-}
 
 
--- prepLambdasEval : ∀ {n m : ℕ} (ctx : Vec ℕ n ) (args : Vec ℕ m ) (exp : Exp (m + n) 0) → 
---         evalST (prepLambdas n m exp) ctx args ≡ evalST exp (args ++r ctx) []
--- prepLambdasEval ctx [] exp = refl
--- prepLambdasEval ctx (x ∷ args) exp = prepLambdasEval ((x ∷ ctx)) args  exp
+prepLambdasEval : ∀ {n m : ℕ} {ty : Ty} (xs : Vec Ty n ) (ys : Vec Ty m ) (exp : Exp (xs ++r ys) ty) (xs' : HVec evalTy xs ) (ys' : HVec evalTy ys) (args : HVec evalTy (getArgs ty)) → 
+             evalExp' (prepLambdas ys xs exp) ys' (xs' ++ᴴ   args)  ≡ evalExp' exp (xs' ++rᴴ ys') args
+prepLambdasEval .[] ys exp []ᴴ ys' args = refl
+prepLambdasEval (x ∷ xs) ys exp (x' ∷ᴴ xs') ys' args rewrite prepLambdasEval xs (x ∷ ys) exp xs' (x' ∷ᴴ ys') args = refl
 
--- prepLambdasEvalClose : ∀ {m : ℕ}  (args : Vec ℕ m ) (exp : Exp m zero) → 
---         evalSTClosed (prepLambdas 0 m exp) args ≡ evalST exp (fastReverse args) []
--- prepLambdasEvalClose = prepLambdasEval []
--- \end{code}}
--- \begin{code}[hide]
+prepLambdasEvalClose : ∀ {n : ℕ} {ty : Ty} (xs : Vec Ty n )  (exp : Exp (xs ++r []) ty) (xs' : HVec evalTy xs )  (args : HVec evalTy (getArgs ty)) → 
+             evalExp' (prepLambdas [] xs exp) []ᴴ (xs' ++ᴴ   args)  ≡ evalExp' exp (xs' ++rᴴ []ᴴ) args
+prepLambdasEvalClose xs exp xs' args = prepLambdasEval xs [] exp xs' []ᴴ args
+
+
+------------------------------------------------------------------------------
+-- constant zero-function
+------------------------------
+
+mkConstZero :  ∀ {n  : ℕ}  (xs : Vec Ty n ) → Exp [] (prepArgs xs TyNat) 
+mkConstZero xs = prepLambdas [] xs CZero
+
+{-# REWRITE  ++identityRᴴ #-}
+
+
+evalMkConstZero : ∀ {n  : ℕ}  (xs : Vec Ty n ) (xs' : HVec evalTy xs) → evalExp' (mkConstZero xs)  []ᴴ  xs'  ≡ 0
+evalMkConstZero xs xs'  rewrite ++identityRᴴ xs' = prepLambdasEvalClose xs CZero xs' []ᴴ
+
+------------------------------------------------------------------------------
+-- projection
+------------------------------------------------------------------------------
+{-# REWRITE  lookupOpRev #-}
+
+mkProj : ∀ {n  : ℕ}  (xs : Vec Ty n ) → (f : Fin n)  →  Exp [] (prepArgs (xs) (lookup (xs) ( f))) 
+mkProj xs f = prepLambdas [] ( xs)  (Var (opposite f))
+
+evalMkProj : ∀ {n  : ℕ}  {xs : Vec Ty n }  (f : Fin n) (xs' : HVec evalTy xs)   → 
+        evalExp' (mkProj xs f)  []ᴴ (xs' ++ᴴ {!   !})  ≡  {!   !} -- hlookup xs' f
+evalMkProj i vs = {!   !} -- evalST (mkProj i) [] vs 
+--     ≡⟨ prepLambdasEvalClose vs (Var (opposite i)) ⟩ 
+--                         lookup (vs ᴿ) (opposite i) 
+--     ≡⟨ lookupOpRev i vs ⟩ 
+--                         lookup vs i
+--     ∎ 
