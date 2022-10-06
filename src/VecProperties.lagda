@@ -96,3 +96,5 @@ reverse (x ∷ vs) = (reverse vs) ++ [ x ]
 reverse=fastReverse : ∀ {A : Set} {n : ℕ}  (xs : Vec A n) → fastReverse xs ≡ reverse xs
 reverse=fastReverse xs rewrite ++r=reverse++ xs [] = ++identityR (reverse xs)
 \end{code}
+
+-- reverse[]≡[] : ∀ {A : Set} {n : ℕ}  →  reverse [] ≡ []

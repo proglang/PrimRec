@@ -17,14 +17,14 @@ import System-T0 as T0 --using (Exp; evalST; evalSTClosed; ext2)
 open import Utils
 open import HVec
 open import EvalPConstructor
-import T0-SystemT-Embedding as T
+import System-T as T
 
 
 data PR : ∀ {n : ℕ} -> T.Ctx n → T.Ty → Set where
         Z : ∀ {n : ℕ} {ctx : T.Ctx n} → PR ctx T.TyNat                                  -- zero
         σ : PR [ T.TyNat ] T.TyNat                                                      -- successor
-        π : ∀ {n : ℕ} {ctx : T.Ctx n}{ty}(i : T.DBI ctx ty)                             -- i-th projection
-            → PR ctx ty
+        π : ∀ {n : ℕ} {ctx : T.Ctx n}(i : Fin n)                             -- i-th projection
+            → PR ctx (lookup ctx i)
         C : ∀ {n m : ℕ} {argsGS : T.Ctx n}{resGi : T.Ctx m}{tyF}(f : PR resGi tyF)      -- composition
             → (g* : HVec (λ t → PR argsGS t) resGi)
             → PR argsGS tyF
@@ -37,7 +37,7 @@ eval* : ∀ {n m : ℕ} {ctx : T.Ctx n}{resGi : T.Ctx m} → HVec (PR ctx) resGi
 eval : ∀ {n : ℕ} {ctx : T.Ctx n}{ty} → PR ctx ty → HVec T.evalTy ctx → T.evalTy ty
 eval Z hvs = 0
 eval σ (x ∷ᴴ []ᴴ) = x + 1
-eval (π i) hvs = lkupH i hvs
+eval (π i) hvs = hlookup  hvs i
 eval (C f g*) hvs = eval f (eval* g* hvs)
 eval (P g h) (x ∷ᴴ hvs) = para  (λ acc' counter' → eval h (acc' ∷ᴴ (counter' ∷ᴴ hvs))) (eval g hvs) x 
 

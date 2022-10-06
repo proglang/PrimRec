@@ -8,7 +8,7 @@ import Relation.Binary.PropositionalEquality as Eq
 open Eq using (_≡_; refl; cong; sym; cong₂)
 open Eq.≡-Reasoning using (begin_; _≡⟨⟩_; step-≡; _∎)
 open import Agda.Builtin.Equality.Rewrite
-import System-T0 as T0 --using (Exp; evalST; evalSTClosed; ext2)
+-- import System-T0 as T0 --using (Exp; evalST; evalSTClosed; ext2)
 
 -- open System-T0.Exp
 open import PR-Nat

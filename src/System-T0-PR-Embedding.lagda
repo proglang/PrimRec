@@ -60,11 +60,11 @@ lookupToN=id [] = refl
 lookupToN=id {A} {suc n} (x ∷ xs) rewrite helperLookupConsSuc x xs (toN n) = cong (x ∷_) (lookupToN=id xs)
 
 
-mapToNRaiseEq : ∀ {n m}  (ys : Vec ℕ m) (xs : Vec ℕ n) → map (λ f → lookup (ys ++ xs) f) (mToM+N n m)  ≡ xs 
-mapToNRaiseEq {n} {m} ys xs rewrite helperLookupMapRaise ys xs (toN n) = lookupToN=id xs
+mapToNRaiseEq : ∀ {A : Set} {n m}  (ys : Vec A m) (xs : Vec A n) → map (λ f → lookup (ys ++ xs) f) (mToM+N n m)  ≡ xs 
+mapToNRaiseEq {_}{n} {m} ys xs rewrite helperLookupMapRaise ys xs (toN n) = lookupToN=id xs
 
-mapToNInjectEq : ∀ {n m}  (ys : Vec ℕ m) (xs : Vec ℕ n) → map (λ f → lookup (ys ++ xs) f) (zeroToM-Inject+N n m)  ≡   ys 
-mapToNInjectEq {n} {m} ys xs rewrite helperLookupMapInject ys xs (toN m) = lookupToN=id ys
+mapToNInjectEq : ∀ {A : Set}{n m}  (ys : Vec A m) (xs : Vec A n) → map (λ f → lookup (ys ++ xs) f) (zeroToM-Inject+N n m)  ≡   ys 
+mapToNInjectEq  {_}{n} {m} ys xs rewrite helperLookupMapInject ys xs (toN m) = lookupToN=id ys
 
 
 
