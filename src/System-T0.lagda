@@ -107,18 +107,18 @@ raiseExPSound (PRecT h acc counter) ctx ctx2 []  rewrite raiseExPSound acc ctx c
 \end{code}
 \newcommand{\prepLambdas}{%
 \begin{code}
-prepLambdas : ∀ {o} n m →  Exp (m + n) o → Exp n (o + m)
-prepLambdas n zero    e = e
-prepLambdas n (suc m) e = Lam (prepLambdas (suc n) m e)
+abstr : ∀ {o} n m →  Exp (m + n) o → Exp n (o + m)
+abstr n zero    e = e
+abstr n (suc m) e = Lam (abstr (suc n) m e)
 
-prepLambdasEval : (ctx : Vec ℕ n) (args : Vec ℕ m) (exp : Exp (m + n) 0) → 
-        evalST (prepLambdas n m exp) ctx args ≡ evalST exp (args ++r ctx) []
-prepLambdasEval ctx [] exp = refl
-prepLambdasEval ctx (x ∷ args) exp = prepLambdasEval (x ∷ ctx) args  exp
+abstrEval : (ctx : Vec ℕ n) (args : Vec ℕ m) (exp : Exp (m + n) 0) → 
+        evalST (abstr n m exp) ctx args ≡ evalST exp (args ++r ctx) []
+abstrEval ctx [] exp = refl
+abstrEval ctx (x ∷ args) exp = abstrEval (x ∷ ctx) args  exp
 
-prepLambdasEvalClose : (args : Vec ℕ m) (exp : Exp m zero) → 
-        evalSTClosed (prepLambdas 0 m exp) args ≡ evalST exp (args ᴿ) []
-prepLambdasEvalClose = prepLambdasEval []
+abstrEvalClose : (args : Vec ℕ m) (exp : Exp m zero) → 
+        evalSTClosed (abstr 0 m exp) args ≡ evalST exp (args ᴿ) []
+abstrEvalClose = abstrEval []
 \end{code}}
 \begin{code}[hide]
 
@@ -128,11 +128,11 @@ prepLambdasEvalClose = prepLambdasEval []
 ------------------------------------------------------------------------------
 
 mkConstZero :   (m : ℕ) → Exp zero m 
-mkConstZero m = prepLambdas zero m CZero
+mkConstZero m = abstr zero m CZero
 
 
 evalMkConstZero : ∀  (n : ℕ ) (v : Vec ℕ n ) → evalSTClosed (mkConstZero n) v  ≡ 0
-evalMkConstZero n v = prepLambdasEvalClose v CZero 
+evalMkConstZero n v = abstrEvalClose v CZero 
 
 ------------------------------------------------------------------------------
 -- projection
@@ -143,15 +143,16 @@ evalMkConstZero n v = prepLambdasEvalClose v CZero
 \newcommand{\mkProj}{%
 \begin{code}
 mkProj : Fin m  →  Exp zero m
-mkProj i = prepLambdas zero _ (Var (opposite i))
+mkProj {m} i = abstr zero m (Var (opposite i))
 
-evalMkProj : ∀ {n : ℕ} (i : Fin (suc n)) (args : Vec ℕ (suc n))  → 
+evalMkProj : (i : Fin (suc n)) (args : Vec ℕ (suc n))  → 
         evalSTClosed (mkProj i) args ≡ lookup args i
-evalMkProj i vs = evalST (mkProj i) [] vs 
-    ≡⟨ prepLambdasEvalClose vs (Var (opposite i)) ⟩ 
-                        lookup (vs ᴿ) (opposite i) 
+evalMkProj i vs = begin
+      evalST (mkProj i) [] vs 
+    ≡⟨ abstrEvalClose vs (Var (opposite i)) ⟩ 
+      lookup (vs ᴿ) (opposite i) 
     ≡⟨ lookupOpRev i vs ⟩ 
-                        lookup vs i
+      lookup vs i
     ∎ 
 \end{code}}
 \begin{code}[hide]
@@ -229,7 +230,7 @@ evalApplyToVars  {n} exp vs  = evalApplyToVars'' exp vs []
 
 
 generalComp : ∀ {n : ℕ} {m : ℕ}  → (Exp zero n) → (Vec (Exp zero m) n) → Exp zero m
-generalComp {n} {m} f' gs' = prepLambdas zero m (apply* (raiseExP m f') (map (applyToVars {m} {zero}) (map (raiseExP m)  gs')))
+generalComp {n} {m} f' gs' = abstr zero m (apply* (raiseExP m f') (map (applyToVars {m} {zero}) (map (raiseExP m)  gs')))
 
 -- is thera a lemma for this? f ≡ g → map f ≡ map g
 evalApplyToVarsMap : ∀ {n m : ℕ} (vs : Vec ℕ n) (gs : Vec (Exp zero n) m) → map (λ exp → evalST ((applyToVars {n} {zero}) (raiseExP n exp)) (fastReverse vs) []) gs ≡ map (λ exp → evalST exp [] vs) gs
@@ -258,8 +259,8 @@ evalGeneralComp : ∀ {n m : ℕ} (f : Exp zero n) (gs : Vec (Exp zero m) n) (ar
 
 \begin{code}[hide]
 evalGeneralComp {n} {m} f gs args = (evalSTClosed (generalComp f gs) args)
-                                                ≡⟨⟩ evalSTClosed (prepLambdas zero m (apply* (raiseExP m f) (map (applyToVars {m} {zero}) (map (raiseExP m)  gs)))) args 
-                                                        ≡⟨ prepLambdasEvalClose {m} args ((apply* (raiseExP m f) (map (applyToVars {m} {zero}) (map (raiseExP m)  gs)))) ⟩ 
+                                                ≡⟨⟩ evalSTClosed (abstr zero m (apply* (raiseExP m f) (map (applyToVars {m} {zero}) (map (raiseExP m)  gs)))) args 
+                                                        ≡⟨ abstrEvalClose {m} args ((apply* (raiseExP m f) (map (applyToVars {m} {zero}) (map (raiseExP m)  gs)))) ⟩ 
                                                 evalST (apply* (raiseExP m f) (map (applyToVars {m} {zero})(map (raiseExP {zero} {m} m ) gs))) (fastReverse args) [] 
                                                         ≡⟨ evalApply*=eval-map-apply (raiseExP m f)  (map (applyToVars {m} {zero})  (map (raiseExP {zero} {m} m) gs)) (fastReverse args) ⟩ 
                                                 evalST (raiseExP m f) (fastReverse args)(map (λ arg → evalST arg (fastReverse args) [])(map (applyToVars {m} {zero}) (map (raiseExP m) gs))) 
@@ -274,7 +275,7 @@ evalGeneralComp {n} {m} f gs args = (evalSTClosed (generalComp f gs) args)
 -- -- ------------------------------------------------------------------------------
 
 paraT : ∀ {n} → Exp zero n → Exp zero (suc (suc n)) →  Exp zero ( (suc n))
-paraT {n} g h = prepLambdas 0 (suc n)  (PRecT 
+paraT {n} g h = abstr 0 (suc n)  (PRecT 
                 (Lam (Lam (applyToVars' {2} {n} {1} (App (App (raiseExP  (n + 3) h) (Var (suc zero))) (Var zero))))) 
                 ((applyToVars {n} {1} (raiseExP (suc n) g)) )
                 (Var (fromℕ n))) 
@@ -340,12 +341,12 @@ evalParaTHelper5 {n} {x} g h args rewrite evalParaTHelper1 {n} {x} args | evalPa
 evalParaT : ∀ {n x : ℕ} (g : Exp zero n) (h : Exp zero (suc (suc n))) (args : Vec ℕ n ) → evalSTClosed (paraT g h) (x ∷ args) ≡ para (λ acc counter  → evalSTClosed h (acc ∷ (counter ∷ args))) (evalSTClosed g args) x  
 evalParaT {n} {x} g h args = (evalSTClosed (paraT g h) (x ∷ args)) 
                         ≡⟨⟩ 
-                ((evalSTClosed (prepLambdas 0 (suc n)  (PRecT 
+                ((evalSTClosed (abstr 0 (suc n)  (PRecT 
                 (Lam (Lam (applyToVars' {2} {n} {1} (App (App (raiseExP  (n + 3) h) (Var (suc zero))) (Var zero))))) 
                 ( (applyToVars {n} {1} (raiseExP (suc n) g)) )
                 (Var (fromℕ n))) ) (x ∷ args)) 
                         
-                        ≡⟨ prepLambdasEvalClose (x ∷ args) (PRecT 
+                        ≡⟨ abstrEvalClose (x ∷ args) (PRecT 
                         (Lam (Lam (applyToVars' {2} {n} {1} (App (App (raiseExP  (n + 3) h) (Var (suc zero))) (Var zero))))) 
                         ( (applyToVars { n} {1} (raiseExP (suc n) g)) )
                         (Var (fromℕ n))) ⟩ 

@@ -1,4 +1,7 @@
 \newcommand{\ANat}{ℕ}
+\newcommand{\ATY}{\AgdaDatatype{TY}}
+\newcommand{\ATy}[1]{\AgdaDatatype{Ty}\AgdaSpace{}\AgdaGeneralizable{#1}}
+\newcommand{\AAlg}[1]{\AgdaDatatype{Alg}\AgdaSpace{}\AgdaGeneralizable{#1}}
 \newcommand{\AFin}[1]{\AgdaDatatype{Fin}\AgdaSpace{}\AgdaGeneralizable{#1}}
 \newcommand{\AList}[1]{\AgdaDatatype{List}\AgdaSpace{}\AgdaGeneralizable{#1}}
 \newcommand{\AMaybe}[1]{\AgdaDatatype{Maybe}\AgdaSpace{}\AgdaGeneralizable{#1}}
@@ -11,6 +14,8 @@
 \newcommand{\AExp}[2]{\AgdaDatatype{Exp}\AgdaSpace{}\AgdaGeneralizable{#1}\AgdaSpace{}\AgdaGeneralizable{#2}}
 \newcommand{\AHVec}[2]{\AgdaDatatype{HVec}\AgdaSpace{}\AgdaGeneralizable{#1}\AgdaSpace{}\AgdaGeneralizable{#2}}
 \newcommand{\ATop}{\AgdaDatatype{\ensuremath\top}}
+\newcommand{\Afold}{\AgdaInductiveConstructor{fold}}
+\newcommand{\Aind}{\AgdaInductiveConstructor{ind}}
 \newcommand{\Acon}{\AgdaInductiveConstructor{con}}
 \newcommand{\AP}{\AgdaInductiveConstructor{P}}
 \newcommand{\Asymbols}[1]{\AgdaField{symbols}\AgdaSpace{}\AgdaBound{#1}}
@@ -22,6 +27,8 @@
 \newcommand{\Atwo}[2]{\AgdaInductiveConstructor{[}\AgdaSpace{}%
   #1\AgdaSpace{}\AgdaInductiveConstructor{,}\AgdaSpace{}%
   #2\AgdaSpace{}\AgdaInductiveConstructor{]}}
+\newcommand{\Asubnull}{\AgdaFunction{sub₀}}
+\newcommand{\Afmap}{\AgdaFunction{fmap}}
 
 %%% Local Variables:
 %%% mode: latex

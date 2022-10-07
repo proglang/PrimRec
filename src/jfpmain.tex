@@ -37,6 +37,11 @@
 \newunicodechar{′}{\ensuremath{'}}
 \newunicodechar{ᴬ}{\ensuremath{^A}}
 \newunicodechar{∘}{\ensuremath{\circ}}
+\newunicodechar{𝟙}{\ensuremath{\mathbb{I}}}
+\newunicodechar{ᴾ}{\ensuremath{^P}}
+\newunicodechar{ᵀ}{\ensuremath{^T}}
+\newunicodechar{⊎}{\ensuremath{\uplus}}
+\newunicodechar{ι}{\ensuremath{\iota}}
 \newcommand\Nat{ℕ}
 
 \newcommand{\xn}{x_1,\dots,x_n }
@@ -258,6 +263,100 @@ $w \in S^*$ and $s \in S$. This definition translates roughly to:
 every constructor has a simple first-order type.
 \input{latex/PR-HTrees}
 
+\section{Primitive recursion for inductive types}
+\label{sec:prim-recurs-gener}
+
+\input{latex/PR-CC-ind}
+
+To complete the picture, we connect the term universe with inductive
+types generated from sums and products. The modeling of inductive
+types is taken from Harper's textbook \cite{DBLP:books/cu/Ha2016}.
+
+We start with defining the type language.
+\ccDataTy
+Types are indexed by a number $n \in \ANat$ denoting the number of free
+type variables in the type. A type is either a unit type, a product, a
+sum, a variable, or an inductive type. The body of an inductive type
+binds a new type variable for recursive occurrences of the
+type. Mostly, we need \ATy{0} which we abbreviate to $\ATY$.
+
+To define primitive recursion on this type structure in pointfree
+style, we have to extend our vocabulary compared to previous attempts.
+\ccDataPR
+The first part defines arrows concerned with categorical structure,
+the injection into the unit type, the identity arrow at all
+types, and type-respecting composition of arrows.\footnote{The
+  cognoscenti will see that we are defining the arrows of 
+  a cartesian closed category.} The second part has arrows to
+introduce and eliminate product types. The third part has arrows to
+introduce and eliminate sum types, which are very obviously dual to
+the respective arrows involving products. The fourth and final part
+defines arrow to introduce {\Afold} and eliminate inductive types
+{\AP}. This treatment is still 100\% first order, without higher-order functions.
+
+In the definition of {\Afold} and {\AP}, we find that $G :$~\ATy1, a type with a
+single type variable. It will be important to view $G$ as a functor
+that acts on types $T:$~{\ATY} by substitution, i.e., $T \mapsto$~\Asubnull~$T$~$G$. 
+
+Elimination of inductive types is by primitive recursion /
+paramorphism. The arrow constructed by {\AP} maps a pair of an element
+of an inductive type and an element of another type $U$ to a result type
+$T$. The type $U$ corresponds to the non-recursion parameters in the
+traditional setting (cf.\ Section~\ref{sec:from-numbers-words}). 
+The single parameter $h$ of {\AP} unifies all subordinate
+arrows. Thanks to the rich type structure, the dispatch on different
+``term constructors'' can be internalized in the calculus. Thus, the
+input of $h$ is a pair where the top-level induction for $G$ is
+unfolded and applied to a pair of $T$, the result of the inductive
+evaluation, and \Aind~$G$, the inductive subterm.
+
+To define evaluation, we first define the interpretation of types in Agda.
+\ccDataAlg
+We reuse as much structure as possible by mapping unit, product, and
+sum to the respective Agda types. We interpret all inductive types with a
+single generic inductive type \AAlg{G}, which is indexed by its generating
+functor $G$.\footnote{Technically speaking, this definition uses
+  induction recursion \cite{DBLP:journals/apal/DybjerS03}.}
+
+With this machinery in place, the definition of the evaluation
+function is straightforward.
+\ccFunEval
+The only interesting case is the one for primitive recursion. It is
+interpreted by a function taking a pair of \Aind~$G$ and some $U$. The
+first component of the argument must evaluate to some \Afold, so the $x$ corresponds
+to the constructor arguments, and the second component $u:U$ is the
+extra argument. Now we run the function $h$ essentially on $x$, but
+after replacing recursive occurrences of the inductive type by a pair
+of the subterm and the recursive call of {\AP}~$h$ on the subterm. We
+identify the recursive occurrences by traversing $x$ according to the
+structure functor $G$ using the $\Afmap'$ function below. 
+\ccFunFmap
+
+It turns out that we can map all flavors of primitive recursion from
+Section~\ref{sec:from-numbers-words} into primitive recursion in terms
+of inductive types. The main difference is that in
+Sections~\ref{sec:prim-recurs-words}-\ref{sec:prim-recurs-sort} we
+never assumed finiteness of (ranked) alphabets. To successfully map into
+inductive types, alphabets must be finite and this requirement
+matches the usual mathematical definition of alphabets.
+
+As a simple example, we define the mapping from primitive recursion on
+natural numbers into inductive types. We start with the functor $G$
+for natural numbers:
+\ccDefGNat
+
+The encoding is straightforward, but it reveals a shortcoming of our
+combinator language for inductive types.
+\ccDefNatToInd
+The encodings of the constructors apply {\Afold} to the left and right
+injection, respectively. Projection and composition are as before. For
+the encoding of primitive recursion, we need two helper arrows. One
+arrow that implements associativity of the product and another that
+implements distributivity of sum over product. While the first one is
+definable with the arrows given in the definition of {\APR n}, the
+distributivity arrow has to be postulated as a new primitive!
+\ccFunAssocDist
+
 \section{Vector-valued primitive recursion}
 \label{sec:vect-valu-prim}
 
@@ -303,8 +402,8 @@ semantics matches the corresponding constructors of primitive recursion.
 We give a detailed explanation for the projection and sketch the ideas for the other constructors.
 
 The following functions and lemmas are useful in all parts of this
-proof. They relate the evaluation of a term and the same term weakened
-under some binders.
+proof. They relate the evaluation of a term and the same term where
+the outermost free variables are abstracted.
 
 \prepLambdas
 
@@ -342,16 +441,22 @@ give a high-level overview of the expressions we use to represent the zero funct
 \end{align*}
 
 
-It is a well known fact, that some functions that can be expressed with System-T, like the Ackermann function, are not primitive recursive. 
+It is a well-known fact that function can be expressed in System~T,
+which are not primitive recursive. The Ackermann function is an
+example. The key for this expressiveness lies in higher-order
+types. For our first-order restriction, System~T0, we can show every
+term in this language can be mapped to a primitive recursive function
+with the same semantics.  
 
-Because the implementation above is restricted to first-order types. We can show that for every term of this language, there is a primitive recursive function with the same semantic. 
+We start by defining a function that maps expressions in System~T0 to primitive recursive functions.
+We cannot restrict this function to closed terms, because we need to
+invoke it recursively on the body of a lambda expression, which
+increases the context by a new free variable.  
 
-First we have to define a function, that maps expressions in the restricted System-T to primitive recursive functions.
-We can't restrict these function to closed terms, because than that function could not be recursively called on the body of a lambda expression, that is defined in a context of size one.  
 
-
-So we have to define and more general embedding and soundness-theorem, in which we add the number of arguments and the size of the context, to get the arity of the primitive recursive function.
-
+So we need a more general embedding and soundness-theorem, in which we
+add the number of arguments and the size of the context to get the
+arity of the primitive recursive function. 
 
 \input{latex/System-T0-PR-Embedding}
 
@@ -359,30 +464,49 @@ So we have to define and more general embedding and soundness-theorem, in which 
 
 \sTtoPRSoundSig
 
-The idea behind these definitions is that every element of \AgdaDatatype{Exp n m} can be transformed to a closed term with type \AgdaDatatype{Exp 0 (n + m)} by wrapping the term behind \AgdaBound{n} binders. By the lemma \AgdaFunction{prepLambdasEval}, we know that evaluating this  expression on reverse-concatenation of the context and the arguments gives the same result as evaluating the inner expression with the context and the arguments.
-So \AgdaFunction{sTtoPR} map an expression of System-T0 to 
-a primitive recursive function, that has the same semantic than the an expression, that was made closed with  \AgdaFunction{prepLambdas}
+The idea behind these definitions is that every element of
+\AgdaDatatype{Exp n m} can be transformed to a closed term with type
+\AgdaDatatype{Exp 0 (n + m)} by abstracting \AgdaBound{n} binders. By
+the lemma \AgdaFunction{abstrEval}, we know that evaluating this
+expression on the reverse-concatenation of the context and the arguments
+gives the same result as evaluating the inner expression with the
+context and the arguments. 
+Hence, \AgdaFunction{sTtoPR} maps an expression of System~T0 to 
+a primitive recursive function with the same semantics after closing with  \AgdaFunction{abstr}.
 %%%now about the semantic of this new term. 
 
-When we define the function \AgdaFunction{sTtoPR} we have to consider that in the soundness-theorem above, for an expression the corresponding primitive recursive function
-doesn't get evaluated just with the arguments of this expression but with the reverse-concatenation of the context and the arguments.
+When defining the function \AgdaFunction{sTtoPR} we have to consider
+that in the soundness-theorem above, for an expression the
+corresponding primitive recursive function 
+does not get evaluated just with the arguments of this expression but with the reverse-concatenation of the context and the arguments.
 %
-For example the successor function in System-T0 can be evaluated with an context of an arbitrary size $n$ and one argument. When we map this function to a primitive recursive function, we can evaluate it with $n + 1$ arguments. Only the last of these arguments is needed to compute the result, so we have to ignore all other arguments.
+For example, the successor function in System~T0 can be evaluated with
+a context of an arbitrary size $n$ and one argument. If we map this
+function to a primitive recursive function, we can evaluate it with $n
++ 1$ arguments. Only the last of these arguments is needed to compute
+the result, so we have to ignore all other arguments using a suitable projection. 
 \sTtoPRSuc
-That is done with a projection that returns the last argument of the input of the primitive recursive function, which is the first element that was not in context of the expression in System-T0.
+%That is done with a projection that returns the last argument of the input of the primitive recursive function, which is the first element that was not in context of the expression in System-T0.
+This part of the proof can be reduced to a simple theorem about vectors. 
 \sTtoPRSoundSuc
-
-Then this part of the proof can be reduced to a simple theorem about vectors.
 \lookupFromN
 
-The translation of the reaming constructors is either very simply or very technical. So we just give the example of the \AgdaFunction{App} Constructor.
+The translation of the remaining constructors is either very simple or very technical. We just give the example of the \AgdaInductiveConstructor{App} Constructor.
 \begin{itemize}
-	\item If f is an element of \AgdaDatatype{Exp (n + 1) m} and x is an element \AgdaDatatype{Exp 0 m} then the App Constructor can be expressed like this. A prime means that this is a translated sub expression.
+\item If $f$ is an element of \AgdaDatatype{Exp (n + 1) m} and $x$ is
+  an element \AgdaDatatype{Exp 0 m}, then the
+  \AgdaInductiveConstructor{App} constructor can be expressed as
+  follows. A prime marks translated subexpressions.
 	
-	$$ (App \ f \ x) \ \rightarrow \ C \ f' \ (\pi_{1}\dots\pi_{n}, C \ x' \ (Z_{n}),\pi_{n + 1}\dots\pi_{n + m}  ) $$ 
+	$$ (\AgdaInductiveConstructor{App} \ f \ x) \ \rightarrow \ \AgdaInductiveConstructor{C} \ f' \ (\pi_{1}\dots\pi_{n}, \AgdaInductiveConstructor{C} \ x' \ (Z_{n}),\pi_{n + 1}\dots\pi_{n + m}  ) $$ 
 \end{itemize}
 
-For the translation of \AgdaFunction{App}, \AgdaFunction{Lam} and \AgdaFunction{Var} only \AgdaFunction{C} and \AgdaFunction{π} are needed and vice versa. This means this theorem is not only true for a language with a Nat-Iterator or primitive recursion. 
+For the translation of \AgdaInductiveConstructor{App},
+\AgdaInductiveConstructor{Lam}, and \AgdaInductiveConstructor{Var} only
+\AgdaInductiveConstructor{C} and \AgdaInductiveConstructor{π} are
+needed and vice versa. Hence, this theorem is largely independent
+of the base type of primitive recursion and can be lifted to all other
+instances considered.
 
 
 

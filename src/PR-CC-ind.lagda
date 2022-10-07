@@ -1,4 +1,5 @@
-\begin{code}
+\begin{code}[hide]
+{-# OPTIONS --allow-unsolved-metas #-}
 module PR-CC-ind where
 
 open import Data.Fin using (Fin; zero; suc)
@@ -6,7 +7,7 @@ open import Data.Unit using (⊤; tt)
 open import Data.List using (List; [] ; _∷_; _++_; map; concat)
 open import Data.Nat using (ℕ; suc; zero; _+_)
 open import Data.Vec using (Vec;[];_∷_)
-open import Data.Product using (_×_; _,_; proj₁; proj₂; <_,_>)
+open import Data.Product using (_×_; _,_; proj₁; proj₂) renaming (<_,_> to ⟨_,_⟩)
 open import Data.Sum using (_⊎_; inj₁; inj₂)
 open import Function using (_∘_; const)
 import Relation.Binary.PropositionalEquality as Eq
@@ -19,7 +20,9 @@ open import Utils
 infix 6 _→ᴾ_
 infix 7 _`×_
 infix 8 _`+_
-
+\end{code}
+\newcommand\ccDataTy{%
+\begin{code}
 data Ty n : Set where
   `𝟙   : Ty n
   _`×_ : Ty n → Ty n → Ty n
@@ -27,6 +30,10 @@ data Ty n : Set where
   `    : Fin n → Ty n
   ind  : Ty (suc n) → Ty n
 
+TY = Ty 0
+\end{code}
+}
+\begin{code}[hide]
 Ren : ℕ → ℕ → Set
 Ren n m = Fin n → Fin m
 
@@ -85,39 +92,39 @@ subsub123 T0 T1 T2 = subsub{m = 1}{o = 0}{n = 2} (λ{ zero → T0}) (λ{ zero �
 
 
 variable
-  T U V : Ty 0
+  T U V : TY
   G : Ty 1
-
-data _→ᴾ_ : Ty 0 → Ty 0 → Set where
-  F : (h : sub₀ T G `× (sub₀ (ind G) G `× U) →ᴾ T)
-    → (ind G `× U →ᴾ T)
-  P : (h : sub₀ (T `× ind G) G `× U →ᴾ T)
-    → (ind G `× U →ᴾ T)
-  fold : sub₀ (ind G) G →ᴾ ind G
-  --
-  C : (f : U →ᴾ V)
-    → (g : T →ᴾ U)
-    → (T →ᴾ V)
-  --
+\end{code}
+\newcommand\ccDataPR{%
+\begin{code}
+data _→ᴾ_ : TY → TY → Set where
   `0 : T →ᴾ `𝟙
   id : T →ᴾ T
+  C  : (f : U →ᴾ V) → (g : T →ᴾ U) → (T →ᴾ V)
   --
-  `# : (f : T →ᴾ U)
-     → (g : T →ᴾ V)
-     → (T →ᴾ U `× V)
+  `# : (f : T →ᴾ U) → (g : T →ᴾ V) → (T →ᴾ U `× V)
   π₁ : U `× V →ᴾ U
   π₂ : U `× V →ᴾ V
   --
   ι₁ : U →ᴾ U `+ V
   ι₂ : V →ᴾ U `+ V
   `case : (f : U →ᴾ T) → (g : V →ᴾ T) → U `+ V →ᴾ T
-
+  --
+  fold : sub₀ (ind G) G →ᴾ ind G
+  P : (h : sub₀ (T `× ind G) G `× U →ᴾ T) → (ind G `× U →ᴾ T)
+\end{code}
+}
+\begin{code}[hide]
+  F : (h : sub₀ T G `× (sub₀ (ind G) G `× U) →ᴾ T)
+    → (ind G `× U →ᴾ T)
 -- or more generally with n-ary sum and product types
   -- π : {T* : Vec (Ty 0) n} → (i : Fin n) → `X T* →ᴾ lookup T* i
   -- ι : {T* : Vec (Ty 0) n} → (i : Fin n) → lookup T* i → `S T*
 -- interpretation
-
-⟦_⟧ᵀ : Ty 0 → Set
+\end{code}
+\newcommand\ccDataAlg{%
+\begin{code}
+⟦_⟧ᵀ : TY → Set
 
 data Alg (G : Ty 1) : Set where
   fold : ⟦ sub₀ (ind G) G ⟧ᵀ → Alg G 
@@ -126,7 +133,9 @@ data Alg (G : Ty 1) : Set where
 ⟦ T `× U ⟧ᵀ = ⟦ T ⟧ᵀ × ⟦ U ⟧ᵀ
 ⟦ T `+ U ⟧ᵀ = ⟦ T ⟧ᵀ ⊎ ⟦ U ⟧ᵀ
 ⟦ ind G ⟧ᵀ  = Alg G
-
+\end{code}
+}
+\begin{code}[hide]
 fmap : ∀ {T} {G₀ : Ty 1}
   → (f : ⟦ ind G₀ ⟧ᵀ → ⟦ T ⟧ᵀ) (G : Ty 1)
   → ⟦ sub₀ (ind G₀) G ⟧ᵀ → ⟦ sub₀ T G ⟧ᵀ
@@ -137,37 +146,49 @@ fmap f (G `+ H) (inj₂ y) = inj₂ (fmap f H y)
 fmap f (` zero) v = f v
 fmap f (ind G) (fold x) = fold {!!}
 --- needs to be recursive over `ind G`
-
-fmap′ : ∀ {T} → {G₀ : Ty 1} (f : ⟦ ind G₀ ⟧ᵀ → ⟦ T ⟧ᵀ) (G : Ty 1) → ⟦ sub₀ (ind G₀) G ⟧ᵀ → ⟦ sub₀ (T `× ind G₀) G ⟧ᵀ
-fmap′ f `𝟙 tt = tt
-fmap′ f (G `× H) (x , y) = (fmap′ f G x) , (fmap′ f H y)
-fmap′ f (G `+ H) (inj₁ x) = inj₁ (fmap′ f G x)
-fmap′ f (G `+ H) (inj₂ y) = inj₂ (fmap′ f H y)
-fmap′ f (` zero) v = f v , v
-fmap′ {_}{G₀} f (ind G) (fold x) =
+\end{code}
+\newcommand\ccFunFmap{%
+\begin{code}
+fmap′ : ∀ {T}{G₀ : Ty 1} (G : Ty 1) (f : ⟦ ind G₀ ⟧ᵀ → ⟦ T ⟧ᵀ)
+  → ⟦ sub₀ (ind G₀) G ⟧ᵀ → ⟦ sub₀ (T `× ind G₀) G ⟧ᵀ
+fmap′ `𝟙       f tt        = tt
+fmap′ (G `× H) f (x , y)   = (fmap′ G f x) , (fmap′ H f y)
+fmap′ (G `+ H) f (inj₁ x) = inj₁ (fmap′ G f x)
+fmap′ (G `+ H) f (inj₂ y) = inj₂ (fmap′ H f y)
+fmap′ (` zero) f v         = f v , v
+\end{code}
+}
+\begin{code}[hide]
+fmap′ {_}{G₀} (ind G) f (fold x) =
   let G′ : Ty 1
       G′ = sub (λ{ zero → ind G ; (suc zero) → ` zero}) G
-      r′ = fmap′ f G′ {!x!}
+      r′ = fmap′ G′ f {!x!}
   in fold {!!}
 --- needs to be recursive over `ind G`
 
 {-# TERMINATING #-}
+\end{code}
+\newcommand\ccFunEval{%
+\begin{code}
 eval : (T →ᴾ U) → ⟦ T ⟧ᵀ → ⟦ U ⟧ᵀ
-eval (F {G = G} p) = λ{ (fold x , u) → eval p ((fmap (λ v → eval (F p) (v , u)) G x) , (x , u))}
-eval (P {G = G} p) = λ{ (fold x , u) → eval p ((fmap′ (λ v → eval (P p) (v , u)) G x) , u)}
-eval (C f g)  = eval f ∘ eval g
-eval fold     = fold
 eval `0       = const tt
 eval id       = λ v → v
-eval (`# f g) = < eval f , eval g >
+eval (C f g)  = eval f ∘ eval g
+eval (`# f g) = ⟨ eval f , eval g ⟩
 eval π₁       = proj₁
 eval π₂       = proj₂
 eval ι₁       = inj₁
 eval ι₂       = inj₂
 eval (`case f g) = λ{ (inj₁ x) → eval f x ; (inj₂ y) → eval g y}
+eval fold     = fold
+eval (P {G = G} h) = λ{ (fold x , u) → eval h ((fmap′ G (λ v → eval (P h) (v , u)) x) , u)}
+\end{code}
+}
+\begin{code}[hide]
+eval (F {G = G} p) = λ{ (fold x , u) → eval p ((fmap (λ v → eval (F p) (v , u)) G x) , (x , u))}
 \end{code}
 
-\begin{code}
+\begin{code}[hide]
 mkvec : Ty 0 → ℕ → Ty 0
 mkvec T zero = `𝟙
 mkvec T (suc n) = T `× mkvec T n
@@ -175,27 +196,38 @@ mkvec T (suc n) = T `× mkvec T n
 lookup : (i : Fin n) → mkvec T n →ᴾ T
 lookup zero = π₁
 lookup (suc i) = C (lookup i) π₂
-
+\end{code}
+\newcommand\ccFunAssocDist{%
+\begin{code}
 assoc-× : (U `× V) `× T →ᴾ U `× (V `× T)
 assoc-× = `# (C π₁ π₁) (`# (C π₂ π₁) π₂)
 
-dist-+-x : (U `+ V) `× T →ᴾ (U `× T) `+ (V `× T)
-dist-+-x = {!!}
+postulate
+  dist-+-x : (U `+ V) `× T →ᴾ (U `× T) `+ (V `× T)
 \end{code}
-
-\begin{code}
+}
+\begin{code}[hide]
 module FromNats where
+\end{code}
+\newcommand\ccDefGNat{%
+\begin{code}
   G-Nat : Ty 1
   G-Nat = `𝟙 `+ ` zero
 
   Nat = ind G-Nat
+\end{code}
+}
+\begin{code}[hide]
 
   import PR-Nat as Nats
 
+\end{code}
+\newcommand\ccDefNatToInd{%
+\begin{code}
   ⟦_⟧  : Nats.PR n → mkvec Nat n →ᴾ Nat
   ⟦_⟧* : Vec (Nats.PR n) m → mkvec Nat n →ᴾ mkvec Nat m
 
-  ⟦ Nats.Z ⟧      = C (C fold ι₁) `0
+  ⟦ Nats.Z ⟧      = C fold ι₁
   ⟦ Nats.σ ⟧      = C (C fold ι₂) π₁
   ⟦ Nats.π i ⟧    = lookup i
   ⟦ Nats.C f g* ⟧ = C ⟦ f ⟧ ⟦ g* ⟧*
@@ -203,7 +235,9 @@ module FromNats where
 
   ⟦ [] ⟧*         = `0
   ⟦ p ∷ p* ⟧*     = `# ⟦ p ⟧ ⟦ p* ⟧*
-
+\end{code}
+}
+\begin{code}[hide]
 module FromWords where
   Alpha : Ty 0
   Alpha = `𝟙 `+ `𝟙
