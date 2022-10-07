@@ -37,7 +37,7 @@ Normal constructors, projection, and composition are as before.
 The translation for primitive recursion merges the functions $g$ and $h$ into a single indexed function.
 \begin{code}
 ⟦_⟧ : Words.PR A n → Trees.PR (make-R A) n
-⟦ Words.Z ⟧      = Trees.C (Trees.σ nothing) []
+⟦ Words.Z ⟧      = Trees.σ nothing
 ⟦ Words.σ a ⟧    = Trees.σ (just a)
 ⟦ Words.π i ⟧    = Trees.π i
 ⟦ Words.C f g* ⟧ = Trees.C ⟦ f ⟧ (map ⟦_⟧ g*)
@@ -52,7 +52,7 @@ sound : ∀ (p : Words.PR A n) (v* : Vec (List A) n)
 sound* : ∀ (p* : Vec (Words.PR A n) m) (v* : Vec (List A) n)
   → map ⟦_⟧ⱽ (Words.eval* p* v*) ≡ Trees.eval* (map ⟦_⟧ p*) (map ⟦_⟧ⱽ v*)
 
-sound Words.Z v* = refl
+sound Words.Z [] = refl
 sound (Words.σ a) [ x ] = refl
 sound (Words.π i) v* = sym (lookup-map i ⟦_⟧ⱽ v*)
 sound (Words.C f g*) v* rewrite sound f (Words.eval* g* v*) | sound* g* v* = refl

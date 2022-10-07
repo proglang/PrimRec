@@ -33,7 +33,7 @@ addP=+ (suc m) n rewrite addP=+ m n = refl
 -- multiplication
 
 mulP : PR 2
-mulP = P Z (C addP [ π (suc (suc zero)) , π zero ])
+mulP = P (C Z []) (C addP [ π (suc (suc zero)) , π zero ])
 
 mulP=* : ∀ m n → eval mulP [ m , n ] ≡ m * n
 mulP=* zero n = refl
@@ -45,7 +45,7 @@ mulP=* (suc m) n
 -- exponentiation
 
 expP : PR 2
-expP = C (P (C σ [ Z ]) (C mulP [ π (suc (suc zero)) , π zero ])) [ π (suc zero) , π zero ]
+expP = C (P (C σ [ C Z [] ]) (C mulP [ π (suc (suc zero)) , π zero ])) [ π (suc zero) , π zero ]
 
 expP=^ : ∀ m n → eval expP [ m , n ] ≡ m ^ n
 expP=^ m zero = refl
@@ -104,7 +104,7 @@ TRUE  = 1
 FALSE = 0
 
 isZeroP : PR 1
-isZeroP = P (C σ [ Z ]) Z
+isZeroP = P (C σ [ C Z [] ]) (C Z [])
 
 isZero : ℕ → ℕ
 isZero zero = TRUE
@@ -133,7 +133,7 @@ notP : PR 1
 notP = isZeroP
 
 toBoolP : PR 1
-toBoolP = P Z (C σ [ Z ])
+toBoolP = P Z (C σ [ C Z [] ])
 
 data _~_ : ℕ → ℕ → Set where
   FF : zero ~ zero
@@ -176,10 +176,10 @@ smallerP=smaller m n rewrite subP=∸ m n = toBool~ (m ∸ n) (smaller m n) (sub
 remGP : PR 3
 remGP = C ifElseP [ C smallerP [ π (suc (suc zero)) , C σ [ π zero ] ]
                   , C σ [ π zero ]
-                  , Z ]
+                  , C Z [] ]
 
 remP : PR 2
-remP = P Z remGP
+remP = P (C Z []) remGP
 
 -- inefficent, but unclear how to handle Nat.DivMod._%_
 rem : ℕ → ℕ → ℕ

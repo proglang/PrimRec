@@ -21,7 +21,7 @@ The type \AFin{n} comprises the elements $\{0, 1, \dots, n-1\}$, which are exact
 The function \AgdaFunction{lookup v* i} accesses such a vector at index $i$.
 \begin{code}
 data PR : ℕ → Set where
-  Z : PR n                      -- zero
+  Z : PR zero                   -- zero
   σ : PR (suc zero)             -- successor
   π : (i : Fin n)               -- i-th projection
     → PR n

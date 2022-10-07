@@ -15,7 +15,7 @@ open import Utils
 \end{code}
 \begin{code}
 data PR A : ℕ → Set where
-  Z : PR A n
+  Z : PR A zero
   σ : (a : A) → PR A (suc zero)
   π : (i : Fin n) → PR A n
   C : (f : PR A m) → (g* : Vec (PR A n) m) → PR A n
