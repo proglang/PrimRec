@@ -37,9 +37,10 @@ convPR : ∀ {n} → PR n → PR (suc (suc n)) → Exp zero (suc n)
 prToST′ : PR m → Exp zero m
 \end{code}}
 
+-- prToST′  {m} Z =  mkConstZero m
 
 \begin{code}[hide]
-prToST′  {m} Z = mkConstZero m
+prToST′  {m} Z =  CZero
 prToST′  σ = Suc
 \end{code}
 
@@ -68,8 +69,10 @@ embeddPR-ST-Sound : (pr : PR n) (vs : Vec ℕ n) →
         evalSTClosed (prToST′   pr) vs ≡ eval pr vs
 \end{code}}
 
+-- embeddPR-ST-Sound {n} Z v =  evalMkConstZero n v
+
 \begin{code}[hide]
-embeddPR-ST-Sound {n} Z v =  evalMkConstZero n v
+embeddPR-ST-Sound  Z [] = refl 
 \end{code}
 
 \newcommand{\embedPRSTSoundProj}{%

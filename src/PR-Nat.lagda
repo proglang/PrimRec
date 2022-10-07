@@ -21,7 +21,7 @@ The type \AFin{n} comprises the elements $\{0, 1, \dots, n-1\}$, which are exact
 The function \AgdaFunction{lookup v* i} accesses such a vector at index $i$.
 \begin{code}
 data PR : ℕ → Set where
-  Z : PR n                      -- zero
+  Z : PR zero                      -- zero
   σ : PR (suc zero)             -- successor
   π : (i : Fin n)               -- i-th projection
     → PR n
@@ -38,7 +38,7 @@ We represent ${ℕ}^n$ by the vector type \AVec{ℕ}n and use the bracket notati
 eval  : PR n → (Vec ℕ n → ℕ)
 eval* : Vec (PR n) m → Vec ℕ n → Vec ℕ m
 
-eval Z        v*           = 0
+eval Z        []          = 0
 eval σ        [ x ]        = suc x
 eval (π i)    v*           = lookup v* i
 eval (C f g*) v*           = eval f (eval* g* v*)

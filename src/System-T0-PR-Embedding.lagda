@@ -72,7 +72,7 @@ mapToNInjectEq  {_}{n} {m} ys xs rewrite helperLookupMapInject ys xs (toN m) = l
 -- -- -- embedding
 -- -- ------------------------------------------------------------------------------
 natToPR : ℕ → (m : ℕ) → PR m
-natToPR zero m = Z
+natToPR zero m = C Z []
 natToPR (suc n) m = C σ ( [ natToPR n m ])
 
 convApp : ∀ {n m}  (f : Exp n (suc m)) (x : Exp n zero) → PR (n + m)
@@ -93,7 +93,7 @@ sTtoPR (Var x) = π (opposite x)
 sTtoPR (Lam exp) = sTtoPR exp
 \end{code}}
 \begin{code}[hide]
-sTtoPR CZero = Z
+sTtoPR CZero = C Z []
 \end{code}
 \newcommand{\sTtoPRSuc}{%
 \begin{code}

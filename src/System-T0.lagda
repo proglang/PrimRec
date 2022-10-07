@@ -145,7 +145,7 @@ evalMkConstZero n v = prepLambdasEvalClose v CZero
 mkProj : Fin m  →  Exp zero m
 mkProj i = prepLambdas zero _ (Var (opposite i))
 
-evalMkProj : (i : Fin (suc n)) (args : Vec ℕ (suc n))  → 
+evalMkProj : ∀ {n : ℕ} (i : Fin (suc n)) (args : Vec ℕ (suc n))  → 
         evalSTClosed (mkProj i) args ≡ lookup args i
 evalMkProj i vs = evalST (mkProj i) [] vs 
     ≡⟨ prepLambdasEvalClose vs (Var (opposite i)) ⟩ 
@@ -180,7 +180,7 @@ evalApply*=eval-map-apply exp [] ctx = refl
 evalApply*=eval-map-apply {n} {suc m } exp (arg ∷ args) ctx rewrite evalApply*=eval-map-apply {n} {m} (App exp arg) args ctx = refl
 
 
-maplookupEq :  {o n m  : ℕ}  (zs : Vec ℕ o) (xs : Vec ℕ n) (ys : Vec ℕ m) → (map (λ x → lookup (zs ++ xs ++r ys) x) (mkFinvec' n m o)) ≡ xs
+maplookupEq : ∀  {o n m  : ℕ}  (zs : Vec ℕ o) (xs : Vec ℕ n) (ys : Vec ℕ m) → (map (λ x → lookup (zs ++ xs ++r ys) x) (mkFinvec' n m o)) ≡ xs
 maplookupEq zs [] ys  = refl
 maplookupEq {o} {suc n} {m}  zs (x ∷ xs) ys   rewrite lookup-++ʳ zs (xs ++r (x ∷ ys))  (inject+ m (fromℕ n)) | lkupfromN {v = x} xs ys  = cong (λ vec → x ∷ vec) (maplookupEq  zs xs (x ∷ ys) )
 
