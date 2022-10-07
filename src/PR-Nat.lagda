@@ -38,7 +38,7 @@ We represent ${ℕ}^n$ by the vector type \AVec{ℕ}n and use the bracket notati
 eval  : PR n → (Vec ℕ n → ℕ)
 eval* : Vec (PR n) m → Vec ℕ n → Vec ℕ m
 
-eval Z        v*           = 0
+eval Z        []          = 0
 eval σ        [ x ]        = suc x
 eval (π i)    v*           = lookup v* i
 eval (C f g*) v*           = eval f (eval* g* v*)
