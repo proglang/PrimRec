@@ -1,11 +1,17 @@
+
+
 \begin{code}[hide]
+{-# OPTIONS --rewriting #-}
+
 {-# OPTIONS --allow-unsolved-metas #-}
 module PR-CC-ind where
+
 
 open import Data.Fin using (Fin; zero; suc)
 open import Data.Unit using (⊤; tt)
 open import Data.List using (List; [] ; _∷_; _++_; map; concat)
 open import Data.Nat using (ℕ; suc; zero; _+_)
+open import Data.Nat.Properties using (+-suc)
 open import Data.Vec using (Vec;[];_∷_)
 open import Data.Product using (_×_; _,_; proj₁; proj₂) renaming (<_,_> to ⟨_,_⟩)
 open import Data.Sum using (_⊎_; inj₁; inj₂)
@@ -15,6 +21,7 @@ open Eq
   using (_≡_; _≢_; refl; sym; trans; cong; cong₂; subst)
 open Eq.≡-Reasoning using (begin_; _≡⟨⟩_; step-≡˘; step-≡; _∎)
 open import Utils
+open import Agda.Builtin.Equality.Rewrite
 
 
 infix 6 _→ᴾ_
@@ -65,16 +72,44 @@ sub σ (ind G)  = ind (sub (extˢ σ) G)
 sub₀ : Ty 0 → Ty 1 → Ty 0
 sub₀ T G       = sub (λ{ zero → T}) G
 
+
+
+extˢ-iterate : ∀ (o : ℕ)(sub : Sub n m) → Sub (o + n) (o + m)
+extˢ-iterate zero sub = sub
+extˢ-iterate (suc o) sub = extˢ ( extˢ-iterate o sub)
+
+-- idBelowNˢ : ∀ (o : ℕ) →  Sub (o + n) (o + (suc n))
+-- idBelowNˢ o = extˢ-iterate o  suc 
+
+extᴿ-iterate : ∀ (o : ℕ)(sub : Ren n m) → Ren (o + n) (o + m)
+extᴿ-iterate zero sub = sub
+extᴿ-iterate (suc o) sub = extᴿ ( extᴿ-iterate o sub)
+
+idBelowN : ∀ {n} (o : ℕ) →  Ren (o + n) ((o + suc n))
+idBelowN o = extᴿ-iterate o  suc 
+
+{-# REWRITE +-suc #-}
+
+
+subExtHelper1 : ∀  (o)(m)(n) (σ₁ : Sub  (o + m) (o + n)) (ty : Ty (o + m)) → sub (extˢ σ₁) (ren (idBelowN {m} o) ty) ≡ ren (idBelowN {n} o) ((sub σ₁)  ty)
+subExtHelper1 o m n σ `𝟙 = refl
+subExtHelper1 o m n σ (tyA `× tyB) rewrite subExtHelper1 o m n σ tyA | subExtHelper1 o m n σ tyB = refl
+subExtHelper1 o m n σ (tyA `+ tyB) rewrite subExtHelper1 o m n σ tyA | subExtHelper1 o m n σ tyB = refl
+subExtHelper1 o m n σ (` x) = {! x  !}
+subExtHelper1 o m n σ (ind ty) = cong ind (subExtHelper1 (suc o) m n  (extˢ σ) ty) 
+
+
+
+subextHelper2 : ∀ {m} {o} (σ₁ : Sub m o) (ty : Ty m) → sub (extˢ σ₁) (ren suc ty) ≡ ren suc ((sub σ₁)  ty)
+subextHelper2 {m} {o} σ  ty = subExtHelper1 zero m o  σ  ty
+
+subextHelper : (σ₁ : Sub m o) (σ₂ : Sub n m) → ∀ x → sub (extˢ σ₁) (ren suc (σ₂ x)) ≡ ren suc ((sub σ₁ ∘ σ₂) x)
+subextHelper σ₁ σ₂ f = subextHelper2 σ₁  (σ₂ f)
+
+
 subext : (σ₁ : Sub m o) (σ₂ : Sub n m) → ∀ x → (sub (extˢ σ₁) ∘ extˢ σ₂) x ≡ extˢ (sub σ₁ ∘ σ₂) x
 subext σ₁ σ₂ zero = refl
-subext σ₁ σ₂ (suc x) = begin
-                        (sub (extˢ σ₁) ∘ extˢ σ₂) (suc x)
-                      ≡⟨⟩
-                        sub (extˢ σ₁) (extˢ σ₂ (suc x))
-                      ≡⟨⟩
-                        sub (extˢ σ₁) (ren suc (σ₂ x))
-                      ≡⟨ {!!} ⟩
-                        {!!}
+subext σ₁ σ₂ (suc x) =  subextHelper σ₁ σ₂ x  
 
 subsub : (σ₁ : Sub m o) (σ₂ : Sub n m) (T : Ty n) → sub σ₁ (sub σ₂ T) ≡ sub (sub σ₁ ∘ σ₂) T
 subsub σ₁ σ₂ `𝟙 = refl
@@ -87,7 +122,7 @@ subsub σ₁ σ₂ (ind T) rewrite subsub (extˢ σ₁) (extˢ σ₂) T = cong i
 subsub123 : ∀ (T0 : Ty 0) (T1 : Ty 1) (T2 : Ty 2)
   →  sub₀ T0 (sub (λ{ zero → T1; (suc zero) → ` zero }) T2)
   ≡ sub (λ{ zero → sub₀ T0 T1; (suc zero) → T0}) T2
-subsub123 T0 T1 T2 = subsub{m = 1}{o = 0}{n = 2} (λ{ zero → T0}) (λ{ zero → T1 ; (suc zero) → ` zero}) {!T2!}
+subsub123 T0 T1 T2 = {!   !} -- subsub{m = 1}{o = 0}{n = 2} (λ{ zero → T0}) (λ{ zero → T1 ; (suc zero) → ` zero}) {!T2!}
 
 
 
@@ -312,3 +347,4 @@ module FromTrees where
   ⟦ [] ⟧*         = `0
   ⟦ p ∷ p* ⟧*     = `# ⟦ p ⟧ ⟦ p* ⟧*
 \end{code}
+ 
