@@ -81,27 +81,37 @@ extˢ-iterate (suc o) sub = extˢ ( extˢ-iterate o sub)
 -- idBelowNˢ : ∀ (o : ℕ) →  Sub (o + n) (o + (suc n))
 -- idBelowNˢ o = extˢ-iterate o  suc 
 
-extᴿ-iterate : ∀ (o : ℕ)(sub : Ren n m) → Ren (o + n) (o + m)
+extᴿ-iterate : ∀ {n} {m} (o : ℕ)(sub : Ren n m) → Ren (o + n) (o + m)
 extᴿ-iterate zero sub = sub
 extᴿ-iterate (suc o) sub = extᴿ ( extᴿ-iterate o sub)
 
-idBelowN : ∀ {n} (o : ℕ) →  Ren (o + n) ((o + suc n))
-idBelowN o = extᴿ-iterate o  suc 
+idBelowN : ∀ (n : ℕ) (o : ℕ) →  Ren (o + n) ((o + suc n))
+idBelowN n o = extᴿ-iterate o  suc 
 
 {-# REWRITE +-suc #-}
 
 
-subExtHelper1 : ∀  (o)(m)(n) (σ₁ : Sub  (o + m) (o + n)) (ty : Ty (o + m)) → sub (extˢ σ₁) (ren (idBelowN {m} o) ty) ≡ ren (idBelowN {n} o) ((sub σ₁)  ty)
+subExtVarHelper : ∀ (o : ℕ)(m : ℕ)(n : ℕ) (x : Fin (o + m)) (σ : Sub m n)  → 
+  (extˢ-iterate  (suc o) σ) (idBelowN m o x) ≡ 
+  ren (idBelowN n o) (extˢ-iterate o σ x)
+subExtVarHelper zero (suc m) n (x) σ = refl
+subExtVarHelper (suc o) m n zero σ = refl
+subExtVarHelper (suc o) (m) n (suc x) σ  rewrite subExtVarHelper o m n x σ = 
+  {! x  !}
+
+
+
+subExtHelper1 : ∀  (o : ℕ)(m : ℕ)(n : ℕ) (σ₁ : Sub m n  ) (ty : Ty (o + m)) → 
+  sub (extˢ-iterate (suc o) σ₁) (ren (idBelowN m o) ty) ≡  ren (idBelowN n o) ((sub (extˢ-iterate o σ₁))  ty)
 subExtHelper1 o m n σ `𝟙 = refl
 subExtHelper1 o m n σ (tyA `× tyB) rewrite subExtHelper1 o m n σ tyA | subExtHelper1 o m n σ tyB = refl
 subExtHelper1 o m n σ (tyA `+ tyB) rewrite subExtHelper1 o m n σ tyA | subExtHelper1 o m n σ tyB = refl
-subExtHelper1 o m n σ (` x) = {! x  !}
-subExtHelper1 o m n σ (ind ty) = cong ind (subExtHelper1 (suc o) m n  (extˢ σ) ty) 
-
+subExtHelper1 o m n σ (` x) = subExtVarHelper o m n x σ
+subExtHelper1 o m n σ (ind ty) = cong ind (subExtHelper1 (suc o) m n σ ty) 
 
 
 subextHelper2 : ∀ {m} {o} (σ₁ : Sub m o) (ty : Ty m) → sub (extˢ σ₁) (ren suc ty) ≡ ren suc ((sub σ₁)  ty)
-subextHelper2 {m} {o} σ  ty = subExtHelper1 zero m o  σ  ty
+subextHelper2 {m} {o} σ ty = subExtHelper1 zero m o  σ  ty
 
 subextHelper : (σ₁ : Sub m o) (σ₂ : Sub n m) → ∀ x → sub (extˢ σ₁) (ren suc (σ₂ x)) ≡ ren suc ((sub σ₁ ∘ σ₂) x)
 subextHelper σ₁ σ₂ f = subextHelper2 σ₁  (σ₂ f)
@@ -111,12 +121,21 @@ subext : (σ₁ : Sub m o) (σ₂ : Sub n m) → ∀ x → (sub (extˢ σ₁) �
 subext σ₁ σ₂ zero = refl
 subext σ₁ σ₂ (suc x) =  subextHelper σ₁ σ₂ x  
 
-subsub : (σ₁ : Sub m o) (σ₂ : Sub n m) (T : Ty n) → sub σ₁ (sub σ₂ T) ≡ sub (sub σ₁ ∘ σ₂) T
+
+
+-- PLFA 
+postulate
+  extensionality : ∀ {A B : Set} {f g : A → B}
+    → (∀ (x : A) → f x ≡ g x)
+      -----------------------
+    → f ≡ g
+
+subsub : (σ₁ : Sub m o) (σ₂ : Sub n m) (T : Ty n) → sub σ₁ (sub σ₂ T) ≡ sub ((sub σ₁) ∘ σ₂) T
 subsub σ₁ σ₂ `𝟙 = refl
 subsub σ₁ σ₂ (T `× U) rewrite subsub σ₁ σ₂ T | subsub σ₁ σ₂ U = refl
 subsub σ₁ σ₂ (T `+ U) rewrite subsub σ₁ σ₂ T | subsub σ₁ σ₂ U = refl
 subsub σ₁ σ₂ (` x) = refl
-subsub σ₁ σ₂ (ind T) rewrite subsub (extˢ σ₁) (extˢ σ₂) T = cong ind (cong (λ σ → sub σ T) {!subext σ₁ σ₂!})
+subsub σ₁ σ₂ (ind T) rewrite subsub (extˢ σ₁) (extˢ σ₂) T = cong ind  (cong (λ σ → sub σ T) {!   !})
 
 
 subsub123 : ∀ (T0 : Ty 0) (T1 : Ty 1) (T2 : Ty 2)
@@ -347,4 +366,4 @@ module FromTrees where
   ⟦ [] ⟧*         = `0
   ⟦ p ∷ p* ⟧*     = `# ⟦ p ⟧ ⟦ p* ⟧*
 \end{code}
- 
+  
