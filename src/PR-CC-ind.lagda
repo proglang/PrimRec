@@ -437,103 +437,99 @@ module FromNats where
   Nat = ind G-Nat
 \end{code}
 }
+
 \begin{code}[hide]
 
   import PR-Nat as Nats
 
 \end{code}
+\newcommand\ccDefNatToInd{%
+\begin{code}
+  ⟦_⟧  : Nats.PR n → mkvec Nat n →ᴾ Nat
+  ⟦_⟧* : Vec (Nats.PR n) m → mkvec Nat n →ᴾ mkvec Nat m
 
+  ⟦ Nats.Z ⟧      = C fold ι₁
+  ⟦ Nats.σ ⟧      = C (C fold ι₂) π₁
+  ⟦ Nats.π i ⟧    = lookup i
+  ⟦ Nats.C f g* ⟧ = C ⟦ f ⟧ ⟦ g* ⟧*
+  ⟦ Nats.P g h ⟧  = P (C (`case (C ⟦ g ⟧ π₂) (C ⟦ h ⟧ assoc-×)) dist-+-x)
 
+  ⟦ [] ⟧*         = `0
+  ⟦ p ∷ p* ⟧*     = `# ⟦ p ⟧ ⟦ p* ⟧*
+\end{code}
+}
+\begin{code}[hide]
+module FromWords where
+  Alpha : Ty 0
+  Alpha = `𝟙 `+ `𝟙
+  G-Alpha* : Ty 1
+  G-Alpha* = `𝟙 `+ (ren suc Alpha `× ` zero)
 
--- \newcommand\ccDefNatToInd{%
--- -- \begin{code}
--- --   ⟦_⟧  : Nats.PR n → mkvec Nat n →ᴾ Nat
--- --   ⟦_⟧* : Vec (Nats.PR n) m → mkvec Nat n →ᴾ mkvec Nat m
+  Alpha* : Ty 0
+  Alpha* = ind G-Alpha*
 
--- --   ⟦ Nats.zero ⟧      = C fold ι₁
--- --   ⟦ Nats.σ ⟧      = C (C fold ι₂) π₁
--- --   ⟦ Nats.π i ⟧    = lookup i
--- --   ⟦ Nats.C f g* ⟧ = C ⟦ f ⟧ ⟦ g* ⟧*
--- --   ⟦ Nats.P g h ⟧  = P (C (`case (C ⟦ g ⟧ π₂) (C ⟦ h ⟧ assoc-×)) dist-+-x)
+  ⟦_⟧ᴬ : ⟦ Alpha ⟧ᵀ → `𝟙 →ᴾ Alpha
+  ⟦ inj₁ tt ⟧ᴬ = ι₁
+  ⟦ inj₂ tt ⟧ᴬ = ι₂
 
--- --   ⟦ [] ⟧*         = `0
--- --   ⟦ p ∷ p* ⟧*     = `# ⟦ p ⟧ ⟦ p* ⟧*
--- -- \end{code}
--- -- }
+  import PR-Words as Words
 
--- \begin{code}[hide]
--- module FromWords where
---   Alpha : Ty 0
---   Alpha = `𝟙 `+ `𝟙
---   G-Alpha* : Ty 1
---   G-Alpha* = `𝟙 `+ (ren suc Alpha `× ` zero)
+  ⟦_⟧  : Words.PR ⟦ Alpha ⟧ᵀ n → mkvec Alpha* n →ᴾ Alpha*
+  ⟦_⟧* : Vec (Words.PR ⟦ Alpha ⟧ᵀ n) m → mkvec Alpha* n →ᴾ mkvec Alpha* m
 
---   Alpha* : Ty 0
---   Alpha* = ind G-Alpha*
+  ⟦ Words.Z ⟧ = C (C fold ι₁) `0
+  ⟦ Words.σ a ⟧ = C (C fold (C ι₂ (`# (C ⟦ a ⟧ᴬ `0) id))) π₁
+  ⟦ Words.π i ⟧ = lookup i
+  ⟦ Words.C f g* ⟧ = C ⟦ f ⟧ ⟦ g* ⟧*
+  ⟦ Words.P g h ⟧ = P (C (`case (C ⟦ g ⟧ π₂) (C (C (C (`case (C ⟦ h (inj₁ tt) ⟧ assoc-×) (C ⟦ h (inj₂ tt) ⟧ assoc-×)) dist-+-x) (`# (C (`case (C ι₁ π₂) (C ι₂ π₂)) π₁) π₂)) (`# (C dist-+-x π₁) π₂))) dist-+-x)
 
---   ⟦_⟧ᴬ : ⟦ Alpha ⟧ᵀ → `𝟙 →ᴾ Alpha
---   ⟦ inj₁ tt ⟧ᴬ = ι₁
---   ⟦ inj₂ tt ⟧ᴬ = ι₂
+  ⟦ [] ⟧*         = `0
+  ⟦ p ∷ p* ⟧*     = `# ⟦ p ⟧ ⟦ p* ⟧*
 
---   import PR-Words as Words
+module FromTrees where
+  -- generic stuff
+  symbols : (G : Ty 1) → Set
+  symbols G = ⟦ sub₀ `𝟙 G ⟧ᵀ
 
---   ⟦_⟧  : Words.PR ⟦ Alpha ⟧ᵀ n → mkvec Alpha* n →ᴾ Alpha*
---   ⟦_⟧* : Vec (Words.PR ⟦ Alpha ⟧ᵀ n) m → mkvec Alpha* n →ᴾ mkvec Alpha* m
+  -- enumerate symbols
+  dom : (G : Ty 1) → List (symbols G)
+  dom `𝟙 =  tt ∷ []
+  dom (G `× H) = concat (map (λ g → map (λ h → g , h) (dom H)) (dom G))
+  dom (G `+ H) = map inj₁ (dom G) ++ map inj₂ (dom H)
+  dom (` zero) = tt ∷ []
+  dom (ind G) = {!!}
 
---   ⟦ Words.zero ⟧ = C (C fold ι₁) `0
---   ⟦ Words.σ a ⟧ = C (C fold (C ι₂ (`# (C ⟦ a ⟧ᴬ `0) id))) π₁
---   ⟦ Words.π i ⟧ = lookup i
---   ⟦ Words.C f g* ⟧ = C ⟦ f ⟧ ⟦ g* ⟧*
---   ⟦ Words.P g h ⟧ = P (C (`case (C ⟦ g ⟧ π₂) (C (C (C (`case (C ⟦ h (inj₁ tt) ⟧ assoc-×) (C ⟦ h (inj₂ tt) ⟧ assoc-×)) dist-+-x) (`# (C (`case (C ι₁ π₂) (C ι₂ π₂)) π₁) π₂)) (`# (C dist-+-x π₁) π₂))) dist-+-x)
+  rank : (G : Ty 1) → symbols G → ℕ
+  rank `𝟙 tt = 0
+  rank (G `× H) (g , h) = rank G g + rank H h
+  rank (G `+ H) (inj₁ g) = rank G g
+  rank (G `+ H) (inj₂ h) = rank H h
+  rank (` zero) tt = 1
+  rank (ind G) sym-G = {!!}
 
---   ⟦ [] ⟧*         = `0
---   ⟦ p ∷ p* ⟧*     = `# ⟦ p ⟧ ⟦ p* ⟧*
+  import PR-Trees as Trees
 
--- module FromTrees where
---   -- generic stuff
---   symbols : (G : Ty 1) → Set
---   symbols G = ⟦ sub₀ `𝟙 G ⟧ᵀ
+  -- binary trees with signature { Leaf:0, Branch:2 }
+  G-Btree : Ty 1
+  G-Btree = `𝟙 `+ (` zero `× ` zero)
 
---   -- enumerate symbols
---   dom : (G : Ty 1) → List (symbols G)
---   dom `𝟙 =  tt ∷ []
---   dom (G `× H) = concat (map (λ g → map (λ h → g , h) (dom H)) (dom G))
---   dom (G `+ H) = map inj₁ (dom G) ++ map inj₂ (dom H)
---   dom (` zero) = tt ∷ []
---   dom (ind G) = {!!}
+  Btree : Ty 0
+  Btree = ind G-Btree
 
---   rank : (G : Ty 1) → symbols G → ℕ
---   rank `𝟙 tt = 0
---   rank (G `× H) (g , h) = rank G g + rank H h
---   rank (G `+ H) (inj₁ g) = rank G g
---   rank (G `+ H) (inj₂ h) = rank H h
---   rank (` zero) tt = 1
---   rank (ind G) sym-G = {!!}
+  R-Btree : Trees.Ranked
+  R-Btree = Trees.mkRanked (rank G-Btree)
 
---   import PR-Trees as Trees
+  ⟦_⟧  : Trees.PR R-Btree n → mkvec Btree n →ᴾ Btree
+  ⟦_⟧* : Vec (Trees.PR R-Btree n) m → mkvec Btree n →ᴾ mkvec Btree m
 
---   -- binary trees with signature { Leaf:0, Branch:2 }
---   G-Btree : Ty 1
---   G-Btree = `𝟙 `+ (` zero `× ` zero)
-
---   Btree : Ty 0
---   Btree = ind G-Btree
-
---   R-Btree : Trees.Ranked
---   R-Btree = Trees.mkRanked (rank G-Btree)
-
---   ⟦_⟧  : Trees.PR R-Btree n → mkvec Btree n →ᴾ Btree
---   ⟦_⟧* : Vec (Trees.PR R-Btree n) m → mkvec Btree n →ᴾ mkvec Btree m
-
---   ⟦ Trees.σ (inj₁ tt) ⟧ = C fold ι₁
---   ⟦ Trees.σ (inj₂ (tt , tt)) ⟧ = C fold (C ι₂ (`# π₁ (C π₁ π₂)))
---   ⟦ Trees.π i ⟧ = lookup i
---   ⟦ Trees.C f g* ⟧ = C ⟦ f ⟧ ⟦ g* ⟧*
---   ⟦ Trees.P h ⟧ = P (C (`case (C ⟦ h (inj₁ tt) ⟧ π₂)
---                               (C ⟦ h (inj₂ (tt , tt)) ⟧ (`# (C π₁ (C π₁ π₁)) (`# (C π₂ (C π₁ π₁)) (`# (C π₁ (C π₂ π₁)) (`# (C π₂ (C π₂ π₁)) π₂))))))
---                        dist-+-x)
+  ⟦ Trees.σ (inj₁ tt) ⟧ = C fold ι₁
+  ⟦ Trees.σ (inj₂ (tt , tt)) ⟧ = C fold (C ι₂ (`# π₁ (C π₁ π₂)))
+  ⟦ Trees.π i ⟧ = lookup i
+  ⟦ Trees.C f g* ⟧ = C ⟦ f ⟧ ⟦ g* ⟧*
+  ⟦ Trees.P h ⟧ = P (C (`case (C ⟦ h (inj₁ tt) ⟧ π₂)
+                              (C ⟦ h (inj₂ (tt , tt)) ⟧ (`# (C π₁ (C π₁ π₁)) (`# (C π₂ (C π₁ π₁)) (`# (C π₁ (C π₂ π₁)) (`# (C π₂ (C π₂ π₁)) π₂))))))
+                       dist-+-x)
   
---   ⟦ [] ⟧*         = `0
---   ⟦ p ∷ p* ⟧*     = `# ⟦ p ⟧ ⟦ p* ⟧*
--- \end{code}
-  
+  ⟦ [] ⟧*         = `0
+  ⟦ p ∷ p* ⟧*     = `# ⟦ p ⟧ ⟦ p* ⟧*
+\end{code}
