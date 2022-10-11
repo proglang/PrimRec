@@ -73,6 +73,31 @@ sub₀ : Ty 0 → Ty 1 → Ty 0
 sub₀ T G       = sub (λ{ zero → T}) G
 
 
+extᴿ-cong : ∀ (r1 r2 : Ren n m) → (∀ (f : Fin n) → r1 f ≡ r2 f) → (∀ (f : Fin (suc n)) → extᴿ r1 f ≡ extᴿ r2 f )
+extᴿ-cong r1 r2 eq zero = refl
+extᴿ-cong r1 r2 eq (suc f) = cong suc (eq f)
+
+extˢ-cong : ∀ (s1 s2 : Sub n m) → (∀ (f : Fin n) → s1 f ≡ s2 f) → (∀ (f : Fin (suc n)) → extˢ s1 f ≡ extˢ s2 f )
+extˢ-cong s1 s2 eq zero = refl
+extˢ-cong s1 s2 eq (suc f) = cong (ren suc) (eq f)
+
+
+extᴿ-cong-ren : ∀ (r1 r2 : Ren n m) → (∀ (f : Fin n) →  r1 f ≡  r2 f) → (∀ (ty : Ty (suc n)) → ren (extᴿ r1) ty ≡ ren (extᴿ r2) ty )
+extᴿ-cong-ren r1 r2 eq `𝟙 = refl
+extᴿ-cong-ren r1 r2 eq (tyA `× tyB) rewrite extᴿ-cong-ren r1 r2 eq tyA | extᴿ-cong-ren r1 r2 eq tyB = refl
+extᴿ-cong-ren r1 r2 eq (tyA `+ tyB) rewrite extᴿ-cong-ren r1 r2 eq tyA | extᴿ-cong-ren r1 r2 eq tyB = refl
+extᴿ-cong-ren r1 r2 eq (` x) = cong ` (extᴿ-cong r1 r2 eq x)
+extᴿ-cong-ren r1 r2 eq (ind ty) = cong ind (extᴿ-cong-ren (extᴿ r1) (extᴿ r2) (extᴿ-cong r1 r2 eq) ty)
+
+
+extˢ-cong-sub : ∀ (s1 s2 : Sub n m) → (∀ (f : Fin n) →  s1 f ≡  s2 f) → (∀ (ty : Ty (suc n)) → sub (extˢ s1) ty ≡ sub (extˢ s2) ty )
+extˢ-cong-sub s1 s2 eq `𝟙 = refl
+extˢ-cong-sub s1 s2 eq (tyA `× tyB) rewrite extˢ-cong-sub s1 s2 eq tyA | extˢ-cong-sub s1 s2 eq tyB = refl
+extˢ-cong-sub s1 s2 eq (tyA `+ tyB) rewrite extˢ-cong-sub s1 s2 eq tyA | extˢ-cong-sub s1 s2 eq tyB = refl
+extˢ-cong-sub s1 s2 eq (` x) = extˢ-cong s1 s2 eq x
+extˢ-cong-sub s1 s2 eq (ind ty) = cong ind (extˢ-cong-sub (extˢ s1) (extˢ s2) (extˢ-cong s1 s2 eq) ty)
+
+
 
 extˢ-iterate : ∀ (o : ℕ)(sub : Sub n m) → Sub (o + n) (o + m)
 extˢ-iterate zero sub = sub
