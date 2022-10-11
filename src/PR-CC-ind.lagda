@@ -44,7 +44,7 @@ TY = Ty 0
 Ren : ℕ → ℕ → Set
 Ren n m = Fin n → Fin m
 
-extᴿ : Ren n m → Ren (suc n) (suc m)
+extᴿ : ∀ {n m} → Ren n m → Ren (suc n) (suc m)
 extᴿ ρ zero    = zero
 extᴿ ρ (suc x) = suc (ρ x)
 
@@ -72,6 +72,20 @@ sub σ (ind G)  = ind (sub (extˢ σ) G)
 sub₀ : Ty 0 → Ty 1 → Ty 0
 sub₀ T G       = sub (λ{ zero → T}) G
 
+_⊢_⇒_ : (ℕ → Set) → ℕ → ℕ → Set
+_⊢_⇒_ Trm n m = ∀{n : ℕ} → Fin n → Trm m
+
+
+record Mappable (Trm : ℕ → Set) : Set where
+  field “_”  : ∀{n} → Trm n → Ty n
+  field ext : ∀ {n m} → Trm ⊢ n ⇒ m → Trm ⊢ (suc n) ⇒ (suc m)
+  field ext-cong : ∀{n m}{σ τ : Trm ⊢ n ⇒ m} → (∀ (x : Fin n) → σ x ≡ τ x) → (∀(x : Fin (suc n)) → ext {n} σ x ≡ ext {n} τ x)
+
+
+
+open Mappable {{...}} public
+
+
 
 extᴿ-cong : ∀ (r1 r2 : Ren n m) → (∀ (f : Fin n) → r1 f ≡ r2 f) → (∀ (f : Fin (suc n)) → extᴿ r1 f ≡ extᴿ r2 f )
 extᴿ-cong r1 r2 eq zero = refl
@@ -81,79 +95,44 @@ extˢ-cong : ∀ (s1 s2 : Sub n m) → (∀ (f : Fin n) → s1 f ≡ s2 f) → (
 extˢ-cong s1 s2 eq zero = refl
 extˢ-cong s1 s2 eq (suc f) = cong (ren suc) (eq f)
 
-
-extᴿ-cong-ren : ∀ (r1 r2 : Ren n m) → (∀ (f : Fin n) →  r1 f ≡  r2 f) → (∀ (ty : Ty (suc n)) → ren (extᴿ r1) ty ≡ ren (extᴿ r2) ty )
-extᴿ-cong-ren r1 r2 eq `𝟙 = refl
-extᴿ-cong-ren r1 r2 eq (tyA `× tyB) rewrite extᴿ-cong-ren r1 r2 eq tyA | extᴿ-cong-ren r1 r2 eq tyB = refl
-extᴿ-cong-ren r1 r2 eq (tyA `+ tyB) rewrite extᴿ-cong-ren r1 r2 eq tyA | extᴿ-cong-ren r1 r2 eq tyB = refl
-extᴿ-cong-ren r1 r2 eq (` x) = cong ` (extᴿ-cong r1 r2 eq x)
-extᴿ-cong-ren r1 r2 eq (ind ty) = cong ind (extᴿ-cong-ren (extᴿ r1) (extᴿ r2) (extᴿ-cong r1 r2 eq) ty)
-
-
-extˢ-cong-sub : ∀ (s1 s2 : Sub n m) → (∀ (f : Fin n) →  s1 f ≡  s2 f) → (∀ (ty : Ty (suc n)) → sub (extˢ s1) ty ≡ sub (extˢ s2) ty )
-extˢ-cong-sub s1 s2 eq `𝟙 = refl
-extˢ-cong-sub s1 s2 eq (tyA `× tyB) rewrite extˢ-cong-sub s1 s2 eq tyA | extˢ-cong-sub s1 s2 eq tyB = refl
-extˢ-cong-sub s1 s2 eq (tyA `+ tyB) rewrite extˢ-cong-sub s1 s2 eq tyA | extˢ-cong-sub s1 s2 eq tyB = refl
-extˢ-cong-sub s1 s2 eq (` x) = extˢ-cong s1 s2 eq x
-extˢ-cong-sub s1 s2 eq (ind ty) = cong ind (extˢ-cong-sub (extˢ s1) (extˢ s2) (extˢ-cong s1 s2 eq) ty)
+mapˢᴿ : ∀ {n m}{Trm}{{_ : Mappable Trm}}
+  → (Trm ⊢ n ⇒ m)
+    -------------------------
+  → (Ty n → Ty m)
+mapˢᴿ f `𝟙 = `𝟙
+mapˢᴿ f (tyA `× tyB) = mapˢᴿ f tyA `× mapˢᴿ f tyB
+mapˢᴿ f (tyA `+ tyB) = (mapˢᴿ f tyA) `+ (mapˢᴿ f tyB)
+mapˢᴿ f (` x) = “ (f x) ”
+mapˢᴿ {n'}{m} f (ind ty) = ind (mapˢᴿ (ext {n = n'} f)  ty)
 
 
-
-extˢ-iterate : ∀ (o : ℕ)(sub : Sub n m) → Sub (o + n) (o + m)
-extˢ-iterate zero sub = sub
-extˢ-iterate (suc o) sub = extˢ ( extˢ-iterate o sub)
-
--- idBelowNˢ : ∀ (o : ℕ) →  Sub (o + n) (o + (suc n))
--- idBelowNˢ o = extˢ-iterate o  suc 
-
-extᴿ-iterate : ∀ {n} {m} (o : ℕ)(sub : Ren n m) → Ren (o + n) (o + m)
-extᴿ-iterate zero sub = sub
-extᴿ-iterate (suc o) sub = extᴿ ( extᴿ-iterate o sub)
-
-idBelowN : ∀ (n : ℕ) (o : ℕ) →  Ren (o + n) ((o + suc n))
-idBelowN n o = extᴿ-iterate o  suc 
-
-{-# REWRITE +-suc #-}
-
-
-subExtVarHelper : ∀ (o : ℕ)(m : ℕ)(n : ℕ) (x : Fin (o + m)) (σ : Sub m n)  → 
-  (extˢ-iterate  (suc o) σ) (idBelowN m o x) ≡ 
-  ren (idBelowN n o) (extˢ-iterate o σ x)
-subExtVarHelper zero (suc m) n (x) σ = refl
-subExtVarHelper (suc o) m n zero σ = refl
-subExtVarHelper (suc o) (m) n (suc x) σ  rewrite subExtVarHelper o m n x σ = 
-  {! x  !}
+map-cong : ∀{n m}{T}{{_ : Mappable T}}{σ τ : T ⊢ n ⇒ m}
+  → (∀(x : Fin n) → σ x ≡ τ x)
+  → ∀(ty : Ty n)
+  → mapˢᴿ σ ty ≡ mapˢᴿ τ ty
+map-cong eq `𝟙 = refl
+map-cong {n} {m} {T} eq (tyA `× tyB) = cong₂ _`×_ (map-cong {n} {m} {T} eq tyA) (map-cong {n} {m} {T} eq tyB)
+map-cong  {n} {m} {T} eq (tyA `+ tyB) = cong₂ _`+_ (map-cong {n} {m} {T} eq tyA) (map-cong {n} {m} {T} eq tyB)
+map-cong eq (` x) = cong “_” (eq x)
+map-cong eq (ind ty) = cong ind (map-cong (ext-cong eq) ty)
 
 
 
-subExtHelper1 : ∀  (o : ℕ)(m : ℕ)(n : ℕ) (σ₁ : Sub m n  ) (ty : Ty (o + m)) → 
-  sub (extˢ-iterate (suc o) σ₁) (ren (idBelowN m o) ty) ≡  ren (idBelowN n o) ((sub (extˢ-iterate o σ₁))  ty)
-subExtHelper1 o m n σ `𝟙 = refl
-subExtHelper1 o m n σ (tyA `× tyB) rewrite subExtHelper1 o m n σ tyA | subExtHelper1 o m n σ tyB = refl
-subExtHelper1 o m n σ (tyA `+ tyB) rewrite subExtHelper1 o m n σ tyA | subExtHelper1 o m n σ tyB = refl
-subExtHelper1 o m n σ (` x) = subExtVarHelper o m n x σ
-subExtHelper1 o m n σ (ind ty) = cong ind (subExtHelper1 (suc o) m n σ ty) 
+-- instance
+--   RenameMappable : Mappable Fin
+--   RenameMappable = record { “_” = ` ; ext = λ finN fin⊢n⇒m → extᴿ finN (suc fin⊢n⇒m) ; ext-cong = λ eq f →  {!    !} }
 
 
-subextHelper2 : ∀ {m} {o} (σ₁ : Sub m o) (ty : Ty m) → sub (extˢ σ₁) (ren suc ty) ≡ ren suc ((sub σ₁)  ty)
-subextHelper2 {m} {o} σ ty = subExtHelper1 zero m o  σ  ty
-
-subextHelper : (σ₁ : Sub m o) (σ₂ : Sub n m) → ∀ x → sub (extˢ σ₁) (ren suc (σ₂ x)) ≡ ren suc ((sub σ₁ ∘ σ₂) x)
-subextHelper σ₁ σ₂ f = subextHelper2 σ₁  (σ₂ f)
-
-
-subext : (σ₁ : Sub m o) (σ₂ : Sub n m) → ∀ x → (sub (extˢ σ₁) ∘ extˢ σ₂) x ≡ extˢ (sub σ₁ ∘ σ₂) x
-subext σ₁ σ₂ zero = refl
-subext σ₁ σ₂ (suc x) =  subextHelper σ₁ σ₂ x  
+-- map-fusionˢ = {!   !}
 
 
 
--- PLFA 
-postulate
-  extensionality : ∀ {A B : Set} {f g : A → B}
-    → (∀ (x : A) → f x ≡ g x)
-      -----------------------
-    → f ≡ g
+
+
+
+
+
+
 
 subsub : (σ₁ : Sub m o) (σ₂ : Sub n m) (T : Ty n) → sub σ₁ (sub σ₂ T) ≡ sub ((sub σ₁) ∘ σ₂) T
 subsub σ₁ σ₂ `𝟙 = refl
