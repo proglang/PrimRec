@@ -310,7 +310,7 @@ subsub σ₁ σ₂ T = sub-sub σ₂ σ₁ T
 subsub123 : ∀ (T0 : Ty 0) (T1 : Ty 1) (T2 : Ty 2)
   →  sub₀ T0 (sub (λ{ zero → T1; (suc zero) → ` zero }) T2)
   ≡ sub (λ{ zero → sub₀ T0 T1; (suc zero) → T0}) T2
-subsub123 T0 T1 T2 = {!   !} -- subsub{m = 1}{o = 0}{n = 2} (λ{ zero → T0}) (λ{ zero → T1 ; (suc zero) → ` zero}) {!T2!}
+subsub123 T0 T1 T2 =  {!   !} -- subsub{m = 1}{o = 0}{n = 2} (λ{ zero → T0}) (λ{ zero → T1 ; (suc zero) → ` zero}) {!T2!}
 
 
 
