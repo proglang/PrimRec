@@ -119,8 +119,11 @@ instance
 sub : Sub n m → Ty n → Ty m
 sub = mapˢᴿ 
 
+σ₀ : Ty 0 → Sub 1 0
+σ₀ T zero = T
+
 sub₀ : Ty 0 → Ty 1 → Ty 0
-sub₀ T G       = sub (λ{ zero → T}) G
+sub₀ T       = sub (σ₀ T)
 
 
 record Composable (T₁ T₂ T₃ : ℕ → Set)
@@ -381,9 +384,26 @@ fmap′ (` zero) f v         = f v , v
 \begin{code}[hide]
 fmap′ {_}{G₀} (ind G) f (fold x) =
   let G′ : Ty 1
-      G′ = sub (λ{ zero → ind G ; (suc zero) → ` zero}) G
-      r′ = fmap′ G′ f {!x!}
+      G′ = sub σ₁ G
+      eq : sub₀ (ind G₀) (sub σ₁ G)
+         ≡ sub₀ (ind (sub (extˢ (σ₀ (ind G₀))) G)) (sub (extˢ (σ₀ (ind G₀))) G)
+      eq = begin
+             sub₀ (ind G₀) (sub σ₁ G)
+           ≡⟨⟩
+             sub (σ₀ (ind G₀)) (sub σ₁ G)
+           ≡⟨ map-fusion σ₁ (σ₀ (ind G₀)) G ⟩
+             {!!}
+           ≡⟨ {!!} ⟩
+             {!!}
+           ≡˘⟨ sub-sub (extˢ (σ₀ (ind G₀))) (σ₀ (ind (sub (extˢ (σ₀ (ind G₀))) G))) G ⟩
+             sub (σ₀ (ind (sub (extˢ (σ₀ (ind G₀))) G))) (sub (extˢ (σ₀ (ind G₀))) G) ∎
+      r′ = fmap′ G′ f (subst ⟦_⟧ᵀ (sym eq) x)
   in fold {!!}
+  where
+    σ₁ : Sub 2 1
+    σ₁ zero = ind G
+    σ₁ (suc i) = ` zero
+    
 --- needs to be recursive over `ind G`
 
 {-# TERMINATING #-}
