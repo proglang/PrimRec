@@ -61,6 +61,19 @@ helper-PR-Z g h args with ⟦ g ⟧
 
 
 sound-natVecToNats : ∀ {n m} (prs : NatsVec.PR m n) (args : Vec ℕ m) → Nats.eval* (⟦ prs ⟧) args  ≡ NatsVec.eval prs args
+
+sound-P-Helper : ∀ (x : ℕ)(args  : Vec ℕ m)(g : Vec (Nats.PR m) 1) (h : Vec (Nats.PR (suc (suc m))) 1) → 
+  Nats.eval* (helper g h ) (suc x ∷ args) ≡
+      Nats.eval* h
+      (Nats.eval* (helper  g  h) (x ∷ args) ++ x ∷ args)
+sound-P-Helper x args [ g' ] [ h' ] = cong (λ x → [ x ]) refl
+
+sound-P : ∀ (x : ℕ)(args  : Vec ℕ m)(g : NatsVec.PR m 1) (h : NatsVec.PR (suc (suc m)) 1) → 
+  Nats.eval* (helper ⟦ g ⟧ ⟦ h ⟧) (x ∷ args) ≡ NatsVec.eval (NatsVec.P' g h) (x ∷ args)
+sound-P zero args g h rewrite sym( sound-natVecToNats g args) = helper-PR-Z g h args
+sound-P (suc x) args g h rewrite sym (sound-natVecToNats h (NatsVec.eval (NatsVec.P' g h) (x ∷ args) ++ x ∷ args) ) | 
+  sym (sound-natVecToNats ((NatsVec.P' g h)) ((x ∷ args))) = sound-P-Helper x args ⟦ g ⟧ ⟦ h ⟧ 
+
 sound-natVecToNats NatsVec.`0 args = refl
 sound-natVecToNats NatsVec.Z [] = refl
 sound-natVecToNats NatsVec.σ [ x ] = refl
@@ -75,17 +88,11 @@ sound-natVecToNats (NatsVec.♯ g h) args rewrite
   ++-map (λ p → Nats.eval p args) ⟦ g ⟧ ⟦ h ⟧ = refl
 sound-natVecToNats (NatsVec.P g h) (zero ∷ args) rewrite sym( sound-natVecToNats g args) = {!   !}
 sound-natVecToNats (NatsVec.P prs prs₁) (suc x ∷ args) = {!   !}
+sound-natVecToNats (NatsVec.P' g h) (x ∷ args) = sound-P x args g h
 
-sound-natVecToNats (NatsVec.P' g h) (zero ∷ args)  rewrite sym (sound-natVecToNats g args) = helper-PR-Z g h args
 
-sound-natVecToNats (NatsVec.P' g h) (suc x ∷ args) rewrite sound-natVecToNats (NatsVec.P' g h) (x ∷ args) rewrite 
-  sym (sound-natVecToNats h (NatsVec.eval (NatsVec.P' g h) (x ∷ args) ++ x ∷ args)) | 
-  sym (sound-natVecToNats (NatsVec.P' g h) (x ∷ args)) 
-     with ⟦ h ⟧ 
-... | [ h' ]  with ⟦ g ⟧ 
-... | [ g' ] with ⟦ (NatsVec.P' g h) ⟧ 
-... | [ P'g'h' ] 
- =  cong (λ x → x ∷ []) (cong (λ x → Nats.eval h' x) 
-   refl)
+
+
+
 
 \end{code} 
