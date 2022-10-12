@@ -50,7 +50,7 @@ The proof is by induction on the program \AgdaBound{p}.
 sound* : ∀ {m} p* (v* : Vec ℕ n)
   → map{n = m} ⟦_⟧ⱽ (Nats.eval* p* v*) ≡ Words.eval* (map ⟦_⟧ p*) (map ⟦_⟧ⱽ v*)
 
-sound Nats.Z v* = refl
+sound Nats.Z [] = refl
 sound Nats.σ [ x ] = refl
 sound (Nats.π i) v* = sym (lookup-map i ⟦_⟧ⱽ v*)
 sound (Nats.C f g*) v* rewrite sound f (Nats.eval* g* v*) | sound* g* v* = refl
@@ -84,7 +84,7 @@ soundᴿ : ∀ p (v* : Vec (List ⊤) n)
 soundᴿ* : ∀ {m} p* (v* : Vec (List ⊤) n)
   → map{n = m} ⟦_⟧ᴿⱽ (Words.eval* p* v*) ≡ Nats.eval* (map ⟦_⟧ᴿ p*) (map ⟦_⟧ᴿⱽ v*)
 
-soundᴿ Words.Z v* = refl
+soundᴿ Words.Z [] = refl 
 soundᴿ (Words.σ a) [ v ] = refl
 soundᴿ (Words.π i) v* = sym (lookup-map i ⟦_⟧ᴿⱽ v*)
 soundᴿ (Words.C f g*) v* rewrite soundᴿ f (Words.eval* g* v*) | soundᴿ* g* v* = refl

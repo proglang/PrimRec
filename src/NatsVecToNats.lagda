@@ -88,7 +88,7 @@ sound-natVecToNats (NatsVec.♯ g h) args rewrite
   ++-map (λ p → Nats.eval p args) ⟦ g ⟧ ⟦ h ⟧ = refl
 sound-natVecToNats (NatsVec.P g h) (zero ∷ args) rewrite sym( sound-natVecToNats g args) = {!   !}
 sound-natVecToNats (NatsVec.P prs prs₁) (suc x ∷ args) = {!   !}
-sound-natVecToNats (NatsVec.P' g h) (x ∷ args) = sound-P x args g h
+sound-natVecToNats (NatsVec.P' g h) (x ∷ args) =   sound-P x args g h
 
 
 

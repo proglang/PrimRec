@@ -50,7 +50,7 @@ module Nats-NatsVec where
   sound : (p : Nats.PR m) (v* : Vec ℕ m) → ∀ {r : Vec ℕ o} → Nats.eval p v* ∷ r ≡ NatsVec.eval ⟦ p ⟧ v* ++ r
   sound* : (f* : Vec (Nats.PR m) n) (v* : Vec ℕ m) → Nats.eval* f* v* ≡ NatsVec.eval ⟦ f* ⟧* v*
 
-  sound Z v* = refl
+  sound Z [] = refl
   sound σ (x ∷ []) = refl
   sound (π i) v* = refl
   sound (C g f*) v* rewrite sound* f* v* = sound g (NatsVec.eval ⟦ f* ⟧* v*)
