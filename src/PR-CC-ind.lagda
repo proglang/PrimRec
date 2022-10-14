@@ -1,13 +1,10 @@
-
-
 \begin{code}[hide]
 {-# OPTIONS --rewriting #-}
-
-{-# OPTIONS --allow-unsolved-metas #-}
 module PR-CC-ind where
 
 
 open import Data.Fin using (Fin; zero; suc)
+open import Data.Empty using (⊥)
 open import Data.Unit using (⊤; tt)
 open import Data.List using (List; [] ; _∷_; _++_; map; concat)
 open import Data.Nat using (ℕ; suc; zero; _+_)
@@ -338,11 +335,8 @@ data _→ᴾ_ : TY → TY → Set where
 \end{code}
 }
 \begin{code}[hide]
-  F : (h : sub₀ T G `× U →ᴾ T)
-    → (ind G `× U →ᴾ T)
--- or more generally with n-ary sum and product types
-  -- π : {T* : Vec (Ty 0) n} → (i : Fin n) → `X T* →ᴾ lookup T* i
-  -- ι : {T* : Vec (Ty 0) n} → (i : Fin n) → lookup T* i → `suc T*
+  F : (h : sub₀ T G `× U →ᴾ T) → (ind G `× U →ᴾ T)
+
 -- interpretation
 \end{code}
 \newcommand\ccDataAlg{%
@@ -417,6 +411,9 @@ comm-⨟-σ₀ σ T (suc x) =
   ∎
 
 {-# TERMINATING #-}
+\end{code}
+\newcommand\ccFunFmap{%
+\begin{code}
 fmap : ∀ {T} {G₀ : Ty 1}
   → (f : ⟦ ind G₀ ⟧ᵀ → ⟦ T ⟧ᵀ) (G : Ty 1)
   → ⟦ sub₀ (ind G₀) G ⟧ᵀ → ⟦ sub₀ T G ⟧ᵀ
@@ -425,8 +422,13 @@ fmap f (G `× H) (x , y) = fmap f G x , fmap f H y
 fmap f (G `+ H) (inj₁ x) = inj₁ (fmap f G x)
 fmap f (G `+ H) (inj₂ y) = inj₂ (fmap f H y)
 fmap f (` zero) v = f v
-fmap {T = T} {G₀ = G₀} f (ind G) (fold x) = fold let r = fmap f G′ in
-  subst ⟦_⟧ᵀ (eq (σ₀ T)) (r (subst ⟦_⟧ᵀ (sym (eq (σ₀ (ind G₀)))) x))
+\end{code}
+}
+\begin{code}[hide]
+fmap {T = T} {G₀ = G₀} f (ind G) (fold x) =
+  fold (subst ⟦_⟧ᵀ (eq (σ₀ T))
+        (fmap{T}{G₀} f G′
+         (subst ⟦_⟧ᵀ (sym (eq (σ₀ (ind G₀)))) x)))
   where
     G′ : Ty 1
     G′ = sub (σ₀ (ind G)) G
@@ -440,47 +442,6 @@ fmap {T = T} {G₀ = G₀} f (ind G) (fold x) = fold let r = fmap f G′ in
      ≡⟨ sym (sub-sub (extˢ τ) (σ₀ (sub τ (ind G))) G) ⟩
        sub₀ (ind (sub (extˢ τ) G)) (sub (extˢ τ) G)
      ∎
-
---- needs to be recursive over `ind G`
-\end{code}
-\newcommand\ccFunFmap{%
-\begin{code}
-fmap′ : ∀ {T}{G₀ : Ty 1} (G : Ty 1) (f : ⟦ ind G₀ ⟧ᵀ → ⟦ T ⟧ᵀ)
-  → ⟦ sub₀ (ind G₀) G ⟧ᵀ → ⟦ sub₀ (T `× ind G₀) G ⟧ᵀ
-fmap′ `𝟙       f tt        = tt
-fmap′ (G `× H) f (x , y)   = (fmap′ G f x) , (fmap′ H f y)
-fmap′ (G `+ H) f (inj₁ x) = inj₁ (fmap′ G f x)
-fmap′ (G `+ H) f (inj₂ y) = inj₂ (fmap′ H f y)
-fmap′ (` zero) f v         = f v , v
-\end{code}
-}
-\begin{code}[hide]
-fmap′ {T}{G₀} (ind G) f (fold x) =
-  let G′ : Ty 1
-      G′ = sub σ₁ G
-      eq0 : ind (sub (extˢ (σ₀ (ind G₀))) G) ≡ sub (σ₀ (ind G₀)) (ind G)
-      eq0 = refl
-      --   [ind G₀/0]    [ind G/0, 0/1]G
-      eq : sub₀ (ind G₀) (sub σ₁ G)
-         ≡ sub₀ (sub (σ₀ (ind G₀)) (ind G)) (sub (extˢ (σ₀ (ind G₀))) G)
-      eq = begin
-             sub₀ (ind G₀) G′
-           ≡⟨⟩
-             sub (σ₀ (ind G₀)) (sub σ₁ G)
-           ≡⟨ map-fusion σ₁ (σ₀ (ind G₀)) G ⟩
-             {!!}
-           ≡⟨ {!!} ⟩
-             {!!}
-           ≡˘⟨ sub-sub (extˢ (σ₀ (ind G₀))) (σ₀ (ind (sub (extˢ (σ₀ (ind G₀))) G))) G ⟩
-             sub (σ₀ (ind (sub (extˢ (σ₀ (ind G₀))) G))) (sub (extˢ (σ₀ (ind G₀))) G) ∎
-      r′ = fmap′ {T}{G₀}  G′ f (subst ⟦_⟧ᵀ (sym eq) x)
-  in fold {!x!}
-  where
-    σ₁ : Sub 2 1
-    σ₁ zero = ind G
-    σ₁ (suc i) = ` zero
-
-    
 --- needs to be recursive over `ind G`
 
 {-# TERMINATING #-}
@@ -498,11 +459,11 @@ eval ι₁       = inj₁
 eval ι₂       = inj₂
 eval (`case f g) = λ{ (inj₁ x) → eval f x ; (inj₂ y) → eval g y}
 eval fold     = fold
-eval (P {G = G} h) = λ{ (fold x , u) → eval h ((fmap′ G (λ v → eval (P h) (v , u)) x) , u)}
+eval (P {G = G} h) = λ{ (fold x , u) → eval h ((fmap (λ v → (eval (P h) (v , u)) , v) G x) , u)}
 \end{code}
 }
 \begin{code}[hide]
-eval (F {T = T}{G = G} h) = λ{ (fold x , u) → eval h ((fmap (λ v → eval (F h) (v , u)) G x) , u) }
+eval (F {G = G} h) = λ{ (fold x , u) → eval h ((fmap (λ v → eval (F h) (v , u)) G x) , u) }
 \end{code}
 
 \begin{code}[hide]
@@ -605,21 +566,28 @@ module FromTrees where
   symbols : (G : Ty 1) → Set
   symbols G = ⟦ sub₀ `𝟙 G ⟧ᵀ
 
-  -- enumerate symbols
-  dom : (G : Ty 1) → List (symbols G)
-  dom `𝟙 =  tt ∷ []
-  dom (G `× H) = concat (map (λ g → map (λ h → g , h) (dom H)) (dom G))
-  dom (G `+ H) = map inj₁ (dom G) ++ map inj₂ (dom H)
-  dom (` zero) = tt ∷ []
-  dom (ind G) = {!!}
+  polynomial : (G : Ty 1) → Set
+  polynomial `𝟙 = ⊤
+  polynomial (G `× H) = polynomial G × polynomial H
+  polynomial (G `+ H) = polynomial G × polynomial H
+  polynomial (` zero) = ⊤
+  polynomial (ind G) = ⊥
 
-  rank : (G : Ty 1) → symbols G → ℕ
-  rank `𝟙 tt = 0
-  rank (G `× H) (g , h) = rank G g + rank H h
-  rank (G `+ H) (inj₁ g) = rank G g
-  rank (G `+ H) (inj₂ h) = rank H h
-  rank (` zero) tt = 1
-  rank (ind G) sym-G = {!!}
+  -- enumerate symbols
+  dom : (G : Ty 1) → polynomial G → List (symbols G)
+  dom `𝟙 tt =  tt ∷ []
+  dom (G `× H) (p , q) = concat (map (λ g → map (λ h → g , h) (dom H q)) (dom G p))
+  dom (G `+ H) (p , q) = map inj₁ (dom G p) ++ map inj₂ (dom H q)
+  dom (` zero) tt = tt ∷ []
+  dom (ind G) ()
+
+  rank : (G : Ty 1) → polynomial G → symbols G → ℕ
+  rank `𝟙 tt tt = 0
+  rank (G `× H) (p , q) (g , h) = rank G p g + rank H q h
+  rank (G `+ H) (p , q) (inj₁ g) = rank G p g
+  rank (G `+ H) (p , q) (inj₂ h) = rank H q h
+  rank (` zero) tt tt = 1
+  rank (ind G) () (fold x)
 
   import PR-Trees as Trees
 
@@ -630,8 +598,11 @@ module FromTrees where
   Btree : Ty 0
   Btree = ind G-Btree
 
+  G-Btree-polynomial : polynomial G-Btree
+  G-Btree-polynomial = tt , tt , tt
+
   R-Btree : Trees.Ranked
-  R-Btree = Trees.mkRanked (rank G-Btree)
+  R-Btree = Trees.mkRanked (rank G-Btree G-Btree-polynomial)
 
   ⟦_⟧  : Trees.PR R-Btree n → mkvec Btree n →ᴾ Btree
   ⟦_⟧* : Vec (Trees.PR R-Btree n) m → mkvec Btree n →ᴾ mkvec Btree m
