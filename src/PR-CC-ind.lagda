@@ -414,21 +414,21 @@ comm-⨟-σ₀ σ T (suc x) =
 \end{code}
 \newcommand\ccFunFmap{%
 \begin{code}
-fmap : ∀ {T} {G₀ : Ty 1}
-  → (f : ⟦ ind G₀ ⟧ᵀ → ⟦ T ⟧ᵀ) (G : Ty 1)
-  → ⟦ sub₀ (ind G₀) G ⟧ᵀ → ⟦ sub₀ T G ⟧ᵀ
-fmap f `𝟙 tt = tt
-fmap f (G `× H) (x , y) = fmap f G x , fmap f H y
-fmap f (G `+ H) (inj₁ x) = inj₁ (fmap f G x)
-fmap f (G `+ H) (inj₂ y) = inj₂ (fmap f H y)
-fmap f (` zero) v = f v
+fmap : ∀ {S T : TY} (G : Ty 1)
+  → (f : ⟦ S ⟧ᵀ → ⟦ T ⟧ᵀ)
+  → ⟦ sub₀ S G ⟧ᵀ → ⟦ sub₀ T G ⟧ᵀ
+fmap `𝟙       f tt       = tt
+fmap (G `× H) f (x , y)  = fmap G f x , fmap H f y
+fmap (G `+ H) f (inj₁ x) = inj₁ (fmap G f x)
+fmap (G `+ H) f (inj₂ y) = inj₂ (fmap H f y)
+fmap (` zero) f v        = f v
 \end{code}
 }
 \begin{code}[hide]
-fmap {T = T} {G₀ = G₀} f (ind G) (fold x) =
+fmap {S}{T} (ind G) f (fold x) =
   fold (subst ⟦_⟧ᵀ (eq (σ₀ T))
-        (fmap{T}{G₀} f G′
-         (subst ⟦_⟧ᵀ (sym (eq (σ₀ (ind G₀)))) x)))
+        (fmap G′ f
+         (subst ⟦_⟧ᵀ (sym (eq (σ₀ S))) x)))
   where
     G′ : Ty 1
     G′ = sub (σ₀ (ind G)) G
@@ -459,22 +459,23 @@ eval ι₁       = inj₁
 eval ι₂       = inj₂
 eval (`case f g) = λ{ (inj₁ x) → eval f x ; (inj₂ y) → eval g y}
 eval fold     = fold
-eval (P {G = G} h) = λ{ (fold x , u) → eval h ((fmap (λ v → (eval (P h) (v , u)) , v) G x) , u)}
+eval (P {G = G} h) = λ{ (fold x , u) → eval h ((fmap G (λ v → (eval (P h) (v , u)) , v) x) , u)}
 \end{code}
 }
 \begin{code}[hide]
-eval (F {G = G} h) = λ{ (fold x , u) → eval h ((fmap (λ v → eval (F h) (v , u)) G x) , u) }
+eval (F {G = G} h) = λ{ (fold x , u) → eval h ((fmap G (λ v → eval (F h) (v , u)) x) , u) }
 \end{code}
-
-\begin{code}[hide]
-mkvec : Ty 0 → ℕ → Ty 0
-mkvec T zero = `𝟙
+\newcommand\ccFunMkvec{%
+\begin{code}
+mkvec : TY → ℕ → TY
+mkvec T zero    = `𝟙
 mkvec T (suc n) = T `× mkvec T n
 
 lookup : (i : Fin n) → mkvec T n →ᴾ T
-lookup zero = π₁
+lookup zero    = π₁
 lookup (suc i) = C (lookup i) π₂
 \end{code}
+}
 \newcommand\ccFunAssocDist{%
 \begin{code}
 assoc-× : (U `× V) `× T →ᴾ U `× (V `× T)
@@ -493,6 +494,10 @@ module FromNats where
   G-Nat = `𝟙 `+ ` zero
 
   Nat = ind G-Nat
+\end{code}
+}
+
+\begin{code}[hide]
 
   _ : sub₀ Nat G-Nat ≡ (`𝟙 `+ Nat)
   _ = refl
@@ -510,10 +515,6 @@ module FromNats where
 
   _ : Nat →ᴾ (`𝟙 `+ Nat)
   _ = ι₂
-\end{code}
-}
-
-\begin{code}[hide]
 
   import PR-Nat as Nats
 
