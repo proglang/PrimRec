@@ -566,28 +566,25 @@ module FromTrees where
   symbols : (G : Ty 1) → Set
   symbols G = ⟦ sub₀ `𝟙 G ⟧ᵀ
 
-  polynomial : (G : Ty 1) → Set
-  polynomial `𝟙 = ⊤
-  polynomial (G `× H) = polynomial G × polynomial H
-  polynomial (G `+ H) = polynomial G × polynomial H
-  polynomial (` zero) = ⊤
-  polynomial (ind G) = ⊥
+  data Poly : Ty 1 → Set where
+    poly-unit : Poly `𝟙
+    poly-pair : ∀ {G}{H} → Poly G → Poly H → Poly (G `× H)
+    poly-sum  : ∀ {G}{H} → Poly G → Poly H → Poly (G `+ H)
+    poly-var  : Poly (` zero)
 
   -- enumerate symbols
-  dom : (G : Ty 1) → polynomial G → List (symbols G)
-  dom `𝟙 tt =  tt ∷ []
-  dom (G `× H) (p , q) = concat (map (λ g → map (λ h → g , h) (dom H q)) (dom G p))
-  dom (G `+ H) (p , q) = map inj₁ (dom G p) ++ map inj₂ (dom H q)
-  dom (` zero) tt = tt ∷ []
-  dom (ind G) ()
+  dom : ∀ {G} → Poly G → List (symbols G)
+  dom poly-unit = tt ∷ []
+  dom (poly-pair pg ph) = concat (map (λ g → map (λ h → g , h) (dom ph)) (dom pg))
+  dom (poly-sum pg ph) = map inj₁ (dom pg) ++ map inj₂ (dom ph)
+  dom poly-var = tt ∷ []
 
-  rank : (G : Ty 1) → polynomial G → symbols G → ℕ
-  rank `𝟙 tt tt = 0
-  rank (G `× H) (p , q) (g , h) = rank G p g + rank H q h
-  rank (G `+ H) (p , q) (inj₁ g) = rank G p g
-  rank (G `+ H) (p , q) (inj₂ h) = rank H q h
-  rank (` zero) tt tt = 1
-  rank (ind G) () (fold x)
+  rank : ∀ {G} → Poly G → symbols G → ℕ
+  rank poly-unit tt = 0
+  rank (poly-pair pg ph) (gs , hs) = rank pg gs + rank ph hs 
+  rank (poly-sum pg ph) (inj₁ gs) = rank pg gs
+  rank (poly-sum pg ph) (inj₂ hs) = rank ph hs
+  rank poly-var tt = 1
 
   import PR-Trees as Trees
 
@@ -598,11 +595,11 @@ module FromTrees where
   Btree : Ty 0
   Btree = ind G-Btree
 
-  G-Btree-polynomial : polynomial G-Btree
-  G-Btree-polynomial = tt , tt , tt
+  G-Btree-polynomial : Poly G-Btree
+  G-Btree-polynomial = poly-sum poly-unit (poly-pair poly-var poly-var)
 
   R-Btree : Trees.Ranked
-  R-Btree = Trees.mkRanked (rank G-Btree G-Btree-polynomial)
+  R-Btree = Trees.mkRanked (rank G-Btree-polynomial)
 
   ⟦_⟧  : Trees.PR R-Btree n → mkvec Btree n →ᴾ Btree
   ⟦_⟧* : Vec (Trees.PR R-Btree n) m → mkvec Btree n →ᴾ mkvec Btree m
