@@ -307,13 +307,6 @@ subsub σ₁ σ₂ T = sub-sub σ₂ σ₁ T
 
 
 
-subsub123 : ∀ (T0 : Ty 0) (T1 : Ty 1) (T2 : Ty 2)
-  →  sub₀ T0 (sub (λ{ zero → T1; (suc zero) → ` zero }) T2)
-  ≡ sub (λ{ zero → sub₀ T0 T1; (suc zero) → T0}) T2
-subsub123 T0 T1 T2 =  {!   !} -- subsub{m = 1}{o = 0}{n = 2} (λ{ zero → T0}) (λ{ zero → T1 ; (suc zero) → ` zero}) {!T2!}
-
-
-
 variable
   T U V : TY
   G : Ty 1
@@ -338,7 +331,7 @@ data _→ᴾ_ : TY → TY → Set where
 \end{code}
 }
 \begin{code}[hide]
-  F : (h : sub₀ T G `× (sub₀ (ind G) G `× U) →ᴾ T)
+  F : (h : sub₀ T G `× U →ᴾ T)
     → (ind G `× U →ᴾ T)
 -- or more generally with n-ary sum and product types
   -- π : {T* : Vec (Ty 0) n} → (i : Fin n) → `X T* →ᴾ lookup T* i
@@ -363,11 +356,26 @@ fmap : ∀ {T} {G₀ : Ty 1}
   → (f : ⟦ ind G₀ ⟧ᵀ → ⟦ T ⟧ᵀ) (G : Ty 1)
   → ⟦ sub₀ (ind G₀) G ⟧ᵀ → ⟦ sub₀ T G ⟧ᵀ
 fmap f `𝟙 tt = tt
-fmap f (G `× H) (x , y) = (fmap f G x) , (fmap f H y)
+fmap f (G `× H) (x , y) = fmap f G x , fmap f H y
 fmap f (G `+ H) (inj₁ x) = inj₁ (fmap f G x)
 fmap f (G `+ H) (inj₂ y) = inj₂ (fmap f H y)
 fmap f (` zero) v = f v
-fmap f (ind G) (fold x) = fold {!!}
+fmap {G₀ = G₀} f (ind G) (fold x) = fold let r = fmap f G′  in {!!}
+  where
+    σ  : Sub 2 1
+    σ zero = ind G
+    σ (suc zero) = ` zero
+    G′ : Ty 1
+    G′ = sub σ G
+    eq : ∀ (τ : Sub 1 0) → sub τ G′ ≡ sub₀ (ind (sub (extˢ τ) G)) (sub (extˢ τ) G)
+    eq τ = begin
+       sub τ G′
+     ≡⟨ sub-sub σ τ G ⟩
+       sub (σ ˢ⨟ˢ τ) G
+     ≡⟨ {!!} ⟩
+       sub₀ (ind (sub (extˢ τ) G)) (sub (extˢ τ) G)
+     ∎
+
 --- needs to be recursive over `ind G`
 \end{code}
 \newcommand\ccFunFmap{%
@@ -382,13 +390,16 @@ fmap′ (` zero) f v         = f v , v
 \end{code}
 }
 \begin{code}[hide]
-fmap′ {_}{G₀} (ind G) f (fold x) =
+fmap′ {T}{G₀} (ind G) f (fold x) =
   let G′ : Ty 1
       G′ = sub σ₁ G
+      eq0 : ind (sub (extˢ (σ₀ (ind G₀))) G) ≡ sub (σ₀ (ind G₀)) (ind G)
+      eq0 = refl
+      --   [ind G₀/0]    [ind G/0, 0/1]G
       eq : sub₀ (ind G₀) (sub σ₁ G)
-         ≡ sub₀ (ind (sub (extˢ (σ₀ (ind G₀))) G)) (sub (extˢ (σ₀ (ind G₀))) G)
+         ≡ sub₀ (sub (σ₀ (ind G₀)) (ind G)) (sub (extˢ (σ₀ (ind G₀))) G)
       eq = begin
-             sub₀ (ind G₀) (sub σ₁ G)
+             sub₀ (ind G₀) G′
            ≡⟨⟩
              sub (σ₀ (ind G₀)) (sub σ₁ G)
            ≡⟨ map-fusion σ₁ (σ₀ (ind G₀)) G ⟩
@@ -397,12 +408,13 @@ fmap′ {_}{G₀} (ind G) f (fold x) =
              {!!}
            ≡˘⟨ sub-sub (extˢ (σ₀ (ind G₀))) (σ₀ (ind (sub (extˢ (σ₀ (ind G₀))) G))) G ⟩
              sub (σ₀ (ind (sub (extˢ (σ₀ (ind G₀))) G))) (sub (extˢ (σ₀ (ind G₀))) G) ∎
-      r′ = fmap′ G′ f (subst ⟦_⟧ᵀ (sym eq) x)
-  in fold {!!}
+      r′ = fmap′ {T}{G₀}  G′ f (subst ⟦_⟧ᵀ (sym eq) x)
+  in fold {!x!}
   where
     σ₁ : Sub 2 1
     σ₁ zero = ind G
     σ₁ (suc i) = ` zero
+
     
 --- needs to be recursive over `ind G`
 
@@ -425,7 +437,7 @@ eval (P {G = G} h) = λ{ (fold x , u) → eval h ((fmap′ G (λ v → eval (P h
 \end{code}
 }
 \begin{code}[hide]
-eval (F {G = G} p) = λ{ (fold x , u) → eval p ((fmap (λ v → eval (F p) (v , u)) G x) , (x , u))}
+eval (F {T = T}{G = G} h) = λ{ (fold x , u) → eval h ((fmap (λ v → eval (F h) (v , u)) G x) , u) }
 \end{code}
 
 \begin{code}[hide]
@@ -455,6 +467,23 @@ module FromNats where
   G-Nat = `𝟙 `+ ` zero
 
   Nat = ind G-Nat
+
+  _ : sub₀ Nat G-Nat ≡ (`𝟙 `+ Nat)
+  _ = refl
+
+  -- zero
+  _ : `𝟙 →ᴾ Nat
+  _ = C fold ι₁
+
+  _ : `𝟙 →ᴾ (`𝟙 `+ Nat)
+  _ = ι₁
+
+  -- successor
+  _ : Nat →ᴾ Nat
+  _ = C fold ι₂
+
+  _ : Nat →ᴾ (`𝟙 `+ Nat)
+  _ = ι₂
 \end{code}
 }
 
