@@ -382,20 +382,20 @@ sub~ {t = ` x} f      = f x
 sub~ {t = ind t} f    = cong ind (sub~ {t = t} (extˢ~ f))
 
 extˢ-idₛ : ∀ {n} → extˢ (idₛ {n}) ~ idₛ
-extˢ-idₛ zero = refl
+extˢ-idₛ zero    = refl
 extˢ-idₛ (suc x) = refl
 
 sub-idₛ : ∀ {n} (t : Ty n) → sub idₛ t ≡ t
-sub-idₛ `𝟙 = refl
+sub-idₛ `𝟙         = refl
 sub-idₛ (t₁ `× t₂) = cong₂ _`×_ (sub-idₛ t₁) (sub-idₛ t₂)
 sub-idₛ (t₁ `+ t₂) = cong₂ _`+_ (sub-idₛ t₁) (sub-idₛ t₂)
-sub-idₛ (` x) = refl
-sub-idₛ (ind t) = cong ind (trans (sub~ {t = t} extˢ-idₛ)
-                                  (sub-idₛ t))
+sub-idₛ (` x)      = refl
+sub-idₛ (ind t)    = cong ind (trans (sub~ {t = t} extˢ-idₛ)
+                                     (sub-idₛ t))
 
 wk-cancels-,ₛ : ∀ {m n} (σ : Sub m n) T
     → suc ᴿ⨟ˢ (σ ,ₛ T) ~ σ
-wk-cancels-,ₛ σ T zero = refl
+wk-cancels-,ₛ σ T zero    = refl
 wk-cancels-,ₛ σ T (suc x) = refl
 
 comm-⨟-σ₀ : ∀ {n m} (σ : Sub m n) T
