@@ -119,8 +119,15 @@ instance
 sub : Sub n m → Ty n → Ty m
 sub = mapˢᴿ 
 
-σ₀ : Ty 0 → Sub 1 0
-σ₀ T zero = T
+idₛ : Sub n n
+idₛ x = ` x
+
+_,ₛ_ : Sub m n → Ty n → Sub (suc m) n
+(σ ,ₛ t) zero    = t
+(σ ,ₛ t) (suc x) = σ x
+
+σ₀ : Ty n → Sub (suc n) n
+σ₀ T = idₛ ,ₛ T
 
 sub₀ : Ty 0 → Ty 1 → Ty 0
 sub₀ T       = sub (σ₀ T)
@@ -352,6 +359,64 @@ data Alg (G : Ty 1) : Set where
 \end{code}
 }
 \begin{code}[hide]
+
+-- Extensional Function Equality (Homotopies)
+infix 4 _~_
+_~_ : ∀ {ℓ₁ ℓ₂} {A : Set ℓ₁} {B : A → Set ℓ₂}
+  → (f g : (x : A) → B x) → Set _
+f ~ g = ∀ x → f x ≡ g x 
+
+extˢ~ : ∀ {m n} {σ₁ σ₂ : Sub m n}
+  → σ₁ ~ σ₂
+  → extˢ σ₁ ~ extˢ σ₂
+extˢ~ σ₁~σ₂ zero = refl
+extˢ~ σ₁~σ₂ (suc x) = cong (mapˢᴿ suc) (σ₁~σ₂ x)
+
+sub~ : ∀ {m n} {σ₁ σ₂ : Sub m n} {t}
+  → σ₁ ~ σ₂
+  → sub σ₁ t ≡ sub σ₂ t
+sub~ {t = `𝟙} f       = refl
+sub~ {t = t₁ `× t₂} f = cong₂ _`×_ (sub~ {t = t₁} f) (sub~ {t = t₂} f)
+sub~ {t = t₁ `+ t₂} f = cong₂ _`+_ (sub~ {t = t₁} f) (sub~ {t = t₂} f)
+sub~ {t = ` x} f      = f x
+sub~ {t = ind t} f    = cong ind (sub~ {t = t} (extˢ~ f))
+
+extˢ-idₛ : ∀ {n} → extˢ (idₛ {n}) ~ idₛ
+extˢ-idₛ zero = refl
+extˢ-idₛ (suc x) = refl
+
+sub-idₛ : ∀ {n} (t : Ty n) → sub idₛ t ≡ t
+sub-idₛ `𝟙 = refl
+sub-idₛ (t₁ `× t₂) = cong₂ _`×_ (sub-idₛ t₁) (sub-idₛ t₂)
+sub-idₛ (t₁ `+ t₂) = cong₂ _`+_ (sub-idₛ t₁) (sub-idₛ t₂)
+sub-idₛ (` x) = refl
+sub-idₛ (ind t) = cong ind (trans (sub~ {t = t} extˢ-idₛ)
+                                  (sub-idₛ t))
+
+wk-cancels-,ₛ : ∀ {m n} (σ : Sub m n) T
+    → suc ᴿ⨟ˢ (σ ,ₛ T) ~ σ
+wk-cancels-,ₛ σ T zero = refl
+wk-cancels-,ₛ σ T (suc x) = refl
+
+comm-⨟-σ₀ : ∀ {n m} (σ : Sub m n) T
+  → (σ₀ T ˢ⨟ˢ σ) ~ (extˢ σ ˢ⨟ˢ σ₀ (sub σ T))
+comm-⨟-σ₀ σ T zero = refl
+comm-⨟-σ₀ σ T (suc x) =
+  begin
+    (σ₀ T ˢ⨟ˢ σ) (suc x)
+  ≡⟨⟩
+    σ x
+  ≡⟨ sym (sub-idₛ (σ x)) ⟩
+    sub idₛ (σ x)
+  ≡⟨ sym (sub~ {t = σ x} (wk-cancels-,ₛ idₛ (sub σ T))) ⟩
+    sub (suc ᴿ⨟ˢ (idₛ ,ₛ sub σ T)) (σ x)
+  ≡⟨ sym (ren-sub suc (idₛ ,ₛ sub σ T) (σ x)) ⟩
+    sub (idₛ ,ₛ sub σ T) (ren suc (σ x))
+  ≡⟨⟩
+    (extˢ σ ˢ⨟ˢ σ₀ (sub σ T)) (suc x)
+  ∎
+
+{-# TERMINATING #-}
 fmap : ∀ {T} {G₀ : Ty 1}
   → (f : ⟦ ind G₀ ⟧ᵀ → ⟦ T ⟧ᵀ) (G : Ty 1)
   → ⟦ sub₀ (ind G₀) G ⟧ᵀ → ⟦ sub₀ T G ⟧ᵀ
@@ -360,19 +425,19 @@ fmap f (G `× H) (x , y) = fmap f G x , fmap f H y
 fmap f (G `+ H) (inj₁ x) = inj₁ (fmap f G x)
 fmap f (G `+ H) (inj₂ y) = inj₂ (fmap f H y)
 fmap f (` zero) v = f v
-fmap {G₀ = G₀} f (ind G) (fold x) = fold let r = fmap f G′  in {!!}
+fmap {T = T} {G₀ = G₀} f (ind G) (fold x) = fold let r = fmap f G′ in
+  subst ⟦_⟧ᵀ (eq (σ₀ T)) (r (subst ⟦_⟧ᵀ (sym (eq (σ₀ (ind G₀)))) x))
   where
-    σ  : Sub 2 1
-    σ zero = ind G
-    σ (suc zero) = ` zero
     G′ : Ty 1
-    G′ = sub σ G
+    G′ = sub (σ₀ (ind G)) G
     eq : ∀ (τ : Sub 1 0) → sub τ G′ ≡ sub₀ (ind (sub (extˢ τ) G)) (sub (extˢ τ) G)
     eq τ = begin
        sub τ G′
-     ≡⟨ sub-sub σ τ G ⟩
-       sub (σ ˢ⨟ˢ τ) G
-     ≡⟨ {!!} ⟩
+     ≡⟨ sub-sub (σ₀ (ind G)) τ G ⟩
+       sub (σ₀ (ind G) ˢ⨟ˢ τ) G
+     ≡⟨ sub~ {t = G} (comm-⨟-σ₀ τ (ind G)) ⟩
+       sub (extˢ τ ˢ⨟ˢ σ₀ (sub τ (ind G))) G
+     ≡⟨ sym (sub-sub (extˢ τ) (σ₀ (sub τ (ind G))) G) ⟩
        sub₀ (ind (sub (extˢ τ) G)) (sub (extˢ τ) G)
      ∎
 
