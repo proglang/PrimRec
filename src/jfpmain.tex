@@ -67,7 +67,7 @@
 \title{Functional Pearl:\\ Variations on Primitive Recursion}
 
 \begin{authgrp}
-  \author{Maximilian Hertenstein}
+  \author{Maximilian Hertenstein} \qquad
   \author{Peter Thiemann}
 \affiliation{University of Freiburg\\
         (\email{\{mh,thiemann\}@informatik.uni-freiburg.de})}
@@ -102,29 +102,42 @@ primitive recursion, system-T, inductive types, algebras
 
 Primitive recursive functions are a standard topic in any class on
 computability. 
+The usual treatment discusses them as total, computable functions on
+natural numbers. They are shown to be equivalent to
+\emph{Loop programs}  \cite{loopsRitchie}, which are simple
+imperative programs with bounded iteration.
+Despite their simplicity, it is possible to define the basic
+arithmetic functions as well as interesting functions like
+\emph{nthPrime} as primitive recursive functions.
+
+Nevertheless,  primitive recursive functions---when restricted to
+first-order functions $\mathbb{N}^n \to \mathbb{N}$---are a proper subset of 
+the class of total recursive functions. For example, the
+\emph{Ackermann function} \cite{szasz1991machine}, Knuth's uparrow
+notation, and Conway's arrow notation yield total functions, which are
+not primitive recursive.
+If we allow arbitrary (higher-order)
+functions over natural numbers, it is possible to define functions
+like the Ackermann function using primitive recursion
+\cite{DBLP:journals/corr/Widemann16}. 
+
+% In the definition of recursive functions, there is a additional
+% construct called $\mu$\emph{-Operator}, that can be used to define
+% partial functions. 
+
+% Recursive functions are as powerful as the untyped lambda calculus
+% and touring-machines \cite{threeModels}
+% \cite[92-94]{ziegler2017godelsche}. 
+ 
 
 
 
-These functions are a model for computable functions for which an upper bound of the runtime can be specified . Particularly they are total.
-They are as powerful as  \emph{Loop-Programms}  \cite{loopsRitchie} for which the same can be stated.
 
-The primitive recursive functions are a proper subset of the  total recursive functions. An example of a function, that is recursive but not primitive recursive, is the \emph{Ackermann function} \cite{szasz1991machine}.
-
-In the definition of recursive functions, there is a additional construct called $\mu$\emph{-Operator}, that can be used to define partial functions.
-
-Recursive functions are as powerful as the untyped lambda calculus and touring-machines \cite{threeModels} \cite[92-94]{ziegler2017godelsche}.
-
-Although  only a few constructors can be used to define primitive recursive functions, it is possible to define the basic arithmetic functions and also interesting functions like  \emph{nthPrime} with these constructors.
+Here is a typical textbook definition of the set of primitive
+recursive functions \cite{martin2019logik,wiki:Primitive_recursive_function}:
 
 
-
-Usually primitiv recursive functions are defined as a subset of $Fun(\mathbb{N}^n, \mathbb{N})$. If bigger domains and codomains are used, it is possible to define functions like the Ackermann function. Interestingly these functions are still total \cite{DBLP:journals/corr/Widemann16} 
-
-
-Here is a typical textbook definition\cite{martin2019logik} \cite{wiki:Primitive_recursive_function} :
-
-
-The primitive recursive functions is the smallest family PR of functions
+The set of primitive recursive functions is the smallest family $PR$ of functions
 from ${ℕ}^n$  to ${ℕ}$, for $n\in {ℕ}$, that contains the following
 basic functions:
 \begin{itemize}
@@ -167,13 +180,16 @@ $n+2$ then $f := P (g,h)$ is a primitive recursive function of arity $n+1$ that 
 
 \end{description}
 
- 
+Clearly, PR is inductively defined, but unfortunately the boundary
+between syntax and semantics is blurred.
+
 
 In programming languages terminology, primitive
-recursive functions are given by a domain-specific language that
-defines functions of type ${ℕ}^n \to {ℕ}$ in a pointfree
-style. Moreover, the boundary between syntax and semantics is not
-clear.
+recursive functions are given by a domain-specific language where a
+sentence of the language specifies a function of type ${ℕ}^n \to {ℕ}$
+in a pointfree style. The syntax of the language is inductively
+defined and consequently its semantics is defined by induction on the
+syntax, thus cleanly separating syntax and semantics.
 
 The following Agda definition formalizes syntax and semantics of pr
 functions precisely (and strictly separated).
@@ -190,6 +206,11 @@ the $h$-function composes the successor with inductive result.
 The equivalence proof is a
 straightforward induction because the structure of the definitions
 matches.
+
+There are alternative definitions of primitive recursion where the
+zero function takes any number of arguments or where there are
+arbitrary constants. It is easy to show that they are equivalent to
+the definition that we adopt here.
 
 \section{From numbers to words, terms, and many-sorted algebras}
 \label{sec:from-numbers-words}
@@ -323,13 +344,15 @@ function is straightforward.
 \ccFunEval
 The only interesting case is the one for primitive recursion. It is
 interpreted by a function taking a pair of \Aind~$G$ and some $U$. The
-first component of the argument must evaluate to some \Afold, so the $x$ corresponds
+first component of the argument must evaluate to some \Afold~$x$, so the $x$ corresponds
 to the constructor arguments, and the second component $u:U$ is the
-extra argument. Now we run the function $h$ essentially on $x$, but
+extra argument. Now we run the function $h$ essentially on $x :{}
+$\Asubnull~(\Aind~$G$)~$G$ and $u$, but 
 after replacing recursive occurrences of the inductive type by a pair
 of the subterm and the recursive call of {\AP}~$h$ on the subterm. We
 identify the recursive occurrences by traversing $x$ according to the
-structure functor $G$ using the $\Afmap'$ function below. 
+structure functor $G$ using the $\Afmap$ function below, which
+implements the action of $G$ on functions. 
 \ccFunFmap
 
 It turns out that we can map all flavors of primitive recursion from
@@ -346,7 +369,9 @@ for natural numbers:
 \ccDefGNat
 
 The encoding is straightforward, but it reveals a shortcoming of our
-combinator language for inductive types.
+combinator language for inductive types. To start with, it requires an
+encoding of vectors and vector lookup.
+\ccFunMkvec
 \ccDefNatToInd
 The encodings of the constructors apply {\Afold} to the left and right
 injection, respectively. Projection and composition are as before. For
