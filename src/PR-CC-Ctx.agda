@@ -6,10 +6,10 @@ module PR-CC-Ctx where
 open import Data.Fin using (Fin; zero; suc)
 open import Data.Empty using (⊥)
 open import Data.Unit using (⊤; tt)
-open import Data.List using (List; [] ; _∷_; _++_; map; concat)
+open import Data.List using (List; [] ; _∷_; map; concat)
 open import Data.Nat using (ℕ; suc; zero; _+_)
 open import Data.Nat.Properties using (+-suc)
-open import Data.Vec using (Vec;[];_∷_;lookup)
+open import Data.Vec using (Vec;[];_∷_;lookup;_++_)
 open import Data.Product using (_×_; _,_; proj₁; proj₂) renaming (<_,_> to ⟨_,_⟩)
 open import Data.Sum using (_⊎_; inj₁; inj₂)
 open import Function using (_∘_; const) renaming (id to identity)
@@ -354,8 +354,9 @@ data Alg (G : Ty 1) : Set where
 ⟦ `𝟙 ⟧ᵀ     = ⊤
 ⟦ T `× U ⟧ᵀ = ⟦ T ⟧ᵀ × ⟦ U ⟧ᵀ
 ⟦ T `+ U ⟧ᵀ = ⟦ T ⟧ᵀ ⊎ ⟦ U ⟧ᵀ
-⟦ ind G ⟧ᵀ  = {!   !} -- Alg G
+⟦ ind G ⟧ᵀ  =  Alg G
 ⟦ tyA ⇒ tyB ⟧ᵀ = ⟦ tyA ⟧ᵀ  →  ⟦ tyB ⟧ᵀ
+
 -- \end{code}
 -- }
 -- \begin{code}[hide]
@@ -475,10 +476,11 @@ embedd-Ty (tyA PF.`+ tyB) = embedd-Ty tyA `+ embedd-Ty tyB
 embedd-Ty (PF.` x) = ` x
 embedd-Ty (PF.ind ty) = ind (embedd-Ty ty)
 
-weaken : ∀ {n : ℕ} {ctx : Ctx n} {tyA tyB } →  Exp ctx tyA → Exp (tyB ∷ ctx) tyA
+weaken : ∀ {n m : ℕ} {ctx : Ctx n} {ctx' : Ctx m} {tyA } →  Exp ctx tyA → Exp (ctx' ++ ctx) tyA
 weaken exp = {!   !}
 
-
+weaken-Eq : ∀ {n m : ℕ} {ctx : Ctx n} {ctx' : Ctx m}  {tyA } (vals : HVec (λ x → ⟦ x ⟧ᵀ) ctx ) (vals' : HVec (λ x → ⟦ x ⟧ᵀ) ctx' ) (exp : Exp ctx tyA) → eval (weaken exp) (vals' ++ᴴ vals) ≡ eval exp vals
+weaken-Eq = {!   !}
 
 embedd-Exp : ∀ {tyA tyB : PF.TY} →  tyA PF.→ᴾ tyB → Exp [] (embedd-Ty tyA ⇒ embedd-Ty tyB )
 embedd-Exp PF.`0 = Lam `0
@@ -489,10 +491,39 @@ embedd-Exp PF.π₁ = Lam (π₁ (Var zero))
 embedd-Exp PF.π₂ = Lam (π₂ (Var zero))
 embedd-Exp PF.ι₁ = Lam (ι₁ ((Var zero)))
 embedd-Exp PF.ι₂ = Lam (ι₂ ((Var zero)))
-embedd-Exp (PF.`case f g) = Lam (`case (Var zero) (App (weaken (weaken (embedd-Exp f))) (Var zero)) {!   !})
+embedd-Exp (PF.`case f g) = Lam (`case (Var zero) (App (weaken ( (embedd-Exp f))) (Var zero)) ((App (weaken ( (embedd-Exp g))) (Var zero))))
 embedd-Exp PF.fold = {!   !}
 embedd-Exp (PF.P exp) = {!   !}
 embedd-Exp (PF.F exp) = {!   !}
+
+
+ty-eq : ∀  (tyA) → PF.⟦ tyA ⟧ᵀ ≡ ⟦ embedd-Ty tyA ⟧ᵀ
+ty-eq PF.`𝟙 = refl
+ty-eq (tyA PF.`× tyB) = cong₂ _×_ (ty-eq tyA) (ty-eq tyB)
+ty-eq (tyA PF.`+ tyB) = cong₂ _⊎_ (ty-eq tyA) (ty-eq tyB)
+ty-eq (PF.ind ty) = {! ty-eq ty  !}
+
+
+{-# REWRITE ty-eq #-}
+
+
+sound-embedd : ∀ {tyA tyB : PF.TY} →  (f : tyA PF.→ᴾ tyB)  → (arg : PF.⟦ tyA ⟧ᵀ  ) → PF.eval f arg  ≡ eval  (embedd-Exp f) []ᴴ  arg
+sound-embedd PF.`0 args = refl
+sound-embedd PF.id args = refl
+sound-embedd (PF.C f g) arg rewrite weaken-Eq []ᴴ (arg ∷ᴴ []ᴴ)(embedd-Exp f) | weaken-Eq []ᴴ (arg ∷ᴴ []ᴴ)(embedd-Exp g) | sound-embedd g arg | sound-embedd f (eval (embedd-Exp g) []ᴴ arg)  = refl
+sound-embedd {tyA} (PF.`# f g) arg rewrite weaken-Eq []ᴴ (arg ∷ᴴ []ᴴ)(embedd-Exp f) | weaken-Eq []ᴴ (arg ∷ᴴ []ᴴ)(embedd-Exp g) | sound-embedd g arg | sound-embedd f arg = refl
+sound-embedd PF.π₁ args = refl
+sound-embedd PF.π₂ args = refl
+sound-embedd PF.ι₁ args = refl
+sound-embedd PF.ι₂ args = refl
+sound-embedd (PF.`case f g) (inj₁ x) rewrite weaken-Eq []ᴴ (x ∷ᴴ (inj₁ x ∷ᴴ []ᴴ)) (embedd-Exp f) | sound-embedd f x | weaken-Eq []ᴴ (x ∷ᴴ (inj₁ x ∷ᴴ []ᴴ)) (embedd-Exp f)  = {!   !}
+sound-embedd (PF.`case f g) (inj₂ y) rewrite weaken-Eq []ᴴ (y ∷ᴴ (inj₁ y ∷ᴴ []ᴴ)) (embedd-Exp g) = {!   !}
+sound-embedd PF.fold args = {!   !}
+sound-embedd (PF.P f) args = {!   !}
+sound-embedd (PF.F f) args = {!   !} 
+
+
+
 -- \end{code}
 -- }
 -- \begin{code}[hide]
