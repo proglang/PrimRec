@@ -1,5 +1,4 @@
-{-# OPTIONS --rewriting --prop -v rewriting:50 #-}
-{-# OPTIONS --allow-unsolved-metas #-}
+{-# OPTIONS --rewriting  #-}
 module HVec where
 
 open import Data.Fin using (Fin; suc; zero)

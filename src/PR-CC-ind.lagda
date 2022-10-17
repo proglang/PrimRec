@@ -1,5 +1,4 @@
 \begin{code}[hide]
-{-# OPTIONS --rewriting #-}
 module PR-CC-ind where
 
 
@@ -18,7 +17,6 @@ open Eq
   using (_≡_; _≢_; refl; sym; trans; cong; cong₂; subst)
 open Eq.≡-Reasoning using (begin_; _≡⟨⟩_; step-≡˘; step-≡; _∎)
 open import Utils
-open import Agda.Builtin.Equality.Rewrite
 
 
 infix 6 _→ᴾ_
