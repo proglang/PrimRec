@@ -28,33 +28,33 @@ infix 8 _`+_
 \begin{code}
 
 data PolyTyOp  :  Set where
-  `𝟙-op   : PolyTyOp
-  _`×-op_ : PolyTyOp → PolyTyOp → PolyTyOp
-  _`+-op_ : PolyTyOp → PolyTyOp → PolyTyOp
-  `t    : PolyTyOp
+  `𝟙   : PolyTyOp
+  _`×_ : PolyTyOp → PolyTyOp → PolyTyOp
+  _`+_ : PolyTyOp → PolyTyOp → PolyTyOp
+  `t   : PolyTyOp
   
 
 data Ty :    Set where
   `𝟙   :  Ty 
   _`×_ :  Ty  → Ty   → Ty 
   _`+_ : Ty  → Ty  → Ty 
-  ind : PolyTyOp → Ty
+  ind  : PolyTyOp → Ty
 --   _⇒_ : Ty → Ty → Ty
 
 
-tyToTyOp : Ty → PolyTyOp
-tyToTyOp `𝟙 = `𝟙-op
-tyToTyOp (tyA `× tyB) = tyToTyOp tyA `×-op tyToTyOp tyB
-tyToTyOp (tyA `+ tyB) = tyToTyOp tyA `+-op tyToTyOp tyB
-tyToTyOp (ind x) = {!   !} -- not possible
+-- tyToTyOp : Ty → PolyTyOp
+-- tyToTyOp `𝟙 = `𝟙
+-- tyToTyOp (tyA `× tyB) = tyToTyOp tyA `× tyToTyOp tyB
+-- tyToTyOp (tyA `+ tyB) = tyToTyOp tyA `+ tyToTyOp tyB
+-- tyToTyOp (ind x) = {!   !} -- not possible
 -- tyToTyOp (ty ⇒ ty₁) = {!   !} -- not possible
 
 TY = Ty
 
 sub₀ : Ty → PolyTyOp → Ty
-sub₀ ty `𝟙-op = `𝟙
-sub₀ ty (pt1 `×-op pt2) = (sub₀ ty pt1) `× (sub₀ ty pt2)
-sub₀ ty (pt1 `+-op pt2) = (sub₀ ty pt1) `+ (sub₀ ty pt2)
+sub₀ ty `𝟙 = `𝟙
+sub₀ ty (pt1 `× pt2) = (sub₀ ty pt1) `× (sub₀ ty pt2)
+sub₀ ty (pt1 `+ pt2) = (sub₀ ty pt1) `+ (sub₀ ty pt2)
 sub₀ ty `t = ty
 
 \end{code}
@@ -111,14 +111,14 @@ data Alg (G : PolyTyOp) : Set where
 
 \newcommand\ccFunFmap{%
 \begin{code}
-fmap : ∀ {T} {G₀ : PolyTyOp}
-  → (f : ⟦ ind G₀ ⟧ᵀ → ⟦ T ⟧ᵀ) (G : PolyTyOp)
-  → ⟦ sub₀ (ind G₀) G ⟧ᵀ → ⟦ sub₀ T G ⟧ᵀ
-fmap f `𝟙-op tt = tt
-fmap f (pto1 `×-op pto2) (x , y) = fmap f pto1 x , fmap f pto2 y
-fmap f (pto1 `+-op pto2) (inj₁ x) = inj₁ (fmap f pto1 x)
-fmap f (pto1 `+-op pto2) (inj₂ y) = inj₂ (fmap f pto2 y)
-fmap f `t (fold x) = f (fold x) 
+fmap : ∀ {S}{T}
+  → (f : ⟦ S ⟧ᵀ → ⟦ T ⟧ᵀ) (G : PolyTyOp)
+  → ⟦ sub₀ S G ⟧ᵀ → ⟦ sub₀ T G ⟧ᵀ
+fmap f `𝟙 tt = tt
+fmap f (pto1 `× pto2) (x , y) = fmap f pto1 x , fmap f pto2 y
+fmap f (pto1 `+ pto2) (inj₁ x) = inj₁ (fmap f pto1 x)
+fmap f (pto1 `+ pto2) (inj₂ y) = inj₂ (fmap f pto2 y)
+fmap f `t x = f x 
 \end{code}
 }
 
@@ -175,7 +175,7 @@ module FromNats where
 \newcommand\ccDefGNat{%
 \begin{code}
   G-Nat : PolyTyOp
-  G-Nat = `𝟙-op `+-op `t
+  G-Nat = `𝟙 `+ `t
 
   Nat = ind G-Nat
 
@@ -228,7 +228,7 @@ module FromWords where
   Alpha = `𝟙 `+ `𝟙
 
   G-Alpha* : PolyTyOp
-  G-Alpha* = `𝟙-op `+-op ((`𝟙-op `+-op `𝟙-op) `×-op  `t)
+  G-Alpha* = `𝟙 `+ ((`𝟙 `+ `𝟙) `×  `t)
 
   Alpha* : Ty
   Alpha* = ind G-Alpha*
@@ -257,30 +257,30 @@ module FromTrees where
   symbols G = ⟦ sub₀ `𝟙 G ⟧ᵀ
 
   dom : ∀ (G : PolyTyOp)  → List (symbols G)
-  dom `𝟙-op = tt ∷ []
-  dom (pg `×-op ph) = concat (map (λ g → map (λ h → g , h) (dom ph)) (dom pg))
-  dom (pg `+-op ph) = map inj₁ (dom pg) ++ map inj₂ (dom ph)
+  dom `𝟙 = tt ∷ []
+  dom (pg `× ph) = concat (map (λ g → map (λ h → g , h) (dom ph)) (dom pg))
+  dom (pg `+ ph) = map inj₁ (dom pg) ++ map inj₂ (dom ph)
   dom `t = tt ∷ []
 
 
   rank : ∀ (G : PolyTyOp) → symbols G → ℕ
-  rank `𝟙-op tt = 0
-  rank (pg `×-op ph) (gs , hs) = rank pg gs + rank ph hs
-  rank (pg `+-op ph) (inj₁ gs) = rank pg gs
-  rank (pg `+-op ph) (inj₂ hs) = rank ph hs
+  rank `𝟙 tt = 0
+  rank (pg `× ph) (gs , hs) = rank pg gs + rank ph hs
+  rank (pg `+ ph) (inj₁ gs) = rank pg gs
+  rank (pg `+ ph) (inj₂ hs) = rank ph hs
   rank `t tt = 1
 
   import PR-Trees as Trees
 
   -- binary trees with signature { Leaf:0, Branch:2 }
   G-Btree : PolyTyOp
-  G-Btree = `𝟙-op `+-op (`t `×-op `t)
+  G-Btree = `𝟙 `+ (`t `× `t)
 
   Btree : Ty
   Btree = ind G-Btree
 
   G-Btree-polynomial : PolyTyOp
-  G-Btree-polynomial =  `𝟙-op `+-op (`t  `×-op `t)
+  G-Btree-polynomial =  `𝟙 `+ (`t  `× `t)
 
   R-Btree : Trees.Ranked
   R-Btree = Trees.mkRanked (rank G-Btree-polynomial)
