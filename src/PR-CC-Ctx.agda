@@ -36,7 +36,7 @@ data Ty n :  Set where
   _`×_ : Ty n → Ty n → Ty n
   _`+_ : Ty n → Ty n → Ty n
   `    : Fin n → Ty n
-  -- ind  : Ty (suc n) → Ty n
+  ind  : Ty (suc n) → Ty n
   _⇒_ : Ty n → Ty n → Ty n 
 
 TY = Ty 0
@@ -64,7 +64,7 @@ mapˢᴿ f `𝟙 = `𝟙
 mapˢᴿ f (tyA `× tyB) = mapˢᴿ f tyA `× mapˢᴿ f tyB
 mapˢᴿ f (tyA `+ tyB) = (mapˢᴿ f tyA) `+ (mapˢᴿ f tyB)
 mapˢᴿ f (` x) = “ (f x) ”
--- mapˢᴿ {n'}{m} f (ind ty) = ind (mapˢᴿ (ext {n = n'} f)  ty)
+mapˢᴿ {n'}{m} f (ind ty) = ind (mapˢᴿ (ext {n = n'} f)  ty)
 mapˢᴿ eq (tyA ⇒ tyB) = mapˢᴿ eq tyA ⇒ mapˢᴿ eq tyB
 
 map-cong : ∀{n m}{T}{{_ : Mappable T}}{σ τ : T ⊢ n ⇒ m}
@@ -75,7 +75,7 @@ map-cong eq `𝟙 = refl
 map-cong {n} {m} {T} eq (tyA `× tyB) = cong₂ _`×_ (map-cong {n} {m} {T} eq tyA) (map-cong {n} {m} {T} eq tyB)
 map-cong  {n} {m} {T} eq (tyA `+ tyB) = cong₂ _`+_ (map-cong {n} {m} {T} eq tyA) (map-cong {n} {m} {T} eq tyB)
 map-cong eq (` x) = cong “_” (eq x)
--- map-cong eq (ind ty) = cong ind (map-cong (ext-cong eq) ty)
+map-cong eq (ind ty) = cong ind (map-cong (ext-cong eq) ty)
 map-cong eq (tyA ⇒ tyB) = cong₂ _⇒_ (map-cong eq tyA) (map-cong eq tyB)
 
 Ren : ℕ → ℕ → Set
@@ -157,14 +157,20 @@ data Exp : ∀ {n : ℕ} → Ctx n → TY → Set where
   ι₂ : ∀ {n : ℕ} {ctx : Ctx n} → Exp ctx V → Exp ctx (U `+ V)
   `case : ∀ {n : ℕ} {ctx : Ctx n} {tyA tyB tyC : TY} →  Exp ctx (tyA `+ tyB) → Exp (tyA ∷ ctx) (tyC) → Exp (tyB ∷ ctx) (tyC) → Exp (ctx) (tyC)
 
-
-
+  fold : ∀ {n : ℕ} {ctx : Ctx n} {G} → Exp ctx (sub₀ (ind G) G) → Exp ctx (ind G)
+  -- P : (h : sub₀ (T `× ind G) G `× U →ᴾ T) → (ind G `× U →ᴾ T)
+  P : ∀ {n : ℕ} {ctx : Ctx n} {G} {P} →  Exp ctx ((sub₀ P G) ⇒ P) → Exp ctx (ind G) → Exp ctx T
 ⟦_⟧ᵀ : TY → Set
+
+
+
+data Alg (G : Ty 1) : Set where
+  fold : ⟦ sub₀ (ind G) G ⟧ᵀ → Alg G 
 
 ⟦ `𝟙 ⟧ᵀ     = ⊤
 ⟦ T `× U ⟧ᵀ = ⟦ T ⟧ᵀ × ⟦ U ⟧ᵀ
 ⟦ T `+ U ⟧ᵀ = ⟦ T ⟧ᵀ ⊎ ⟦ U ⟧ᵀ
--- ⟦ ind G ⟧ᵀ  =  Alg G
+⟦ ind G ⟧ᵀ  =  Alg G
 ⟦ tyA ⇒ tyB ⟧ᵀ = ⟦ tyA ⟧ᵀ  →  ⟦ tyB ⟧ᵀ
 
 
@@ -181,13 +187,16 @@ eval (ι₂ exp) ctx = inj₂ ((eval exp ctx))
 eval (`case exp l r) ctx with eval exp ctx 
 ... | inj₁ res = eval l (res ∷ᴴ ctx)
 ... | inj₂ res = eval r (res ∷ᴴ ctx)
+eval (fold exp) ctx = fold (eval exp ctx)
+eval {ty = ty'} (P (exp) exp₁) ctx = {!  ty' !}
+
 
 embedd-Ty : ∀ {n} → PF.Ty n → Ty n
 embedd-Ty PF.`𝟙 = `𝟙
 embedd-Ty (tyA PF.`× tyB) = embedd-Ty tyA `× embedd-Ty tyB
 embedd-Ty (tyA PF.`+ tyB) = embedd-Ty tyA `+ embedd-Ty tyB
 embedd-Ty (PF.` x) = ` x
-embedd-Ty (PF.ind ty) = {!   !} --  ind (embedd-Ty ty)
+embedd-Ty (PF.ind ty) = ind (embedd-Ty ty) --  ind (embedd-Ty ty)
 
 {-# REWRITE   lookup-++ˡ #-}
 
@@ -203,27 +212,29 @@ weaken ctx (π₂ exp) = π₂ (weaken ctx exp)
 weaken ctx (ι₁ exp) = ι₁ (weaken ctx exp)
 weaken ctx (ι₂ exp) = ι₂ (weaken ctx exp)
 weaken ctx (`case c l r) = `case (weaken ctx c) (weaken ctx l) (weaken ctx r) 
+weaken ctx (fold exp) = fold (weaken ctx exp)
+weaken ctx (P e1 e2) = P (weaken ctx e1) (weaken ctx e2)
 
 weaken-Eq : ∀ {n m : ℕ} {ctx : Ctx n} {ctx' : Ctx m}  {tyA } (vals : HVec (λ x → ⟦ x ⟧ᵀ) ctx ) (vals' : HVec (λ x → ⟦ x ⟧ᵀ) ctx' ) (exp : Exp ctx tyA) → eval (weaken ctx' exp) (vals ++ᴴ vals') ≡ eval exp vals
 weaken-Eq = {!   !}
 
-embedd-Exp : ∀ {tyA tyB : PF.TY} →  tyA PF.→ᴾ tyB → Exp [] (embedd-Ty tyA ⇒ embedd-Ty tyB )
-embedd-Exp PF.`0 = Lam `0
-embedd-Exp PF.id = Lam (Var zero)
-embedd-Exp {tyA} {tyB} (PF.C f g) = Lam ( App (weaken [ embedd-Ty tyA ] (embedd-Exp f)) (App (weaken [ embedd-Ty tyA ]  (embedd-Exp g)) (Var zero))) 
-embedd-Exp {tyA} {tyB} (PF.`# l r) = Lam (`# 
-          (App (weaken [ embedd-Ty tyA ] (embedd-Exp l)) (Var zero)) 
-          (App (weaken [ embedd-Ty tyA ] (embedd-Exp r)) (Var zero))) 
-embedd-Exp PF.π₁ = Lam (π₁ (Var zero))
-embedd-Exp PF.π₂ = Lam (π₂ (Var zero))
-embedd-Exp PF.ι₁ = Lam (ι₁ ((Var zero)))
-embedd-Exp PF.ι₂ = Lam (ι₂ ((Var zero)))
-embedd-Exp {(U PF.`+ V)}  (PF.`case f g) = Lam (`case (Var zero) 
-          (App (weaken ((embedd-Ty U) ∷ (embedd-Ty U `+ embedd-Ty V ) ∷ [])  (embedd-Exp f)) (Var zero)) 
-          (App (weaken (embedd-Ty V ∷ embedd-Ty U `+ embedd-Ty V ∷ []) (embedd-Exp g)) (Var zero))) 
-embedd-Exp PF.fold = {!   !}
-embedd-Exp (PF.P exp) = {!   !}
-embedd-Exp (PF.F exp) = {!   !}
+PF→NPF : ∀ {tyA tyB : PF.TY} →  tyA PF.→ᴾ tyB → Exp [] (embedd-Ty tyA ⇒ embedd-Ty tyB )
+PF→NPF PF.`0 = Lam `0
+PF→NPF PF.id = Lam (Var zero)
+PF→NPF {tyA} {tyB} (PF.C f g) = Lam ( App (weaken [ embedd-Ty tyA ] (PF→NPF f)) (App (weaken [ embedd-Ty tyA ]  (PF→NPF g)) (Var zero))) 
+PF→NPF {tyA} {tyB} (PF.`# l r) = Lam (`# 
+          (App (weaken [ embedd-Ty tyA ] (PF→NPF l)) (Var zero)) 
+          (App (weaken [ embedd-Ty tyA ] (PF→NPF r)) (Var zero))) 
+PF→NPF PF.π₁ = Lam (π₁ (Var zero))
+PF→NPF PF.π₂ = Lam (π₂ (Var zero))
+PF→NPF PF.ι₁ = Lam (ι₁ ((Var zero)))
+PF→NPF PF.ι₂ = Lam (ι₂ ((Var zero)))
+PF→NPF {(U PF.`+ V)}  (PF.`case f g) = Lam (`case (Var zero) 
+          (App (weaken ((embedd-Ty U) ∷ (embedd-Ty U `+ embedd-Ty V ) ∷ [])  (PF→NPF f)) (Var zero)) 
+          (App (weaken (embedd-Ty V ∷ embedd-Ty U `+ embedd-Ty V ∷ []) (PF→NPF g)) (Var zero))) 
+PF→NPF PF.fold = {!   !}
+PF→NPF (PF.P exp) = {!   !}
+PF→NPF (PF.F exp) = {!   !}
 
 
 ty-eq : ∀  (tyA) → PF.⟦ tyA ⟧ᵀ ≡ ⟦ embedd-Ty tyA ⟧ᵀ
@@ -236,24 +247,36 @@ ty-eq (PF.ind ty) = {! ty-eq ty  !}
 {-# REWRITE ty-eq   #-}
 
 
-sound-embedd : ∀ {tyA tyB : PF.TY} →  (f : tyA PF.→ᴾ tyB)  → (arg : PF.⟦ tyA ⟧ᵀ  ) → eval  (embedd-Exp f) []ᴴ  arg   ≡ PF.eval f arg
-sound-embedd PF.`0 args = refl
-sound-embedd PF.id args = refl
-sound-embedd (PF.C f g) arg rewrite  
-  weaken-Eq []ᴴ (arg ∷ᴴ []ᴴ)  (embedd-Exp g) | 
-  weaken-Eq []ᴴ (arg ∷ᴴ []ᴴ)  (embedd-Exp f) |
-  sound-embedd g arg |
-  sound-embedd f (PF.eval g arg) = refl 
-sound-embedd {tyA} (PF.`# f g) arg rewrite weaken-Eq []ᴴ (arg ∷ᴴ []ᴴ)(embedd-Exp f) | weaken-Eq []ᴴ (arg ∷ᴴ []ᴴ)(embedd-Exp g) | sound-embedd g arg | sound-embedd f arg = refl 
-sound-embedd PF.π₁ args = refl
-sound-embedd PF.π₂ args = refl
-sound-embedd PF.ι₁ args = refl
-sound-embedd PF.ι₂ args = refl
-sound-embedd (PF.`case f g) (inj₁ x) = {!   !} 
--- rewrite weaken-Eq []ᴴ (x ∷ᴴ (inj₁ x ∷ᴴ []ᴴ)) (embedd-Exp f) | sound-embedd f x | weaken-Eq []ᴴ (x ∷ᴴ (inj₁ x ∷ᴴ []ᴴ)) (embedd-Exp f)  = {!   !}
-sound-embedd (PF.`case f g) (inj₂ y) rewrite weaken-Eq []ᴴ (y ∷ᴴ (inj₁ y ∷ᴴ []ᴴ)) (embedd-Exp g) = {!   !}
-sound-embedd PF.fold args = {!   !}
-sound-embedd (PF.P f) args = {!   !}
-sound-embedd (PF.F f) args = {!   !} 
+PF→NPF-sound : ∀ {tyA tyB : PF.TY} →  (f : tyA PF.→ᴾ tyB)  → (arg : PF.⟦ tyA ⟧ᵀ  ) → eval  (PF→NPF f) []ᴴ  arg   ≡ PF.eval f arg
+PF→NPF-sound PF.`0 args = refl
+PF→NPF-sound PF.id args = refl
+PF→NPF-sound (PF.C f g) arg rewrite  
+  weaken-Eq []ᴴ (arg ∷ᴴ []ᴴ)  (PF→NPF g) | 
+  weaken-Eq []ᴴ (arg ∷ᴴ []ᴴ)  (PF→NPF f) |
+  PF→NPF-sound g arg |
+  PF→NPF-sound f (PF.eval g arg) = refl 
+PF→NPF-sound {tyA} (PF.`# f g) arg rewrite weaken-Eq []ᴴ (arg ∷ᴴ []ᴴ)(PF→NPF f) | weaken-Eq []ᴴ (arg ∷ᴴ []ᴴ)(PF→NPF g) | PF→NPF-sound g arg | PF→NPF-sound f arg = refl 
+PF→NPF-sound PF.π₁ args = refl
+PF→NPF-sound PF.π₂ args = refl
+PF→NPF-sound PF.ι₁ args = refl
+PF→NPF-sound PF.ι₂ args = refl
+PF→NPF-sound {U PF.`+ V} (PF.`case f g) (inj₁ x) rewrite weaken-Eq {ctx = []} {ctx' = embedd-Ty U ∷ embedd-Ty U `+ embedd-Ty V ∷ [] }  []ᴴ (x ∷ᴴ ((inj₁ x) ∷ᴴ []ᴴ))   (PF→NPF f)  = PF→NPF-sound f x 
+PF→NPF-sound {U PF.`+ V} (PF.`case f g) (inj₂ y) rewrite weaken-Eq {ctx = []} {ctx' = embedd-Ty V ∷ embedd-Ty U `+ embedd-Ty V ∷ [] }  []ᴴ (y ∷ᴴ (inj₂ y ∷ᴴ []ᴴ)) (PF→NPF g) = PF→NPF-sound g y
+PF→NPF-sound PF.fold args = {!   !}
+PF→NPF-sound (PF.P f) args = {!   !}
+PF→NPF-sound (PF.F f) args = {!   !} 
 
 
+-- NPF→PF : ∀ {n : ℕ} {ctx : Ctx n}{tyA tyB : PF.TY} → Exp ctx (embedd-Ty tyA ⇒ embedd-Ty tyB ) → HVec (λ x → ⟦ x ⟧ᵀ) ctx → tyA PF.→ᴾ tyB 
+-- NPF→PF   (Var ())   = ?
+-- NPF→PF (App f x) ctx = NPF→PF f ctx (NPF→PF x ctx)
+-- NPF→PF (Var f) ctx = hlookup ctx f
+-- NPF→PF (Lam exp) ctx = λ x → NPF→PF exp (x ∷ᴴ ctx)
+-- NPF→PF (`# expL expR) ctx = NPF→PF expL ctx , NPF→PF expR ctx
+-- NPF→PF (π₁ exp) ctx = proj₁ (NPF→PF exp ctx)
+-- NPF→PF (π₂ exp) ctx = proj₂ (NPF→PF exp ctx)
+-- NPF→PF (ι₁ exp) ctx = inj₁ ((NPF→PF exp ctx))
+-- NPF→PF (ι₂ exp) ctx = inj₂ ((NPF→PF exp ctx))
+-- NPF→PF (`case exp l r) ctx with NPF→PF exp ctx 
+-- ... | inj₁ res = NPF→PF l (res ∷ᴴ ctx)
+-- ... | inj₂ res = NPF→PF r (res ∷ᴴ ctx)
