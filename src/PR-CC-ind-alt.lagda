@@ -39,6 +39,7 @@ data Ty :    Set where
   _`×_ :  Ty  → Ty   → Ty 
   _`+_ : Ty  → Ty  → Ty 
   ind : PolyTyOp → Ty
+--   _⇒_ : Ty → Ty → Ty
 
 
 tyToTyOp : Ty → PolyTyOp
@@ -46,6 +47,7 @@ tyToTyOp `𝟙 = `𝟙-op
 tyToTyOp (tyA `× tyB) = tyToTyOp tyA `×-op tyToTyOp tyB
 tyToTyOp (tyA `+ tyB) = tyToTyOp tyA `+-op tyToTyOp tyB
 tyToTyOp (ind x) = {!   !} -- not possible
+-- tyToTyOp (ty ⇒ ty₁) = {!   !} -- not possible
 
 TY = Ty
 
@@ -102,6 +104,7 @@ data Alg (G : PolyTyOp) : Set where
 ⟦ T `× U ⟧ᵀ = ⟦ T ⟧ᵀ × ⟦ U ⟧ᵀ
 ⟦ T `+ U ⟧ᵀ = ⟦ T ⟧ᵀ ⊎ ⟦ U ⟧ᵀ
 ⟦ ind G ⟧ᵀ  = Alg G
+-- ⟦ tyA ⇒ tyB ⟧ᵀ = ⟦ tyA ⟧ᵀ → ⟦ tyB ⟧ᵀ
 \end{code}
 }
 
