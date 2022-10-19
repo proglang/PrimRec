@@ -1,4 +1,4 @@
-{-# OPTIONS --rewriting --prop -v rewriting:50 #-}
+{-# OPTIONS --rewriting  #-}
 {-# OPTIONS --allow-unsolved-metas #-}
 
 open import Data.Fin using (Fin; suc; zero; opposite)
