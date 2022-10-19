@@ -1,4 +1,7 @@
+
 \begin{code}[hide]
+{-# OPTIONS --rewriting  #-}
+
 module PR-CC-ind-alt where
 
 
@@ -13,11 +16,14 @@ open import Data.Vec using (Vec;[];_∷_)
 open import Data.Product using (_×_; _,_; proj₁; proj₂) renaming (<_,_> to ⟨_,_⟩)
 open import Data.Sum using (_⊎_; inj₁; inj₂)
 open import Function using (_∘_; const) renaming (id to identity)
+open import Data.Product using (Σ)
 import Relation.Binary.PropositionalEquality as Eq
 open Eq
   using (_≡_; _≢_; refl; sym; trans; cong; cong₂; subst)
 open Eq.≡-Reasoning using (begin_; _≡⟨⟩_; step-≡˘; step-≡; _∎)
 open import Utils
+open import Agda.Builtin.Equality.Rewrite
+
 
 
 infix 6 _→ᴾ_
@@ -39,7 +45,18 @@ data Ty :    Set where
   _`×_ :  Ty  → Ty   → Ty 
   _`+_ : Ty  → Ty  → Ty 
   ind  : PolyTyOp → Ty
---   _⇒_ : Ty → Ty → Ty
+  _⇒_ : Ty → Ty → Ty
+
+
+-- https://stackoverflow.com/questions/43083123/how-to-define-a-functor-fixpoint
+⟦_⟧ₚ : PolyTyOp → Set → Set
+⟦ `𝟙 ⟧ₚ arg = ⊤
+⟦ ptoA `× ptoB ⟧ₚ arg = ⟦ ptoA ⟧ₚ arg × ⟦ ptoB ⟧ₚ arg
+⟦ ptoA `+ ptoB ⟧ₚ arg = ⟦ ptoA ⟧ₚ arg ⊎ ⟦ ptoB ⟧ₚ arg
+⟦ `t ⟧ₚ arg = arg
+
+data Fix (F : PolyTyOp) : Set where
+    fold : ⟦ F ⟧ₚ (Fix F) → Fix F 
 
 
 -- tyToTyOp : Ty → PolyTyOp
@@ -97,16 +114,30 @@ data _→ᴾ_ : TY → TY → Set where
 \begin{code}
 ⟦_⟧ᵀ : TY → Set
 
-data Alg (G : PolyTyOp) : Set where
-  fold : ⟦ sub₀ (ind G) G ⟧ᵀ → Alg G 
+-- data Alg (G : PolyTyOp) : Set where
+--   fold : ⟦ sub₀ (ind G) G ⟧ᵀ → Alg G 
 
 ⟦ `𝟙 ⟧ᵀ     = ⊤
 ⟦ T `× U ⟧ᵀ = ⟦ T ⟧ᵀ × ⟦ U ⟧ᵀ
 ⟦ T `+ U ⟧ᵀ = ⟦ T ⟧ᵀ ⊎ ⟦ U ⟧ᵀ
-⟦ ind G ⟧ᵀ  = Alg G
--- ⟦ tyA ⇒ tyB ⟧ᵀ = ⟦ tyA ⟧ᵀ → ⟦ tyB ⟧ᵀ
+⟦ ind G ⟧ᵀ  = Fix G
+⟦ tyA ⇒ tyB ⟧ᵀ = ⟦ tyA ⟧ᵀ → ⟦ tyB ⟧ᵀ
 \end{code}
 }
+
+\begin{code}[hide]
+helper : ∀ (G : PolyTyOp) (ty : Ty) → ⟦ G ⟧ₚ ⟦ ty ⟧ᵀ ≡ (λ y → ⟦ sub₀ y G ⟧ᵀ ) ty
+helper `𝟙 ty = refl
+helper (G1 `× G2) ty = cong₂ _×_ (helper G1 ty) (helper G2 ty)
+helper (G1 `+ G2) ty = cong₂ _⊎_ (helper G1 ty) (helper G2 ty)
+helper `t ty = refl
+
+helper2 : ∀ (G : PolyTyOp) → ⟦ G ⟧ₚ (Fix G) ≡ ⟦ sub₀ (ind G) G ⟧ᵀ
+helper2 G = helper G (ind G)
+
+{-# REWRITE   helper2 #-}
+
+\end{code}
 
 
 \newcommand\ccFunFmap{%
@@ -139,12 +170,12 @@ eval π₂       = proj₂
 eval ι₁       = inj₁
 eval ι₂       = inj₂
 eval (`case f g) = λ{ (inj₁ x) → eval f x ; (inj₂ y) → eval g y}
-eval fold     = fold
-eval (P {G = G} h) = λ{ (fold x , u) → eval h ((fmap (λ v → (eval (P h) (v , u)) , v) G x) , u)}
+eval fold  =  fold
+eval (P {G = G} h) =  λ{ (fold x , u) → eval h ((fmap (λ v → (eval (P h) (v , u)) , v) G x) , u)}
 \end{code}
 }
 \begin{code}[hide]
-eval (F {G = G} h) = λ{ (fold x , u) → eval h ((fmap (λ v → eval (F h) (v , u)) G x) , u) }
+eval (F {G = G} h) =   λ{ (fold x , u) → eval h ((fmap (λ v → eval (F h) (v , u)) G x) , u) }
 \end{code}
 
 \begin{code}[hide]
