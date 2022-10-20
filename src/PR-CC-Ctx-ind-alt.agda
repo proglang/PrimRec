@@ -64,8 +64,8 @@ data Exp : ∀ {n : ℕ} → Ctx n → TY → Set where
 
   fold : ∀ {n : ℕ} {ctx : Ctx n} {G} → Exp ctx (sub₀ (ind G) G) → Exp ctx (ind G)
   -- P : (h : sub₀ (T `× ind G) G `× U →ᴾ T) → (ind G `× U →ᴾ T)
-  P : ∀ {n : ℕ} {ctx : Ctx n} {G}{P} →  Exp ctx ((sub₀ P G) ⇒ P) → Exp ctx (ind G) → Exp ctx P
-
+  -- P : ∀ {n : ℕ} {ctx : Ctx n} {G}{P} →  Exp ctx ((sub₀ P G) ⇒ P) → Exp ctx (ind G) → Exp ctx P
+  P : ∀ {n : ℕ} {ctx : Ctx n} {G}{P} →  Exp ctx ((sub₀ P G) ⇒ P) → Exp ctx (ind G ⇒  P)
 
 
 
@@ -85,10 +85,12 @@ eval (`case exp l r) ctx with eval exp ctx
 ... | inj₁ res = eval l (res ∷ᴴ ctx)
 ... | inj₂ res = eval r (res ∷ᴴ ctx)
 eval (fold exp) ctx = fold (eval exp ctx)
-eval   (P {G = G} (e1') e2) ctx with eval  e2 ctx
-... | fold x = eval e1' ctx (fmap (λ y → eval  (P e1' e2)  ctx)  G x) 
+-- eval   (P {G = G} (e1') e2) ctx with eval  e2 ctx
+-- ... | fold x = eval e1' ctx 
+--                   (fmap  (λ v → {! eval  (Lam (P e1' (Var zero))) ctx !})   G x) 
+eval   (P {G = G}{P = p} (e1')) ctx = λ { (fold x) → eval e1' ctx (fmap (λ v → eval (P e1') ctx v) G x)}
 
--- eval (P {G = G} h) =  λ{ (fold x , u) → eval h ((fmap (λ v → (eval (P h) (v , u)) , v) G x) , u)}
+
 
 
 
@@ -107,7 +109,7 @@ weaken ctx (ι₁ exp) = ι₁ (weaken ctx exp)
 weaken ctx (ι₂ exp) = ι₂ (weaken ctx exp)
 weaken ctx (`case c l r) = `case (weaken ctx c) (weaken ctx l) (weaken ctx r) 
 weaken ctx (fold exp) = fold (weaken ctx exp)
-weaken ctx (P e1 e2) = P (weaken ctx e1) (weaken ctx e2)
+weaken ctx (P e1 ) = P (weaken ctx e1)
 
 weaken-Eq : ∀ {n m : ℕ} {ctx : Ctx n} {ctx' : Ctx m}  {tyA } (vals : HVec (λ x → ⟦ x ⟧ᵀ) ctx ) (vals' : HVec (λ x → ⟦ x ⟧ᵀ) ctx' ) (exp : Exp ctx tyA) → eval (weaken ctx' exp) (vals ++ᴴ vals') ≡ eval exp vals
 weaken-Eq = {!   !}
@@ -127,11 +129,9 @@ PF→NPF {(U PF.`+ V)}  (PF.`case f g) = Lam (`case (Var zero)
           (App (weaken (( U) ∷ ( U `+  V ) ∷ [])  (PF→NPF f)) (Var zero)) 
           (App (weaken ( V ∷  U `+  V ∷ []) (PF→NPF g)) (Var zero))) 
 PF→NPF PF.fold = Lam (fold (Var zero))
-PF→NPF {(ind G `× U)} (PF.P h) = Lam (P ({!   !}) (π₁ (Var zero))) --  Lam (P (weaken [ ind G `× U ] (Lam (App (weaken {!   !} (PF→NPF h)) {!  π₁ (Var zero) !}))) (π₁ ( Var zero))) -- Lam (P (weaken [ ind G `× U ] (PF→NPF exp)) {!  Var zero !}) -- P : ∀ {n : ℕ} {ctx : Ctx n} {G} {P} →  Exp ctx ((sub₀ P G) ⇒ P) → Exp ctx (ind G) → Exp ctx T
+PF→NPF {(ind G `× U)} (PF.P h) = Lam {!   !} 
 PF→NPF (PF.F exp) = {!   !}
 
--- P : (h : sub₀ (P `× ind G) G `× U →ᴾ P) → (ind G `× U →ᴾ P)
--- P : ∀ {n : ℕ} {ctx : Ctx n} {G}{P} →  Exp ctx ((sub₀ P G) ⇒ P) → Exp ctx (ind G) → Exp ctx P
 
 
 PF→NPF-sound : ∀ {tyA tyB : PF.TY} →  (f : tyA PF.→ᴾ tyB)  → (arg : PF.⟦ tyA ⟧ᵀ  ) → eval  (PF→NPF f) []ᴴ  arg   ≡ PF.eval f arg
@@ -174,5 +174,6 @@ embedd-ST (ST.Lam exp) = Lam (embedd-ST exp)
 embedd-ST ST.CZero = fold (ι₁ `0)
 embedd-ST ST.Suc = Lam (fold (ι₂ (Var zero)))
 embedd-ST (ST.App f x) = App (embedd-ST f) (embedd-ST x)
-embedd-ST (ST.PrecT h acc counter) = P {G = G-Nat}  (Lam {! embedd-ST h   !}) (embedd-ST counter)
+embedd-ST (ST.PrecT h acc counter) = {!   !}
 embedd-ST (ST.Nat x) = {!   !}
+-- P : ∀ {n : ℕ} {ctx : Ctx n} {G}{P} →  Exp ctx ((sub₀ P G) ⇒ P) → Exp ctx (ind G ⇒  P)
