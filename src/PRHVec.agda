@@ -55,6 +55,6 @@ mapId (x ∷ xs) rewrite mapId xs = refl
 {-# REWRITE  mapId #-}
 
 
-eval*≡map-Eval :  ∀ {n m : ℕ} {ctx : T.Ctx n}{resGi : T.Ctx m} (gs : HVec (PR ctx) resGi) (hvs : HVec T.evalTy ctx) → eval*  gs hvs ≡ mapᴴ' {F = PR ctx }{G = T.evalTy}{tt = resGi}{res = id} (λ g → eval g hvs) gs
+eval*≡map-Eval :  ∀ {n m : ℕ} {ctx : T.Ctx n}{resGi : T.Ctx m} (gs : HVec (PR ctx) resGi) (hvs : HVec T.evalTy ctx) → eval*  gs hvs ≡ mapᴴ' {F = PR ctx }{G = T.evalTy}{res = id} (λ g → eval g hvs) gs
 eval*≡map-Eval []ᴴ hvs = refl
 eval*≡map-Eval (x ∷ᴴ gs) hvs = cong (λ v → eval x hvs ∷ᴴ v) (eval*≡map-Eval gs hvs)

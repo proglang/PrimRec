@@ -26,9 +26,9 @@ _++ᴴ_ : ∀ {F : S → Set}{n₁ n₂}{ss₁ : Vec S n₁}{ss₂ : Vec S n₂}
 []ᴴ ++ᴴ ys = ys
 (x ∷ᴴ xs) ++ᴴ ys = x ∷ᴴ (xs ++ᴴ ys)
 
-mapᴴ' : ∀ {S T : Set} {F : S → Set}{G : T → Set}{n}{ss : Vec S n}{tt : Vec T n} {res : S → T} → (∀ {s} → F s → G (res s)) → HVec F ss → HVec G (map res ss)
+mapᴴ' : ∀ {S T : Set} {F : S → Set}{G : T → Set}{n}{ss : Vec S n} {res : S → T} → (∀ {s} → F s → G (res s)) → HVec F ss → HVec G (map res ss)
 mapᴴ' f []ᴴ = []ᴴ
-mapᴴ'  {ss = s' ∷ ss'}{res = res'} f (x ∷ᴴ a*) = f x ∷ᴴ mapᴴ' {tt = map res' ss'} f a* -- 
+mapᴴ'  {ss = s' ∷ ss'}{res = res'} f (x ∷ᴴ a*) = f x ∷ᴴ mapᴴ'  f a* -- 
 
 mapᴴ : ∀ {F : S → Set}{n}{ss : Vec S n} {res : S → S} → (∀ {s} → F s → F (res s)) → HVec F ss → HVec F (map res ss)
 mapᴴ f []ᴴ = []ᴴ
