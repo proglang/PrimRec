@@ -3,7 +3,7 @@
 module PR-CC-Ctx-ind-alt where
 
 
-open import Data.Fin using (Fin; zero; suc; inject+)
+open import Data.Fin using (Fin; zero; suc; inject+; raise)
 open import Data.Vec.Properties using (lookup-++ʳ; lookup-++ˡ)
 open import Data.Empty using (⊥)
 open import Data.Unit using (⊤; tt)
@@ -271,3 +271,59 @@ embedd-ST-sound ctx' (ST.Nat x) = ℕ→Nat≡eval∘ℕ→ExpNat x ((mapᴴ' (e
 embedd-ST-sound ctx' (ST.PrecT h acc counter) = {!   !} 
 
 
+weakenRVar : ∀ (n) (m) (o)→ Fin (n + o) → Fin (n + (m + o))
+weakenRVar zero m o f = raise m f
+weakenRVar (suc n) m o zero = zero
+weakenRVar (suc n) m o (suc f) = suc (weakenRVar n m o f)
+
+weakenRVAr-lookup : ∀ {n m o}  (ctxA : Ctx n)(ctxB : Ctx m)(ctxC : Ctx o) (f : Fin (n + o)) → lookup (ctxA ++ ctxB ++ ctxC) (weakenRVar   n m o f) ≡ lookup (ctxA ++ ctxC) f  
+weakenRVAr-lookup [] ctxB ctxC f = lookup-++ʳ ctxB ctxC f
+weakenRVAr-lookup (x ∷ ctxA) ctxB ctxC zero = refl
+weakenRVAr-lookup (x ∷ ctxA) ctxB ctxC (suc f) = weakenRVAr-lookup ctxA ctxB ctxC f
+
+{-# REWRITE   weakenRVAr-lookup #-}
+
+
+weakenRVAr-hlookup : ∀ {n m o}  {ctxA : Ctx n} {ctxB : Ctx m} {ctxC : Ctx o} (valsA : HVec (λ x → ⟦ x ⟧ᵀ) ctxA ) (valsB : HVec (λ x → ⟦ x ⟧ᵀ) ctxB )(valsC : HVec (λ x → ⟦ x ⟧ᵀ) ctxC ) (f : Fin (n + o)) →
+  hlookup (valsA ++ᴴ valsB ++ᴴ valsC) (weakenRVar n m o f) ≡
+      hlookup (valsA ++ᴴ valsC) f
+weakenRVAr-hlookup []ᴴ valsB valsC f = {!   !}
+weakenRVAr-hlookup (x ∷ᴴ valsA) valsB valsC zero = refl
+weakenRVAr-hlookup (x ∷ᴴ valsA) valsB valsC (suc f) = weakenRVAr-hlookup valsA valsB valsC f
+
+
+-- see : https://gitlab.com/goldfirere/stitch/-/blob/hs2020/src/Language/Stitch/Shift.hs
+weakenR : ∀ {n m o}  (ctxA : Ctx n)(ctxB : Ctx m)(ctxC : Ctx o){tyA} → Exp (ctxA ++ ctxC) tyA → Exp (ctxA ++ ctxB ++ ctxC) tyA
+weakenR ctxA ctxB ctxC `0 = `0
+weakenR ctxA ctxB ctxC (App f x) = App (weakenR ctxA ctxB ctxC f) (weakenR ctxA ctxB ctxC x)
+weakenR {n} {m}  {o} ctxA ctxB ctxC (Var f) = Var (weakenRVar  n m o f)
+weakenR ctxA ctxB ctxC (Lam {tyA = tyA } exp) = Lam (weakenR (tyA ∷ ctxA) ctxB ctxC exp)
+weakenR ctxA ctxB ctxC (`# l r) = `# (weakenR ctxA ctxB ctxC l) (weakenR ctxA ctxB ctxC r)
+weakenR ctxA ctxB ctxC (π₁ exp) = π₁ (weakenR ctxA ctxB ctxC exp)
+weakenR ctxA ctxB ctxC (π₂ exp) = π₂ (weakenR ctxA ctxB ctxC exp)
+weakenR ctxA ctxB ctxC (ι₁ exp) = ι₁ (weakenR ctxA ctxB ctxC exp)
+weakenR ctxA ctxB ctxC (ι₂ exp) = ι₂ (weakenR ctxA ctxB ctxC exp)
+weakenR ctxA ctxB ctxC (`case {tyA = tyA}  {tyB = tyB} c l r) = `case (weakenR ctxA ctxB ctxC c) (weakenR (tyA ∷ ctxA) ctxB ctxC l) ((weakenR (tyB ∷ ctxA) ctxB ctxC r))
+weakenR ctxA ctxB ctxC (fold exp) = fold (weakenR ctxA ctxB ctxC exp)
+weakenR ctxA ctxB ctxC (P exp) = P (weakenR ctxA ctxB ctxC exp)
+
+
+
+weaken-R-Eq : ∀ {n m o : ℕ} {ctxA : Ctx n} {ctxB : Ctx m}{ctxC : Ctx o}  {tyA } (valsA : HVec (λ x → ⟦ x ⟧ᵀ) ctxA ) (valsB : HVec (λ x → ⟦ x ⟧ᵀ) ctxB )(valsC : HVec (λ x → ⟦ x ⟧ᵀ) ctxC ) (exp : Exp (ctxA ++ ctxC) tyA) → 
+      eval (weakenR ctxA ctxB ctxC exp) (valsA ++ᴴ valsB ++ᴴ valsC ) ≡ eval exp (valsA ++ᴴ valsC)
+weaken-R-Eq valsA valsB valsC `0 = refl
+weaken-R-Eq valsA valsB valsC (App f x) rewrite weaken-R-Eq valsA valsB valsC f | weaken-R-Eq valsA valsB valsC x = refl
+weaken-R-Eq valsA valsB valsC (Var f) = {!   !}
+weaken-R-Eq valsA valsB valsC (Lam {tyA = tyA} exp) = extensionality (λ x → weaken-R-Eq (x ∷ᴴ valsA) valsB valsC exp)
+weaken-R-Eq valsA valsB valsC (`# l r) = cong₂ _,_ (weaken-R-Eq valsA valsB valsC l) (weaken-R-Eq valsA valsB valsC r)
+weaken-R-Eq valsA valsB valsC (π₁ exp) = cong proj₁ (weaken-R-Eq valsA valsB valsC exp)
+weaken-R-Eq valsA valsB valsC (π₂ exp) = cong proj₂ (weaken-R-Eq valsA valsB valsC exp)
+weaken-R-Eq valsA valsB valsC (ι₁ exp) = cong inj₁ (weaken-R-Eq valsA valsB valsC exp)
+weaken-R-Eq valsA valsB valsC (ι₂ exp) = cong inj₂ (weaken-R-Eq valsA valsB valsC exp)
+weaken-R-Eq {n}{m}{o} {ctxA}{ctxB} {ctxC} valsA valsB valsC  (`case {tyA = tyA} {tyB = tyB} c l r) 
+  rewrite sym (weaken-R-Eq  valsA valsB valsC c)
+  with eval (weakenR ctxA ctxB ctxC c) (valsA ++ᴴ valsB ++ᴴ valsC )
+... | inj₁ x  = weaken-R-Eq (x ∷ᴴ valsA) valsB valsC l
+... | inj₂ y = weaken-R-Eq (y ∷ᴴ valsA) valsB valsC r
+weaken-R-Eq valsA valsB valsC (fold exp) = cong fold (weaken-R-Eq valsA valsB valsC exp)
+weaken-R-Eq valsA valsB valsC (P exp) rewrite weaken-R-Eq valsA valsB valsC exp = extensionality (λ {(fold y) → {!   !}}) 

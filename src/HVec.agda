@@ -22,6 +22,8 @@ hlookup : ∀ {ss : Vec S n}{F : S → Set} (a* : HVec F ss) → (i : Fin n) →
 hlookup {ss = s ∷ ss} (a ∷ᴴ a*) Fin.zero = a
 hlookup {ss = s ∷ ss} (a ∷ᴴ a*) (Fin.suc i) = hlookup a* i
 
+infixr 5 _++ᴴ_
+
 _++ᴴ_ : ∀ {F : S → Set}{n₁ n₂}{ss₁ : Vec S n₁}{ss₂ : Vec S n₂} → HVec F ss₁ → HVec F ss₂ → HVec F (ss₁ ++ ss₂)
 []ᴴ ++ᴴ ys = ys
 (x ∷ᴴ xs) ++ᴴ ys = x ∷ᴴ (xs ++ᴴ ys)
