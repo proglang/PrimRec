@@ -178,12 +178,20 @@ lookupMap (v ∷ vs) (suc f) g = lookupMap vs f g
 
 Nat→ℕ : PR-CC-ind-alt.Fix G-Nat → ℕ
 Nat→ℕ (fold (inj₁ x)) = zero
-Nat→ℕ (fold (inj₂ y)) = Nat→ℕ y
+Nat→ℕ (fold (inj₂ y)) = suc (Nat→ℕ y)
 
+ℕ→Nat∘Nat→ℕ≡id : ∀ (x) → ℕ→Nat (Nat→ℕ x) ≡ x
+ℕ→Nat∘Nat→ℕ≡id (fold (inj₁ x)) = refl
+ℕ→Nat∘Nat→ℕ≡id (fold (inj₂ y))  = cong fold (cong inj₂ (ℕ→Nat∘Nat→ℕ≡id y))
+
+Nat→ℕ∘ℕ→Nat≡id : ∀ (x) → Nat→ℕ ( ℕ→Nat x) ≡ x
+Nat→ℕ∘ℕ→Nat≡id zero = refl
+Nat→ℕ∘ℕ→Nat≡id (suc x) = cong suc (Nat→ℕ∘ℕ→Nat≡id x)
 
 ℕ→ExpNat : ∀ {n}{ctx : Ctx n } →  ℕ → Exp ctx Nat
 ℕ→ExpNat zero = fold (ι₁ `0)
 ℕ→ExpNat (suc n) = fold (ι₂ (ℕ→ExpNat n))
+
 
 
 embedd-ST : ∀ {n}  {ctx : ST.Ctx n} {ty} → ST.Exp ctx ty → Exp (map embedd-ST-Ty ctx) (embedd-ST-Ty ty) 
@@ -200,7 +208,6 @@ embedd-ST {n} {ctx} {ty} (ST.PrecT h acc counter) =
             x = (P {n} {map embedd-ST-Ty ctx}  {G-Nat } {embedd-ST-Ty ty} h'') in 
         App x counter'
 embedd-ST (ST.Nat n) = ℕ→ExpNat n
--- P : ∀ {n : ℕ} {ctx : Ctx n} {G}{P} →  Exp ctx ((sub₀ P G) ⇒ P) → Exp ctx (ind G ⇒  P)
 
 
 
@@ -215,12 +222,52 @@ embeddTyEval' {(tyA ST.⇒ tyB)} v = λ x → embeddTyEval' {tyB} (v (embeddTyEv
 embeddTyEval {ST.TyNat} v = ℕ→Nat v
 embeddTyEval {(tyA ST.⇒ tyB)} v = λ x → embeddTyEval {tyB} (v (embeddTyEval' {tyA} x))
 
+postulate
+  extensionality : ∀ {A B : Set} {f g : A → B}
+    → (∀ (x : A) → f x ≡ g x)
+      -----------------------
+    → f ≡ g
+
+
+
+embeddTyEval∘embeddTyEval'≡id : ∀ {ty : ST.Ty } (v : ⟦ (embedd-ST-Ty ty) ⟧ᵀ) → embeddTyEval (embeddTyEval' {ty} v ) ≡ v
+embeddTyEval∘embeddTyEval'≡id {ST.TyNat} v = ℕ→Nat∘Nat→ℕ≡id v
+embeddTyEval∘embeddTyEval'≡id {tyA ST.⇒ tyB} v = extensionality (λ x → 
+    (embeddTyEval (embeddTyEval' (v (embeddTyEval (embeddTyEval' x))))) 
+        ≡⟨ cong ((λ x →  (embeddTyEval (embeddTyEval' (v x))))) (embeddTyEval∘embeddTyEval'≡id {tyA} x) ⟩ 
+    embeddTyEval (embeddTyEval' (v x)) 
+        ≡⟨ embeddTyEval∘embeddTyEval'≡id {tyB} (v x) ⟩ 
+    ((v x) ∎ ))
+
+embeddTyEval'∘embeddTyEval≡id : ∀ {ty : ST.Ty} (v : ST.evalTy ty) → embeddTyEval' (embeddTyEval {ty} v ) ≡ v
+embeddTyEval'∘embeddTyEval≡id {ST.TyNat} v = Nat→ℕ∘ℕ→Nat≡id v
+embeddTyEval'∘embeddTyEval≡id {tyA ST.⇒ tyB} v = extensionality (λ x → 
+      embeddTyEval' (embeddTyEval (v (embeddTyEval' (embeddTyEval x)))) 
+          ≡⟨ cong (λ x → embeddTyEval' (embeddTyEval (v x)))  (embeddTyEval'∘embeddTyEval≡id {tyA} x)  ⟩ 
+      (embeddTyEval' (embeddTyEval (v x)) 
+          ≡⟨ embeddTyEval'∘embeddTyEval≡id {tyB} (v x) ⟩ 
+      (v x) ∎))
+
+{-# REWRITE   embeddTyEval∘embeddTyEval'≡id #-}
+
+ℕ→Nat≡eval∘ℕ→ExpNat :  ∀ {n}  {ctx : Ctx n} (x : ℕ) (ctx' : HVec (λ x → ⟦ x ⟧ᵀ) ctx) →  ℕ→Nat x ≡ eval (ℕ→ExpNat x) ctx'
+ℕ→Nat≡eval∘ℕ→ExpNat zero ctx = refl
+ℕ→Nat≡eval∘ℕ→ExpNat (suc x) ctx = cong fold (cong inj₂ (ℕ→Nat≡eval∘ℕ→ExpNat x ctx))
+
+
+lookupMapᴴ : ∀ {S T : Set} {F : S → Set}{G : T → Set}{n}{ss : Vec S n} {res : S → T} → (i : Fin n) → (f : ∀ {s} → F s → G (res s)) → (hvs : HVec F ss) → f (hlookup  hvs i ) ≡ hlookup (mapᴴ' {S}{T}{F}{G}{n}{ss}{res} f hvs) i
+lookupMapᴴ zero f (x ∷ᴴ hvs) = refl
+lookupMapᴴ (suc i) f (x ∷ᴴ hvs) = lookupMapᴴ i f hvs
+
+
 
 embedd-ST-sound : ∀ {n}  {ctx : ST.Ctx n} {ty} → (ctx' : HVec ST.evalTy ctx) → (sTExp : ST.Exp ctx ty)  → embeddTyEval {ty} ((ST.evalExp sTExp ctx') ) ≡  ( eval (embedd-ST sTExp) (mapᴴ' (embeddTyEval) ctx') ) 
-embedd-ST-sound ctx' (ST.Var f) = {!   !}
-embedd-ST-sound ctx' (ST.Lam exp) = {!   !}
+embedd-ST-sound  ( ctx') (ST.Var ( f)) = lookupMapᴴ f embeddTyEval ctx' 
+embedd-ST-sound ctx' (ST.Lam exp) = extensionality (λ x → embedd-ST-sound (embeddTyEval' x ∷ᴴ ctx') exp)
 embedd-ST-sound ctx' ST.CZero = refl
-embedd-ST-sound ctx' ST.Suc = {!   !}
-embedd-ST-sound ctx' (ST.App f x) rewrite embedd-ST-sound ctx' f | embedd-ST-sound ctx' x = {!   !}
-embedd-ST-sound ctx' (ST.Nat x) = {!   !}
-embedd-ST-sound ctx' (ST.PrecT exp exp₁ exp₂) = {!   !} 
+embedd-ST-sound ctx' ST.Suc = extensionality (λ x → cong fold (cong inj₂ (ℕ→Nat∘Nat→ℕ≡id x) ))
+embedd-ST-sound {ty = ty} ctx' (ST.App f x) rewrite sym (embedd-ST-sound ctx' f) |  sym (embedd-ST-sound ctx' x) | embeddTyEval'∘embeddTyEval≡id (ST.evalExp x ctx') = refl 
+embedd-ST-sound ctx' (ST.Nat x) = ℕ→Nat≡eval∘ℕ→ExpNat x ((mapᴴ' (embeddTyEval) ctx'))
+embedd-ST-sound ctx' (ST.PrecT h acc counter) = {!   !} 
+
+
