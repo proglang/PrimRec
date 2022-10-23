@@ -96,27 +96,108 @@ eval   (P {G = G}{P = p} (e1')) ctx = λ { (fold x) → eval e1' ctx (fmap (λ v
 
 {-# REWRITE   lookup-++ˡ #-}
 
+postulate
+  extensionality : ∀ {A B : Set} {f g : A → B}
+    → (∀ (x : A) → f x ≡ g x)
+      -----------------------
+    → f ≡ g
+
+
+
+
+weakenGenVar : ∀ (n) (m) (o)→ Fin (n + o) → Fin (n + (m + o))
+weakenGenVar zero m o f = raise m f
+weakenGenVar (suc n) m o zero = zero
+weakenGenVar (suc n) m o (suc f) = suc (weakenGenVar n m o f)
+
+weakenGenVAr-lookup : ∀ {A : Set} {n m o}  (ctxA : Vec A n)(ctxB : Vec A m)(ctxC : Vec A o) (f : Fin (n + o)) → lookup (ctxA ++ ctxB ++ ctxC) (weakenGenVar   n m o f) ≡ lookup (ctxA ++ ctxC) f  
+weakenGenVAr-lookup [] ctxB ctxC f = lookup-++ʳ ctxB ctxC f
+weakenGenVAr-lookup (x ∷ ctxA) ctxB ctxC zero = refl
+weakenGenVAr-lookup (x ∷ ctxA) ctxB ctxC (suc f) = weakenGenVAr-lookup ctxA ctxB ctxC f
+
+{-# REWRITE   weakenGenVAr-lookup lookup-++ʳ #-}
+
+lookup-++ʳᴴ : ∀ {A : Set}{F : A → Set} {n m} {xs : Vec A n} {ys : Vec A m} (hxs : HVec F xs)  (hys : HVec F ys)(f : Fin m )   → hlookup (hxs ++ᴴ hys) (raise n f) ≡ hlookup hys f 
+lookup-++ʳᴴ []ᴴ (x ∷ᴴ hys) zero = refl
+lookup-++ʳᴴ []ᴴ (x ∷ᴴ hys) (suc f) = refl
+lookup-++ʳᴴ (x ∷ᴴ hxs) hys f = lookup-++ʳᴴ hxs hys f
+
+
+weakenGenVAr-hlookup :  ∀ {A : Set}{F : A → Set}{n m o}  {ctxA : Vec A n} {ctxB : Vec A  m} {ctxC : Vec A o} (valsA : HVec F ctxA ) (valsB : HVec F ctxB )(valsC : HVec F ctxC ) (f : Fin (n + o)) →
+  hlookup (valsA ++ᴴ valsB ++ᴴ valsC) (weakenGenVar n m o f) ≡
+      hlookup (valsA ++ᴴ valsC) f
+weakenGenVAr-hlookup []ᴴ valsB valsC f = lookup-++ʳᴴ valsB valsC f
+weakenGenVAr-hlookup (x ∷ᴴ valsA) valsB valsC zero = refl
+weakenGenVAr-hlookup (x ∷ᴴ valsA) valsB valsC (suc f) = weakenGenVAr-hlookup valsA valsB valsC f
+
+
+-- see : https://gitlab.com/goldfirere/stitch/-/blob/hs2020/src/Language/Stitch/Shift.hs
+weakenGen : ∀ {n m o}  (ctxA : Ctx n)(ctxB : Ctx m)(ctxC : Ctx o){tyA} → Exp (ctxA ++ ctxC) tyA → Exp (ctxA ++ ctxB ++ ctxC) tyA
+weakenGen ctxA ctxB ctxC `0 = `0
+weakenGen ctxA ctxB ctxC (App f x) = App (weakenGen ctxA ctxB ctxC f) (weakenGen ctxA ctxB ctxC x)
+weakenGen {n} {m}  {o} ctxA ctxB ctxC (Var f) = Var (weakenGenVar  n m o f)
+weakenGen ctxA ctxB ctxC (Lam {tyA = tyA } exp) = Lam (weakenGen (tyA ∷ ctxA) ctxB ctxC exp)
+weakenGen ctxA ctxB ctxC (`# l r) = `# (weakenGen ctxA ctxB ctxC l) (weakenGen ctxA ctxB ctxC r)
+weakenGen ctxA ctxB ctxC (π₁ exp) = π₁ (weakenGen ctxA ctxB ctxC exp)
+weakenGen ctxA ctxB ctxC (π₂ exp) = π₂ (weakenGen ctxA ctxB ctxC exp)
+weakenGen ctxA ctxB ctxC (ι₁ exp) = ι₁ (weakenGen ctxA ctxB ctxC exp)
+weakenGen ctxA ctxB ctxC (ι₂ exp) = ι₂ (weakenGen ctxA ctxB ctxC exp)
+weakenGen ctxA ctxB ctxC (`case {tyA = tyA}  {tyB = tyB} c l r) = `case (weakenGen ctxA ctxB ctxC c) (weakenGen (tyA ∷ ctxA) ctxB ctxC l) ((weakenGen (tyB ∷ ctxA) ctxB ctxC r))
+weakenGen ctxA ctxB ctxC (fold exp) = fold (weakenGen ctxA ctxB ctxC exp)
+weakenGen ctxA ctxB ctxC (P exp) = P (weakenGen ctxA ctxB ctxC exp)
+
+
+
+weakenGenEq : ∀ {n m o : ℕ} {ctxA : Ctx n} {ctxB : Ctx m}{ctxC : Ctx o}  {tyA } (valsA : HVec (λ x → ⟦ x ⟧ᵀ) ctxA ) (valsB : HVec (λ x → ⟦ x ⟧ᵀ) ctxB )(valsC : HVec (λ x → ⟦ x ⟧ᵀ) ctxC ) (exp : Exp (ctxA ++ ctxC) tyA) → 
+      eval (weakenGen ctxA ctxB ctxC exp) (valsA ++ᴴ valsB ++ᴴ valsC ) ≡ eval exp (valsA ++ᴴ valsC)
+weakenGenEq valsA valsB valsC `0 = refl
+weakenGenEq valsA valsB valsC (App f x) rewrite weakenGenEq valsA valsB valsC f | weakenGenEq valsA valsB valsC x = refl
+weakenGenEq valsA valsB valsC (Var f) = weakenGenVAr-hlookup valsA valsB valsC f
+weakenGenEq valsA valsB valsC (Lam {tyA = tyA} exp) = extensionality (λ x → weakenGenEq (x ∷ᴴ valsA) valsB valsC exp)
+weakenGenEq valsA valsB valsC (`# l r) = cong₂ _,_ (weakenGenEq valsA valsB valsC l) (weakenGenEq valsA valsB valsC r)
+weakenGenEq valsA valsB valsC (π₁ exp) = cong proj₁ (weakenGenEq valsA valsB valsC exp)
+weakenGenEq valsA valsB valsC (π₂ exp) = cong proj₂ (weakenGenEq valsA valsB valsC exp)
+weakenGenEq valsA valsB valsC (ι₁ exp) = cong inj₁ (weakenGenEq valsA valsB valsC exp)
+weakenGenEq valsA valsB valsC (ι₂ exp) = cong inj₂ (weakenGenEq valsA valsB valsC exp)
+weakenGenEq {n}{m}{o} {ctxA}{ctxB} {ctxC} valsA valsB valsC  (`case {tyA = tyA} {tyB = tyB} c l r) 
+  rewrite sym (weakenGenEq  valsA valsB valsC c)
+  with eval (weakenGen ctxA ctxB ctxC c) (valsA ++ᴴ valsB ++ᴴ valsC )
+... | inj₁ x  = weakenGenEq (x ∷ᴴ valsA) valsB valsC l
+... | inj₂ y = weakenGenEq (y ∷ᴴ valsA) valsB valsC r
+weakenGenEq valsA valsB valsC (fold exp) = cong fold (weakenGenEq valsA valsB valsC exp)
+weakenGenEq valsA valsB valsC (P exp) rewrite weakenGenEq valsA valsB valsC exp = extensionality (λ {(fold y) → {!   !}}) 
+
 
 weaken : ∀ {n m : ℕ} {ctx : Ctx n} {tyA } (ctx' : Ctx m)  →  Exp ctx tyA → Exp (ctx ++ ctx') tyA
-weaken ctx `0 = `0
-weaken ctx (App f x) = App (weaken ctx f) (weaken ctx x)
-weaken {n} {m} {ctx} ctx' (Var f)  rewrite lookup-++ˡ ctx ctx' f = Var  {n + m}  ((inject+ m f)) 
-weaken ctx (Lam exp) = Lam (weaken ctx exp)
-weaken ctx (`# l r) = `# (weaken ctx l) (weaken ctx r)
-weaken ctx (π₁ exp) = π₁ (weaken ctx exp)
-weaken ctx (π₂ exp) = π₂ (weaken ctx exp)
-weaken ctx (ι₁ exp) = ι₁ (weaken ctx exp)
-weaken ctx (ι₂ exp) = ι₂ (weaken ctx exp)
-weaken ctx (`case c l r) = `case (weaken ctx c) (weaken ctx l) (weaken ctx r) 
-weaken ctx (fold exp) = fold (weaken ctx exp)
-weaken ctx (P e1 ) = P (weaken ctx e1)
+weaken {ctx = ctx} ctx' exp = weakenGen ctx ctx' [] exp
+-- weaken ctx `0 = `0
+-- weaken ctx (App f x) = App (weaken ctx f) (weaken ctx x)
+-- weaken {n} {m} {ctx} ctx' (Var f)  rewrite lookup-++ˡ ctx ctx' f = Var  {n + m}  ((inject+ m f)) 
+-- weaken ctx (Lam exp) = Lam (weaken ctx exp)
+-- weaken ctx (`# l r) = `# (weaken ctx l) (weaken ctx r)
+-- weaken ctx (π₁ exp) = π₁ (weaken ctx exp)
+-- weaken ctx (π₂ exp) = π₂ (weaken ctx exp)
+-- weaken ctx (ι₁ exp) = ι₁ (weaken ctx exp)
+-- weaken ctx (ι₂ exp) = ι₂ (weaken ctx exp)
+-- weaken ctx (`case c l r) = `case (weaken ctx c) (weaken ctx l) (weaken ctx r) 
+-- weaken ctx (fold exp) = fold (weaken ctx exp)
+-- weaken ctx (P e1 ) = P (weaken ctx e1)
 
 
 
 
 
 weaken-Eq : ∀ {n m : ℕ} {ctx : Ctx n} {ctx' : Ctx m}  {tyA } (vals : HVec (λ x → ⟦ x ⟧ᵀ) ctx ) (vals' : HVec (λ x → ⟦ x ⟧ᵀ) ctx' ) (exp : Exp ctx tyA) → eval (weaken ctx' exp) (vals ++ᴴ vals') ≡ eval exp vals
-weaken-Eq = {!   !}
+weaken-Eq vals vals'  = weakenGenEq vals vals' []ᴴ 
+
+
+weaken' : ∀ {m o} (ctxB : Ctx m){ctxC : Ctx o}{tyA} → Exp ( ctxC) tyA → Exp ( ctxB ++ ctxC) tyA
+weaken' ctxB {ctxC} = weakenGen [] ctxB ctxC  
+
+
+weaken'-Eq : ∀ {m o : ℕ}  {ctxB : Ctx m}{ctxC : Ctx o}  {tyA } (valsB : HVec (λ x → ⟦ x ⟧ᵀ) ctxB )(valsC : HVec (λ x → ⟦ x ⟧ᵀ) ctxC ) (exp : Exp ( ctxC) tyA) → 
+      eval (weaken' ctxB {ctxC} exp) (valsB ++ᴴ valsC ) ≡ eval exp (valsC)
+weaken'-Eq valsB valsC  = weakenGenEq  []ᴴ  valsB valsC
 
 PF→NPF : ∀ {tyA tyB : PF.TY} →  tyA PF.→ᴾ tyB → Exp [] ( tyA ⇒  tyB )
 PF→NPF PF.`0 = Lam `0
@@ -201,12 +282,12 @@ embedd-ST ST.CZero = fold (ι₁ `0)
 embedd-ST ST.Suc = Lam (fold (ι₂ (Var zero)))
 embedd-ST (ST.App f x) = App (embedd-ST f) (embedd-ST x)
 embedd-ST {n} {ctx} {ty} (ST.PrecT h acc counter) = 
-        let h' = embedd-ST h 
+        let h' =  (embedd-ST h) 
             acc' = embedd-ST acc
             counter' = embedd-ST counter 
-            h'' = Lam (`case (Var zero) {!  acc' !} {! embedd-ST h'   !})
+            h'' = Lam (`case (Var zero) (weaken'  (`𝟙 ∷ (`𝟙 `+ embedd-ST-Ty ty)∷ []) acc') {! h'   !})
             x = (P {n} {map embedd-ST-Ty ctx}  {G-Nat } {embedd-ST-Ty ty} h'') in 
-        App x counter'
+         App x counter'
 embedd-ST (ST.Nat n) = ℕ→ExpNat n
 
 
@@ -222,11 +303,7 @@ embeddTyEval' {(tyA ST.⇒ tyB)} v = λ x → embeddTyEval' {tyB} (v (embeddTyEv
 embeddTyEval {ST.TyNat} v = ℕ→Nat v
 embeddTyEval {(tyA ST.⇒ tyB)} v = λ x → embeddTyEval {tyB} (v (embeddTyEval' {tyA} x))
 
-postulate
-  extensionality : ∀ {A B : Set} {f g : A → B}
-    → (∀ (x : A) → f x ≡ g x)
-      -----------------------
-    → f ≡ g
+
 
 
 
@@ -268,62 +345,11 @@ embedd-ST-sound ctx' ST.CZero = refl
 embedd-ST-sound ctx' ST.Suc = extensionality (λ x → cong fold (cong inj₂ (ℕ→Nat∘Nat→ℕ≡id x) ))
 embedd-ST-sound {ty = ty} ctx' (ST.App f x) rewrite sym (embedd-ST-sound ctx' f) |  sym (embedd-ST-sound ctx' x) | embeddTyEval'∘embeddTyEval≡id (ST.evalExp x ctx') = refl 
 embedd-ST-sound ctx' (ST.Nat x) = ℕ→Nat≡eval∘ℕ→ExpNat x ((mapᴴ' (embeddTyEval) ctx'))
-embedd-ST-sound ctx' (ST.PrecT h acc counter) = {!   !} 
-
-
-weakenRVar : ∀ (n) (m) (o)→ Fin (n + o) → Fin (n + (m + o))
-weakenRVar zero m o f = raise m f
-weakenRVar (suc n) m o zero = zero
-weakenRVar (suc n) m o (suc f) = suc (weakenRVar n m o f)
-
-weakenRVAr-lookup : ∀ {n m o}  (ctxA : Ctx n)(ctxB : Ctx m)(ctxC : Ctx o) (f : Fin (n + o)) → lookup (ctxA ++ ctxB ++ ctxC) (weakenRVar   n m o f) ≡ lookup (ctxA ++ ctxC) f  
-weakenRVAr-lookup [] ctxB ctxC f = lookup-++ʳ ctxB ctxC f
-weakenRVAr-lookup (x ∷ ctxA) ctxB ctxC zero = refl
-weakenRVAr-lookup (x ∷ ctxA) ctxB ctxC (suc f) = weakenRVAr-lookup ctxA ctxB ctxC f
-
-{-# REWRITE   weakenRVAr-lookup #-}
-
-
-weakenRVAr-hlookup : ∀ {n m o}  {ctxA : Ctx n} {ctxB : Ctx m} {ctxC : Ctx o} (valsA : HVec (λ x → ⟦ x ⟧ᵀ) ctxA ) (valsB : HVec (λ x → ⟦ x ⟧ᵀ) ctxB )(valsC : HVec (λ x → ⟦ x ⟧ᵀ) ctxC ) (f : Fin (n + o)) →
-  hlookup (valsA ++ᴴ valsB ++ᴴ valsC) (weakenRVar n m o f) ≡
-      hlookup (valsA ++ᴴ valsC) f
-weakenRVAr-hlookup []ᴴ valsB valsC f = {!   !}
-weakenRVAr-hlookup (x ∷ᴴ valsA) valsB valsC zero = refl
-weakenRVAr-hlookup (x ∷ᴴ valsA) valsB valsC (suc f) = weakenRVAr-hlookup valsA valsB valsC f
-
-
--- see : https://gitlab.com/goldfirere/stitch/-/blob/hs2020/src/Language/Stitch/Shift.hs
-weakenR : ∀ {n m o}  (ctxA : Ctx n)(ctxB : Ctx m)(ctxC : Ctx o){tyA} → Exp (ctxA ++ ctxC) tyA → Exp (ctxA ++ ctxB ++ ctxC) tyA
-weakenR ctxA ctxB ctxC `0 = `0
-weakenR ctxA ctxB ctxC (App f x) = App (weakenR ctxA ctxB ctxC f) (weakenR ctxA ctxB ctxC x)
-weakenR {n} {m}  {o} ctxA ctxB ctxC (Var f) = Var (weakenRVar  n m o f)
-weakenR ctxA ctxB ctxC (Lam {tyA = tyA } exp) = Lam (weakenR (tyA ∷ ctxA) ctxB ctxC exp)
-weakenR ctxA ctxB ctxC (`# l r) = `# (weakenR ctxA ctxB ctxC l) (weakenR ctxA ctxB ctxC r)
-weakenR ctxA ctxB ctxC (π₁ exp) = π₁ (weakenR ctxA ctxB ctxC exp)
-weakenR ctxA ctxB ctxC (π₂ exp) = π₂ (weakenR ctxA ctxB ctxC exp)
-weakenR ctxA ctxB ctxC (ι₁ exp) = ι₁ (weakenR ctxA ctxB ctxC exp)
-weakenR ctxA ctxB ctxC (ι₂ exp) = ι₂ (weakenR ctxA ctxB ctxC exp)
-weakenR ctxA ctxB ctxC (`case {tyA = tyA}  {tyB = tyB} c l r) = `case (weakenR ctxA ctxB ctxC c) (weakenR (tyA ∷ ctxA) ctxB ctxC l) ((weakenR (tyB ∷ ctxA) ctxB ctxC r))
-weakenR ctxA ctxB ctxC (fold exp) = fold (weakenR ctxA ctxB ctxC exp)
-weakenR ctxA ctxB ctxC (P exp) = P (weakenR ctxA ctxB ctxC exp)
+embedd-ST-sound ctx' (ST.PrecT h acc counter) rewrite sym (embedd-ST-sound ctx' counter)  with ST.evalExp counter ctx'
+... | zero rewrite embedd-ST-sound ctx' acc   =  sym (weaken'-Eq (tt ∷ᴴ (inj₁ tt ∷ᴴ  []ᴴ)) (mapᴴ' embeddTyEval ctx') (embedd-ST acc))
+... | suc c = {!   !} 
 
 
 
-weaken-R-Eq : ∀ {n m o : ℕ} {ctxA : Ctx n} {ctxB : Ctx m}{ctxC : Ctx o}  {tyA } (valsA : HVec (λ x → ⟦ x ⟧ᵀ) ctxA ) (valsB : HVec (λ x → ⟦ x ⟧ᵀ) ctxB )(valsC : HVec (λ x → ⟦ x ⟧ᵀ) ctxC ) (exp : Exp (ctxA ++ ctxC) tyA) → 
-      eval (weakenR ctxA ctxB ctxC exp) (valsA ++ᴴ valsB ++ᴴ valsC ) ≡ eval exp (valsA ++ᴴ valsC)
-weaken-R-Eq valsA valsB valsC `0 = refl
-weaken-R-Eq valsA valsB valsC (App f x) rewrite weaken-R-Eq valsA valsB valsC f | weaken-R-Eq valsA valsB valsC x = refl
-weaken-R-Eq valsA valsB valsC (Var f) = {!   !}
-weaken-R-Eq valsA valsB valsC (Lam {tyA = tyA} exp) = extensionality (λ x → weaken-R-Eq (x ∷ᴴ valsA) valsB valsC exp)
-weaken-R-Eq valsA valsB valsC (`# l r) = cong₂ _,_ (weaken-R-Eq valsA valsB valsC l) (weaken-R-Eq valsA valsB valsC r)
-weaken-R-Eq valsA valsB valsC (π₁ exp) = cong proj₁ (weaken-R-Eq valsA valsB valsC exp)
-weaken-R-Eq valsA valsB valsC (π₂ exp) = cong proj₂ (weaken-R-Eq valsA valsB valsC exp)
-weaken-R-Eq valsA valsB valsC (ι₁ exp) = cong inj₁ (weaken-R-Eq valsA valsB valsC exp)
-weaken-R-Eq valsA valsB valsC (ι₂ exp) = cong inj₂ (weaken-R-Eq valsA valsB valsC exp)
-weaken-R-Eq {n}{m}{o} {ctxA}{ctxB} {ctxC} valsA valsB valsC  (`case {tyA = tyA} {tyB = tyB} c l r) 
-  rewrite sym (weaken-R-Eq  valsA valsB valsC c)
-  with eval (weakenR ctxA ctxB ctxC c) (valsA ++ᴴ valsB ++ᴴ valsC )
-... | inj₁ x  = weaken-R-Eq (x ∷ᴴ valsA) valsB valsC l
-... | inj₂ y = weaken-R-Eq (y ∷ᴴ valsA) valsB valsC r
-weaken-R-Eq valsA valsB valsC (fold exp) = cong fold (weaken-R-Eq valsA valsB valsC exp)
-weaken-R-Eq valsA valsB valsC (P exp) rewrite weaken-R-Eq valsA valsB valsC exp = extensionality (λ {(fold y) → {!   !}}) 
+-- weaken'-Eq : ∀ {m o : ℕ}  {ctxB : Ctx m}{ctxC : Ctx o}  {tyA } (valsB : HVec (λ x → ⟦ x ⟧ᵀ) ctxB )(valsC : HVec (λ x → ⟦ x ⟧ᵀ) ctxC ) (exp : Exp ( ctxC) tyA) → 
+   --    eval (weaken' ctxB {ctxC} exp) (valsB ++ᴴ valsC ) ≡ eval exp (valsC)
