@@ -135,8 +135,22 @@ helper `t ty = refl
 helper2 : ∀ (G : PolyTyOp) → ⟦ G ⟧ₚ (Fix G) ≡ ⟦ sub₀ (ind G) G ⟧ᵀ
 helper2 G = helper G (ind G)
 
-{-# REWRITE   helper2 #-}
+{-# REWRITE   helper2  #-}
 
+\end{code}
+
+\begin{code}[hide]
+-- https://www.cse.chalmers.se/~ulfn/papers/afp08/tutorial.pdf
+mapFold : forall {X} F G -> (⟦ G ⟧ₚ X -> X) -> ⟦ F ⟧ₚ (Fix G) -> ⟦ F ⟧ₚ X
+mapFold `𝟙 G φ x = tt
+mapFold (F1 `× F2) G φ (x , y) = (mapFold F1 G φ x) , mapFold F2 G φ y
+mapFold (F1 `+ F2) G φ (inj₁ x) = inj₁ (mapFold F1 G φ x)
+mapFold (F1 `+ F2) G φ (inj₂ y) = inj₂ ((mapFold F2 G φ y))
+mapFold `t G φ (fold x) = φ (mapFold G G φ x) 
+
+
+foldF : {F : PolyTyOp}{A : Set} -> (⟦ F ⟧ₚ A -> A) -> Fix F -> A
+foldF {pto} φ (fold x) = φ (mapFold pto pto φ x) 
 \end{code}
 
 
@@ -159,6 +173,8 @@ fmap f `t x = f x
 \end{code}
 \newcommand\ccFunEval{%
 \begin{code}
+{-# REWRITE   helper  #-}
+
 {-# TERMINATING #-}
 eval : (T →ᴾ U) → ⟦ T ⟧ᵀ → ⟦ U ⟧ᵀ
 eval `0       = const tt
@@ -171,11 +187,11 @@ eval ι₁       = inj₁
 eval ι₂       = inj₂
 eval (`case f g) = λ{ (inj₁ x) → eval f x ; (inj₂ y) → eval g y}
 eval fold  =  fold
-eval (P {G = G} h) =  λ{ (fold x , u) → eval h ((fmap (λ v → (eval (P h) (v , u)) , v) G x) , u)}
+eval (P {G = G} h) =   λ {(x , u) → foldF (λ gu → eval h (fmap (λ u' → u' , x) G gu , u)) x} --   λ{ (fold x , u) → eval h ((fmap (λ v → (eval (P h) (v , u)) , v) G x) , u)}
 \end{code}
 }
 \begin{code}[hide]
-eval (F {G = G} h) =   λ{ (fold x , u) → eval h ((fmap (λ v → eval (F h) (v , u)) G x) , u) }
+eval (F {G = G} h) =  λ{ (x , u) → foldF (λ gu → eval h (gu , u)) x } --  λ{ (fold x , u) → eval h ((fmap (λ v → eval (F h) (v , u)) G x) , u) }
 \end{code}
 
 \begin{code}[hide]
