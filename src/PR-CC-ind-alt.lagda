@@ -100,12 +100,12 @@ data _→ᴾ_ : TY → TY → Set where
   `case : (f : U →ᴾ T) → (g : V →ᴾ T) → U `+ V →ᴾ T
   --
   fold : sub₀ (ind G) G →ᴾ ind G
-  P : (h : sub₀ (T `× ind G) G `× U →ᴾ T) → (ind G `× U →ᴾ T)
+  P :  ∀ {T U} {G}  (h : sub₀ (T `× ind G) G `× U →ᴾ T) → (ind G `× U →ᴾ T)
 \end{code}
 }
 
 \begin{code}[hide]
-  F : (h : sub₀ T G `× U →ᴾ T) → (ind G `× U →ᴾ T)
+  F : ∀ {T U} {G}  (h : sub₀ T G `× U →ᴾ T) → (ind G `× U →ᴾ T)
 
 -- interpretation
 \end{code}

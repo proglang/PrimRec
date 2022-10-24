@@ -43,6 +43,7 @@ data Exp : ∀ {n : ℕ} -> Ctx n  -> Ty -> Set where
     App : ∀ {n : ℕ} {ctx : Ctx n} {tyA tyB} →   Exp ctx (tyA ⇒ tyB) → Exp ctx tyA → Exp ctx tyB
     Nat : ∀ {n : ℕ} {ctx : Ctx n} → ℕ → Exp ctx TyNat
     PrecT : ∀ {n : ℕ} {ctx : Ctx n}{ty} → Exp ctx (ty ⇒ (TyNat ⇒ ty)) → Exp ctx (ty) → Exp ctx (TyNat) → Exp ctx (ty)
+    --PrecT : ∀ {n : ℕ} {ctx : Ctx n}{ty} → Exp ctx (ty ⇒ (TyNat ⇒ ty)) → Exp ctx (ty) → Exp ctx (TyNat  ⇒ ty )
 
 
 

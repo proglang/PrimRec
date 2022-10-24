@@ -16,12 +16,12 @@ open import Data.Sum using (_⊎_; inj₁; inj₂)
 open import Function using (_∘_; const) renaming (id to identity)
 import Relation.Binary.PropositionalEquality as Eq
 open Eq
-  using (_≡_; _≢_; refl; sym; trans; cong; cong₂; subst)
+  using (_≡_; _≢_; refl; sym; trans; cong; cong₂; subst;cong-app)
 open Eq.≡-Reasoning using (begin_; _≡⟨⟩_; step-≡˘; step-≡; _∎)
 open import Utils
 open import HVec
 open import Agda.Builtin.Equality.Rewrite
-open import PR-CC-ind-alt using (Ty;PolyTyOp;sub₀;⟦_⟧ₚ;⟦_⟧ᵀ;fold;fmap;foldF;helper )
+open import PR-CC-ind-alt using (Ty;PolyTyOp;sub₀;⟦_⟧ₚ;⟦_⟧ᵀ;fold;fmap;foldF;helper;Fix )
 open import EvalPConstructor using (para)
 import System-T as ST
 
@@ -166,8 +166,7 @@ weakenGenEq {n}{m}{o} {ctxA}{ctxB} {ctxC} valsA valsB valsC  (`case {tyA = tyA} 
 ... | inj₁ x  = weakenGenEq (x ∷ᴴ valsA) valsB valsC l
 ... | inj₂ y = weakenGenEq (y ∷ᴴ valsA) valsB valsC r
 weakenGenEq valsA valsB valsC (fold exp) = cong fold (weakenGenEq valsA valsB valsC exp)
-weakenGenEq {n} {m} {o} {ctxA} {ctxB} {ctxC} valsA valsB valsC (P {G = G}{P = ty} exp) rewrite  sym ( weakenGenEq valsA valsB valsC exp)  = extensionality λ {(fold x) → 
- {! cong ? ? !} }
+weakenGenEq {n} {m} {o} {ctxA} {ctxB} {ctxC} valsA valsB valsC (P {G = G}{P = ty} exp) rewrite  sym ( weakenGenEq valsA valsB valsC exp)  = refl -- extensionality λ {(fold x) → refl }
 
 
 weaken : ∀ {n m : ℕ} {ctx : Ctx n} {tyA } (ctx' : Ctx m)  →  Exp ctx tyA → Exp (ctx ++ ctx') tyA
@@ -216,9 +215,14 @@ PF→NPF {(U PF.`+ V)}  (PF.`case f g) = Lam (`case (Var zero)
           (App (weaken (( U) ∷ ( U `+  V ) ∷ [])  (PF→NPF f)) (Var zero)) 
           (App (weaken ( V ∷  U `+  V ∷ []) (PF→NPF g)) (Var zero))) 
 PF→NPF PF.fold = Lam (fold (Var zero))
-PF→NPF {(ind G `× U)} (PF.P h) = Lam {!   !} 
-PF→NPF (PF.F exp) = {!   !}
+PF→NPF {(ind G `× U)} (PF.P {T} {U} {G} h) = Lam (App (P (Lam (App ((weaken (sub₀ T G ∷ ind G `× U ∷ []) (PF→NPF h))) (`# {! P  !} ((π₂ (Var (suc zero)))))))) (π₁ (Var zero))) 
+PF→NPF (PF.F {T} {U} {G} exp) = Lam (App (P (Lam (App (weaken (sub₀ T G ∷ ind G `× U ∷ []) (PF→NPF exp)) (`# (Var zero) (π₂ (Var (suc zero))))))) (π₁ (Var zero))) 
 
+
+-- λ {(x , u) → foldF (λ gu → eval h (fmap (λ u' → u' , x) G gu , u)) x}
+--P : ∀ {n : ℕ} {ctx : Ctx n} {G}{P} →  Exp ctx ((sub₀ P G) ⇒ P) → Exp ctx (ind G ⇒  P)
+
+PF→NPF-sound-Helper : ∀ {T} {U} {G} (f : sub₀ T G `× U PR-CC-ind-alt.→ᴾ T) (x : ⟦ sub₀ T G ⟧ᵀ ) (fst : Fix G) (snd : ⟦ U ⟧ᵀ) → eval (weaken  (sub₀ T G ∷ ind G `× U ∷ []) (PF→NPF f)) (x ∷ᴴ ((fst , snd) ∷ᴴ []ᴴ)) (x , snd) ≡ PR-CC-ind-alt.eval f (x , snd)
 
 
 PF→NPF-sound : ∀ {tyA tyB : PF.TY} →  (f : tyA PF.→ᴾ tyB)  → (arg : PF.⟦ tyA ⟧ᵀ  ) → eval  (PF→NPF f) []ᴴ  arg   ≡ PF.eval f arg
@@ -237,8 +241,11 @@ PF→NPF-sound PF.ι₂ args = refl
 PF→NPF-sound {U PF.`+ V} (PF.`case f g) (inj₁ x) rewrite weaken-Eq {ctx = []} {ctx' =  U ∷  U `+  V ∷ [] }  []ᴴ (x ∷ᴴ ((inj₁ x) ∷ᴴ []ᴴ))   (PF→NPF f)  = PF→NPF-sound f x 
 PF→NPF-sound {U PF.`+ V} (PF.`case f g) (inj₂ y) rewrite weaken-Eq {ctx = []} {ctx' =  V ∷  U `+  V ∷ [] }  []ᴴ (y ∷ᴴ (inj₂ y ∷ᴴ []ᴴ)) (PF→NPF g) = PF→NPF-sound g y
 PF→NPF-sound PF.fold args = refl
-PF→NPF-sound (PF.P f) args = {!   !}
-PF→NPF-sound (PF.F f) args = {!   !} 
+PF→NPF-sound (PF.P f) arg = {!   !}
+PF→NPF-sound (PR-CC-ind-alt.F  {T} {U} {G} f) (fst , snd)   = cong₂ foldF {u = fst} {v = fst} (extensionality (λ x →  ( PF→NPF-sound-Helper f x fst snd))) refl
+
+PF→NPF-sound-Helper f x fst snd rewrite weaken-Eq []ᴴ (x ∷ᴴ ((fst , snd) ∷ᴴ []ᴴ))  (PF→NPF f) | PF→NPF-sound f (x , snd) = refl
+
 
 
 
@@ -356,6 +363,8 @@ embedd-ST-sound ctx' (ST.Nat x) = ℕ→Nat≡eval∘ℕ→ExpNat x ((mapᴴ' (e
 embedd-ST-sound ctx' (ST.PrecT h acc counter) rewrite sym (embedd-ST-sound ctx' counter)  with ST.evalExp counter ctx'
 ... | zero rewrite embedd-ST-sound ctx' acc = sym (weaken'-Eq (tt ∷ᴴ (inj₁ tt ∷ᴴ  []ᴴ)) (mapᴴ' embeddTyEval ctx') (embedd-ST acc)) 
 ... | suc c = {!   !} 
+embedd-ST-sound ctx' (ST.PrecT h acc counter) with ST.evalExp counter ctx' 
+... | y  = {!   !}
 
 para≡foldF : ∀ {ty : ST.Ty} (counter : ℕ) (h : ST.evalTy ty → ℕ →  ST.evalTy ty) (acc : ST.evalTy ty)  → embeddTyEval (para h acc counter) ≡  proj₁ (foldF {F = G-Nat} (λ  {(inj₁ tt) → embeddTyEval acc , 0
                                                                                                                                                                           ; (inj₂ (acc' , counter')) → embeddTyEval h acc' (embeddTyEval counter') , counter'}) (embeddTyEval counter)) 
@@ -369,3 +378,4 @@ para≡foldF (suc counter) h acc  = cong embeddTyEval {x = h (para h acc counter
                   → embeddTyEval h acc' (embeddTyEval counter') , counter'
               })
            (ℕ→Nat counter))))) !}} {!   !} 
+ 
