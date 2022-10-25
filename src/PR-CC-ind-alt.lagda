@@ -169,13 +169,13 @@ fmap f `t x = f x
 
 
 
-{-# TERMINATING #-}
+-- {-# TERMINATING #-}
 \end{code}
 \newcommand\ccFunEval{%
 \begin{code}
 {-# REWRITE   helper  #-}
 
-{-# TERMINATING #-}
+-- {-# TERMINATING #-}
 eval : (T →ᴾ U) → ⟦ T ⟧ᵀ → ⟦ U ⟧ᵀ
 eval `0       = const tt
 eval id       = λ v → v
