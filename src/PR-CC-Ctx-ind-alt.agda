@@ -381,7 +381,11 @@ switchembeddSTValsApp {tyA} f x y rewrite  embeddSTValsInv∘embeddSTVals≡id x
 cong-app2 : ∀ {A B C : Set } {f g : A → B → C} →
            f ≡ g → (x : A) → (y : B) → f x y ≡ g x y
 cong-app2 refl x y = refl
+-- foldF : {F : PolyTyOp}{A : Set} -> (⟦ F ⟧ₚ A -> A) -> Fix F -> A
 
+
+helper7 : ∀ {A : Set}  {F : PolyTyOp}  (f : (⟦ F ⟧ₚ (A × Fix F) ) -> A × Fix F ) (c : Fix F) →   (foldF f (c)) ≡  (PR-CC-ind-alt.mapFold `t (F) f ( c))
+helper7 f (fold x) =  refl
 
 helper5 : ∀ {n}  {ctx : ST.Ctx n} {ty} → (ctx' : HVec ST.evalTy ctx) → (h  : ST.Exp ctx (ty ST.⇒ (ST.TyNat ST.⇒ ty))) → (acc : ST.Exp ctx ty) → (c : ℕ ) →  proj₁
   (foldF
@@ -427,9 +431,27 @@ helper5 : ∀ {n}  {ctx : ST.Ctx n} {ty} → (ctx' : HVec ST.evalTy ctx) → (h 
       (x ∷ᴴ mapᴴ' embeddSTVals ctx')
       )
   (ℕ→Nat c))
-helper5 {n} {ctx} {ty} ctx' h acc zero = refl
-helper5 {n} {ctx} {ty} ctx' h acc ( suc c) = refl
-
+-- helper5 {n} {ctx} {ty} ctx' h acc zero = refl
+-- helper5 {n} {ctx} {ty} ctx' h acc ( suc c) = refl
+helper5 {n} {ctx} {ty} ctx' h acc ( c) = cong proj₁ (helper7 ((λ x →
+      eval
+      (`case (Var zero)
+      (`#
+        (weakenGen [] [ `𝟙 , `𝟙 `+ (embedd-ST-Ty ty `× ind (`𝟙 `+ `t)) ]
+        (map embedd-ST-Ty ctx) (embedd-ST acc))
+        (fold (ι₁ `0)))
+      (`#
+        (App
+        (App
+          (weakenGen []
+          [ embedd-ST-Ty ty `× ind (`𝟙 `+ `t) ,
+          `𝟙 `+ (embedd-ST-Ty ty `× ind (`𝟙 `+ `t)) ]
+          (map embedd-ST-Ty ctx) (embedd-ST h))
+          (π₁ (Var zero)))
+        (π₂ (Var zero)))
+        (fold (ι₂ (π₂ (Var zero))))))
+      (x ∷ᴴ mapᴴ' embeddSTVals ctx')
+      )) ((ℕ→Nat c)))
 
 
 helper6 : ∀ {n}  {ctx : ST.Ctx n} {ty} → (ctx' : HVec ST.evalTy ctx) → (h  : ST.Exp ctx (ty ST.⇒ (ST.TyNat ST.⇒ ty))) → (acc : ST.Exp ctx ty) → (c : ℕ ) →  (ℕ→Nat c) ≡  (proj₂
@@ -622,3 +644,4 @@ embedd-ST-sound {ty = ty} ctx' (ST.App f x) rewrite sym (embedd-ST-sound ctx' f)
 embedd-ST-sound ctx' (ST.Nat x) = ℕ→Nat≡eval∘ℕ→ExpNat x ((mapᴴ' (embeddSTVals) ctx'))
 embedd-ST-sound {n} {ctx} {ty} ctx' (ST.PrecT h acc counter) rewrite sym (embedd-ST-sound ctx' counter)  with ST.evalExp counter ctx'
 ... | c  =  helper4 ctx' h acc c
+ 
