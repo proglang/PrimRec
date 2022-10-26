@@ -21,7 +21,7 @@ open Eq.≡-Reasoning using (begin_; _≡⟨⟩_; step-≡˘; step-≡; _∎)
 open import Utils
 open import HVec
 open import Agda.Builtin.Equality.Rewrite
-open import PR-CC-ind-alt using (Ty;PolyTyOp;sub₀;⟦_⟧ₚ;⟦_⟧ᵀ;fold;fmap;foldF;helper;Fix )
+open import PR-CC-ind-alt using (Ty;PolyTyOp;sub₀;⟦_⟧ₚ;⟦_⟧ᵀ;fold;fmap;foldF;helper;Alg )
 open import EvalPConstructor using (para)
 import System-T as ST
 
@@ -222,7 +222,7 @@ PF→NPF (PF.F {T} {U} {G} exp) = Lam (App (P (Lam (App (weaken (sub₀ T G ∷ 
 -- λ {(x , u) → foldF (λ gu → eval h (fmap (λ u' → u' , x) G gu , u)) x}
 --P : ∀ {n : ℕ} {ctx : Ctx n} {G}{P} →  Exp ctx ((sub₀ P G) ⇒ P) → Exp ctx (ind G ⇒  P)
 
-PF→NPF-sound-Helper : ∀ {T} {U} {G} (f : sub₀ T G `× U PR-CC-ind-alt.→ᴾ T) (x : ⟦ sub₀ T G ⟧ᵀ ) (fst : Fix G) (snd : ⟦ U ⟧ᵀ) → eval (weaken  (sub₀ T G ∷ ind G `× U ∷ []) (PF→NPF f)) (x ∷ᴴ ((⟨ fst , snd ⟩) ∷ᴴ []ᴴ)) (⟨ x , snd ⟩) ≡ PR-CC-ind-alt.eval f (⟨ x , snd ⟩)
+PF→NPF-sound-Helper : ∀ {T} {U} {G} (f : sub₀ T G `× U PR-CC-ind-alt.→ᴾ T) (x : ⟦ sub₀ T G ⟧ᵀ ) (fst : Alg G) (snd : ⟦ U ⟧ᵀ) → eval (weaken  (sub₀ T G ∷ ind G `× U ∷ []) (PF→NPF f)) (x ∷ᴴ ((⟨ fst , snd ⟩) ∷ᴴ []ᴴ)) (⟨ x , snd ⟩) ≡ PR-CC-ind-alt.eval f (⟨ x , snd ⟩)
 
 
 PF→NPF-sound : ∀ {tyA tyB : PF.TY} →  (f : tyA PF.→ᴾ tyB)  → (arg : PF.⟦ tyA ⟧ᵀ  ) → eval  (PF→NPF f) []ᴴ  arg   ≡ PF.eval f arg
@@ -262,11 +262,11 @@ lookupMap (v ∷ vs) (suc f) g = lookupMap vs f g
 {-# REWRITE   lookupMap #-}
 
 
-ℕ→Nat : ℕ → Fix G-Nat 
+ℕ→Nat : ℕ → Alg G-Nat 
 ℕ→Nat zero = fold (inj₁ tt)
 ℕ→Nat (suc n) = fold (inj₂ (ℕ→Nat n))
 
-Nat→ℕ : Fix G-Nat → ℕ
+Nat→ℕ : Alg G-Nat → ℕ
 Nat→ℕ (fold (inj₁ x)) = zero
 Nat→ℕ (fold (inj₂ y)) = suc (Nat→ℕ y)
 
@@ -381,10 +381,10 @@ switchembeddSTValsApp {tyA} f x y rewrite  embeddSTValsInv∘embeddSTVals≡id x
 cong-app2 : ∀ {A B C : Set } {f g : A → B → C} →
            f ≡ g → (x : A) → (y : B) → f x y ≡ g x y
 cong-app2 refl x y = refl
--- foldF : {F : PolyTyOp}{A : Set} -> (⟦ F ⟧ₚ A -> A) -> Fix F -> A
+-- foldF : {F : PolyTyOp}{A : Set} -> (⟦ F ⟧ₚ A -> A) -> Alg F -> A
 
 
-helper7 : ∀ {A : Set}  {F : PolyTyOp}  (f : (⟦ F ⟧ₚ (A × Fix F) ) -> A × Fix F ) (c : Fix F) →   (foldF f (c)) ≡  (PR-CC-ind-alt.mapFold `t (F) f ( c))
+helper7 : ∀ {A : Set}  {F : PolyTyOp}  (f : (⟦ F ⟧ₚ (A × Alg F) ) -> A × Alg F ) (c : Alg F) →   (foldF f (c)) ≡  (PR-CC-ind-alt.mapFold `t (F) f ( c))
 helper7 f (fold x) =  refl
 
 helper5 : ∀ {n}  {ctx : ST.Ctx n} {ty} → (ctx' : HVec ST.evalTy ctx) → (h  : ST.Exp ctx (ty ST.⇒ (ST.TyNat ST.⇒ ty))) → (acc : ST.Exp ctx ty) → (c : ℕ ) →  proj₁
