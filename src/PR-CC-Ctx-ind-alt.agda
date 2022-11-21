@@ -340,77 +340,10 @@ helper1Gen : {F : PolyTyOp}{A : Set} →  (φ : ⟦ F ⟧ₚ A →  A) →  (c :
 helper1Gen φ (fold x) = refl
 
 
-
-helper1 : ∀ {n}  {ctx : ST.Ctx n} {ty} → (ctx' : HVec ST.evalTy ctx) → (h  : ST.Exp ctx (ty ST.⇒ (ST.TyNat ST.⇒ ty))) → (acc : ST.Exp ctx ty) → (c : ℕ ) →  proj₁
-  (foldF 
-  (λ x →
-      eval
-      (`case (Var zero)
-      (`#
-        (weakenGen [] [ `𝟙 , `𝟙 `+ (embedd-ST-Ty ty `× ind (`𝟙 `+ `t)) ]
-        (map embedd-ST-Ty ctx) (embedd-ST acc))
-        (fold (ι₁ `0)))
-      (`#
-        (App
-        (App
-          (weakenGen []
-          [ embedd-ST-Ty ty `× ind (`𝟙 `+ `t) ,
-          `𝟙 `+ (embedd-ST-Ty ty `× ind (`𝟙 `+ `t)) ]
-          (map embedd-ST-Ty ctx) (embedd-ST h))
-          (π₁ (Var zero)))
-        (π₂ (Var zero)))
-        (fold (ι₂ (π₂ (Var zero))))))
-      (x ∷ᴴ mapᴴ' embeddSTVals ctx'))
-  (ℕ→Nat c))
-    ≡
-  proj₁
-  (PR-CC-ind-alt.mapFold `t (`𝟙 `+ `t)
-  (λ x →
-      eval
-      (`case (Var zero)
-      (`#
-        (weakenGen [] [ `𝟙 , `𝟙 `+ (embedd-ST-Ty ty `× ind (`𝟙 `+ `t)) ]
-        (map embedd-ST-Ty ctx) (embedd-ST acc))
-        (fold (ι₁ `0)))
-      (`#
-        (App
-        (App
-          (weakenGen []
-          [ embedd-ST-Ty ty `× ind (`𝟙 `+ `t) ,
-          `𝟙 `+ (embedd-ST-Ty ty `× ind (`𝟙 `+ `t)) ]
-          (map embedd-ST-Ty ctx) (embedd-ST h))
-          (π₁ (Var zero)))
-        (π₂ (Var zero)))
-        (fold (ι₂ (π₂ (Var zero))))))
-      (x ∷ᴴ mapᴴ' embeddSTVals ctx')
-      )
-  (ℕ→Nat c))
-helper1 {n} {ctx} {ty} ctx' h acc c with (ℕ→Nat c)
-... | fold x = refl 
-helper1 {n} {ctx} {ty} ctx' h acc c = cong proj₁( helper1Gen {G-Nat} (λ x → eval
-      (`case (Var zero)
-      (`#
-        (weakenGen [] [ `𝟙 , `𝟙 `+ (embedd-ST-Ty ty `× ind (`𝟙 `+ `t)) ]
-        (map embedd-ST-Ty ctx) (embedd-ST acc))
-        (fold (ι₁ `0)))
-      (`#
-        (App
-        (App
-          (weakenGen []
-          [ embedd-ST-Ty ty `× ind (`𝟙 `+ `t) ,
-          `𝟙 `+ (embedd-ST-Ty ty `× ind (`𝟙 `+ `t)) ]
-          (map embedd-ST-Ty ctx) (embedd-ST h))
-          (π₁ (Var zero)))
-        (π₂ (Var zero)))
-        (fold (ι₂ (π₂ (Var zero))))))
-      (x ∷ᴴ mapᴴ' embeddSTVals ctx')) ((ℕ→Nat c)) )
-
-
-
 helper2Gen : ∀ {n}  {ctx : ST.Ctx n} {ty} {zeroL : Exp
         (`𝟙 ∷
          `𝟙 `+ (embedd-ST-Ty ty `× ind (`𝟙 `+ `t)) ∷ map embedd-ST-Ty ctx)
-        (embedd-ST-Ty ty)} {succL}  → (ctx' : HVec ST.evalTy ctx) → (c : Alg G-Nat)  →  ( c) ≡  (proj₂
+        (embedd-ST-Ty ty)} {succL}  → (ctx' : HVec ST.evalTy ctx) → (c : Alg G-Nat)  →  c ≡  proj₂
        (PR-CC-ind-alt.mapFold `t (`𝟙 `+ `t)
         (λ x →
            eval
@@ -423,35 +356,10 @@ helper2Gen : ∀ {n}  {ctx : ST.Ctx n} {ty} {zeroL : Exp
              (fold (ι₂ (π₂ (Var zero))))))
            (x ∷ᴴ mapᴴ' embeddSTVals ctx')
            )
-        ( c)))
+         c)
 helper2Gen  ctx' (fold (inj₁ x)) = refl
 helper2Gen ctx' (fold (inj₂ y)) = cong fold (cong inj₂ (helper2Gen ctx' y))
 
-helper2 : ∀ {n}  {ctx : ST.Ctx n} {ty} → (ctx' : HVec ST.evalTy ctx) → (h  : ST.Exp ctx (ty ST.⇒ (ST.TyNat ST.⇒ ty))) → (acc : ST.Exp ctx ty) → (c : ℕ ) →  (ℕ→Nat c) ≡  (proj₂
-       (PR-CC-ind-alt.mapFold `t (`𝟙 `+ `t)
-        (λ x →
-           eval
-           (`case (Var zero)
-            (`#
-             (weakenGen [] [ `𝟙 , `𝟙 `+ (embedd-ST-Ty ty `× ind (`𝟙 `+ `t)) ]
-              (map embedd-ST-Ty ctx) (embedd-ST acc))
-             (fold (ι₁ `0)))
-            (`#
-             (App
-              (App
-               (weakenGen []
-                [ embedd-ST-Ty ty `× ind (`𝟙 `+ `t) ,
-                `𝟙 `+ (embedd-ST-Ty ty `× ind (`𝟙 `+ `t)) ]
-                (map embedd-ST-Ty ctx) (embedd-ST h))
-               (π₁ (Var zero)))
-              (π₂ (Var zero)))
-             (fold (ι₂ (π₂ (Var zero))))))
-           (x ∷ᴴ mapᴴ' embeddSTVals ctx')
-           )
-        (ℕ→Nat c)))
-helper2  ctx h acc zero = refl
-helper2  ctx h acc (suc c) = cong fold (cong inj₂ (helper2  ctx h acc c))
-helper2  ctx h acc c = helper2Gen ctx ((ℕ→Nat c))
 
 
 embedd-ST-sound : ∀ {n}  {ctx : ST.Ctx n} {ty} → (ctx' : HVec ST.evalTy ctx) → (sTExp : ST.Exp ctx ty)  → embeddSTVals {ty} ((ST.evalExp sTExp ctx') ) ≡  ( eval (embedd-ST sTExp) (mapᴴ' (embeddSTVals) ctx') ) 
@@ -527,7 +435,7 @@ helper3 {n} {ctx} {ty} ctx' h acc  (suc c) rewrite weaken'-Eq {ctxB = [ embedd-S
               (fold (ι₂(π₂ (Var zero))))))
             (x ∷ᴴ mapᴴ' embeddSTVals ctx')
             )
-         (ℕ→Nat c)) ∷ᴴ []ᴴ) ) (mapᴴ' embeddSTVals ctx') ((embedd-ST h)) | helper1 {n} {ctx} {ty} ctx' h acc c = 
+         (ℕ→Nat c)) ∷ᴴ []ᴴ) ) (mapᴴ' embeddSTVals ctx') ((embedd-ST h)) = 
          
           (embeddSTVals (ST.evalExp h ctx' (para (ST.evalExp h ctx') (ST.evalExp acc ctx') c) c)) 
               ≡⟨ switchembeddSTValsApp  (ST.evalExp h ctx') ((para (ST.evalExp h ctx') (ST.evalExp acc ctx') c)) c  ⟩ 
@@ -559,7 +467,23 @@ helper3 {n} {ctx} {ty} ctx' h acc  (suc c) rewrite weaken'-Eq {ctxB = [ embedd-S
            )
         (ℕ→Nat c)))
       (ℕ→Nat c) 
-                  ≡⟨ cong₂ (eval (embedd-ST h) (mapᴴ' embeddSTVals ctx')) (helper1 {n} {ctx} {ty} ctx' h acc c) ((helper2 {n} {ctx} {ty} ctx' h acc c))  ⟩ 
+                  ≡⟨ cong₂ (eval (embedd-ST h) (mapᴴ' embeddSTVals ctx')) (cong proj₁( helper1Gen {G-Nat} (λ x → eval
+      (`case (Var zero)
+      (`#
+        (weakenGen [] [ `𝟙 , `𝟙 `+ (embedd-ST-Ty ty `× ind (`𝟙 `+ `t)) ]
+        (map embedd-ST-Ty ctx) (embedd-ST acc))
+        (fold (ι₁ `0)))
+      (`#
+        (App
+        (App
+          (weakenGen []
+          [ embedd-ST-Ty ty `× ind (`𝟙 `+ `t) ,
+          `𝟙 `+ (embedd-ST-Ty ty `× ind (`𝟙 `+ `t)) ]
+          (map embedd-ST-Ty ctx) (embedd-ST h))
+          (π₁ (Var zero)))
+        (π₂ (Var zero)))
+        (fold (ι₂ (π₂ (Var zero))))))
+      (x ∷ᴴ mapᴴ' embeddSTVals ctx')) ((ℕ→Nat c)) )) ((helper2Gen ctx' ((ℕ→Nat c))))  ⟩ 
                   
       (eval (embedd-ST h) (mapᴴ' embeddSTVals ctx')
       (proj₁
