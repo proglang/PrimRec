@@ -65,33 +65,3 @@ fastReverseᴴ xs = xs ++rᴴ []ᴴ
 ++identityRᴴ []ᴴ = refl
 ++identityRᴴ (x ∷ᴴ xs) = cong (λ v → x ∷ᴴ v) (++identityRᴴ xs)
 
--- id : A → A 
--- id x = x
-
-
--- toHVec : {S : Set} (v : Vec S n) → HVec (λ x → S) v
--- toHVec []ⱽ = []ᴴ
--- toHVec (x ∷ⱽ v) = x ∷ᴴ toHVec v
-
--- mapᴴ : ∀{n}{F : S → Set}{ss rss : Vec S n} → (∀ {i : Fin n} → F (lookup ss i) → F (lookup rss i)) → HVec F ss → HVec F rss
--- mapᴴ{rss = []ⱽ} f []ᴴ = []ᴴ
--- mapᴴ{rss = A ∷ⱽ V} f (a ∷ᴴ a*) = f {zero} a ∷ᴴ mapᴴ (λ{i} → f{suc i}) a*
-
-
--- toHVec' : {n : ℕ} {S : Set} (v : Vec S n) → HVec  (λ x → {!   !}) (repeat {! n  !} {!S   !})
--- toHVec' []ⱽ = []ᴴ
--- toHVec' (x ∷ⱽ v) = x ∷ᴴ toHVec v
-
-
-
--- fromVec : ∀ {n : ℕ} {S : Set} → Vec ℕ n →  HVec id (replicate ℕ) 
--- fromVec xs = ?
-
--- hlookup : ∀ {ss : Vec S n}{F : S → Set} (a* : HList F (toList ss)) → (i : Fin n) → F (lookup ss i)
--- hlookup {ss = s ∷ ss} (a ∷ᴴ a*) Fin.zero = a
--- hlookup {ss = s ∷ ss} (a ∷ᴴ a*) (Fin.suc i) = hlookup a* i
-
--- _++ᴴ_ : ∀ {F : S → Set}{ss₁ ss₂ : List S} → HList F ss₁ → HList F ss₂ → HList F (ss₁ ++ᴸ ss₂)
--- []ᴴ ++ᴴ ys = ys
--- (x ∷ᴴ xs) ++ᴴ ys = x ∷ᴴ (xs ++ᴴ ys)
-

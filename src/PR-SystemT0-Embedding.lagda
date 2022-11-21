@@ -1,7 +1,6 @@
 
 \begin{code}[hide]
 {-# OPTIONS --rewriting  #-}
-{-# OPTIONS --allow-unsolved-metas #-}
 module PR-SystemT0-Embedding where
 
 

@@ -28,12 +28,12 @@ open import Utils
 \newcommand{\defSTZero}{%
 \begin{code}
 data Exp n : ℕ → Set where
-    Var : Fin n → Exp   n zero
+    Var : Fin n → Exp n zero
     Lam : Exp (suc n) m → Exp n (suc m)
     CZero :  Exp n zero
     Suc : Exp n (suc zero)
     App : Exp n (suc m) → Exp n (zero) → Exp n m
-    Nat : ℕ  → Exp n zero
+    Nat : ℕ → Exp n zero
     PRecT : Exp n 2 → Exp n zero → Exp n zero → Exp n zero
 \end{code}}
 
