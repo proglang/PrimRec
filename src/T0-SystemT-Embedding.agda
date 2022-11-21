@@ -21,10 +21,6 @@ open import System-T
 -- -- ------------------------------------------------------------------------------
 
 
--- finToDBI : ∀ {n : ℕ} → (Fin n) → DBI (ℕtoCtx n) TyNat
--- finToDBI zero = ZI
--- finToDBI (suc f) = SI (finToDBI f)
-
 ℕtoTy : ℕ → Ty
 ℕtoTy zero = TyNat
 ℕtoTy (suc n) = TyNat ⇒  (ℕtoTy n)
@@ -64,9 +60,6 @@ repeatCountArgs=getArgs (suc n) = cong (λ xs → TyNat ∷ xs) (repeatCountArgs
 
 {-# REWRITE repeatCountArgs=getArgs  #-}
 
--- convVarSound : ∀ {n : ℕ} (ctx : Vec ℕ n) (x : Fin n)  → lookup ctx x ≡ evalExp' (Var (finToDBI x)) (toHVec' ctx) ([]ᴴ)
--- convVarSound  (x ∷ ctx) zero = refl
--- convVarSound (x₁ ∷ ctx) (suc x) rewrite convVarSound  ctx x  = refl
 
 helper : ∀ {n : ℕ}(f : Fin n) →  (lookup (getArgs (ℕtoTy n)) f) ≡ TyNat
 helper  zero = refl

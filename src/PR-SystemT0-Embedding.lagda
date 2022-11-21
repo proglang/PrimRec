@@ -95,7 +95,6 @@ prToSt* : ∀ {m : ℕ}    → Vec (PR m) n → Vec (Exp zero m) n
 prToSt*  [] = []
 prToSt* {m}  (x ∷ vs) = (prToST′  x) ∷ (prToSt*  vs)
 
-
 convComp {n} {m} f gs = generalComp (prToST′ f) (prToSt*  gs)
 
 

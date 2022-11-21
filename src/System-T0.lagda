@@ -202,6 +202,7 @@ applyToVars : ∀ {m o} → Exp (m + o) m → Exp (m + o) zero
 applyToVars {m} {o} exp  = applyToVars' {zero} {m} {o} exp
 
 
+
 evalApplyToVars' :  ∀ {n m o : ℕ} (exp : Exp ( n + m + o) m ) (zs : Vec ℕ (o))(xs : Vec ℕ n) (ys  : Vec ℕ m) → eval (applyToVars' {n} {m} {o} (exp)) ( xs ++ ys ++r zs) [] ≡ eval exp ( xs ++ ys ++r zs) ys
 evalApplyToVars'  {n} {m} {o} exp zs xs ys  = 
         (eval (applyToVars' exp) (xs ++ ys ++r zs) [] ) 
