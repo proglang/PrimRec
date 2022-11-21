@@ -8,7 +8,7 @@ import Relation.Binary.PropositionalEquality as Eq
 open Eq using (_≡_; refl; cong; sym; cong₂)
 open Eq.≡-Reasoning using (begin_; _≡⟨⟩_; step-≡; _∎)
 open import Agda.Builtin.Equality.Rewrite
-import System-T0 as T0 --using (Exp; evalST; evalSTClosed; ext2)
+import System-T0 as T0 --using (Exp; eval; evalClosed; ext2)
 
 -- open System-T0.Exp
 open import PR-Nat
@@ -83,7 +83,7 @@ convVarSound : ∀  {n : ℕ} (ctx : Vec ℕ n) (x : Fin n)  → lookup ctx x �
 convVarSound (x₁ ∷ ctx) zero = refl
 convVarSound (x₁ ∷ ctx) (suc x) = convVarSound ctx x
 
-sound-embedd : ∀ {n m : ℕ} (exp : T0.Exp n m)  (ctx : Vec ℕ n) (args : Vec ℕ m) → (T0.evalST exp ctx args)  ≡  (evalExp' (embedd  exp) (toHVec' ctx) ) ( (toHVec'   ( args)))
+sound-embedd : ∀ {n m : ℕ} (exp : T0.Exp n m)  (ctx : Vec ℕ n) (args : Vec ℕ m) → (T0.eval exp ctx args)  ≡  (evalExp' (embedd  exp) (toHVec' ctx) ) ( (toHVec'   ( args)))
 sound-embedd {suc n} (T0.Var x) ctx []   = convVarSound ctx x 
 sound-embedd {n} {suc m} (T0.Lam exp) (ctx) (x ∷ args) rewrite sound-embedd exp (x ∷ ctx) args = refl
 sound-embedd T0.CZero ctx args = refl
