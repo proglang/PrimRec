@@ -69,7 +69,6 @@ data Exp : ∀ {n : ℕ} → Ctx n → TY → Set where
   P : ∀ {n : ℕ} {ctx : Ctx n} {G}{P} →  Exp ctx ((sub₀ P G) ⇒ P) → Exp ctx (ind G ⇒  P)
 
 
--- {-# REWRITE   helper #-}
 
 -- {-# TERMINATING #-}
 eval : ∀ {n : ℕ} {ctx : Ctx n} {ty} → Exp ctx ty →  HVec (λ x → ⟦ x ⟧ᵀ) ctx → ⟦ ty ⟧ᵀ
@@ -86,24 +85,18 @@ eval (`case exp l r) ctx with eval exp ctx
 ... | inj₁ res = eval l (res ∷ᴴ ctx)
 ... | inj₂ res = eval r (res ∷ᴴ ctx)
 eval (fold exp) ctx = fold (eval exp ctx)
--- eval   (P {G = G} (e1') e2) ctx with eval  e2 ctx
--- ... | fold x = eval e1' ctx 
---                   (fmap  (λ v → {! eval  (Lam (P e1' (Var zero))) ctx !})   G x) 
-eval   (P {G = G}{P = p} (e1')) ctx = foldF (eval e1' ctx) -- λ { (fold x) → eval e1' ctx (fmap (λ v → eval (P e1') ctx v) G x)}
+eval   (P {G = G}{P = p} (e1')) ctx = foldF (eval e1' ctx)
 
 
 
 
 
-{-# REWRITE   lookup-++ˡ #-}
 
 postulate
   extensionality : ∀ {A B : Set} {f g : A → B}
     → (∀ (x : A) → f x ≡ g x)
       -----------------------
     → f ≡ g
-
-
 
 
 weakenGenVar : ∀ (n) (m) (o)→ Fin (n + o) → Fin (n + (m + o))
@@ -116,13 +109,14 @@ weakenGenVAr-lookup [] ctxB ctxC f = lookup-++ʳ ctxB ctxC f
 weakenGenVAr-lookup (x ∷ ctxA) ctxB ctxC zero = refl
 weakenGenVAr-lookup (x ∷ ctxA) ctxB ctxC (suc f) = weakenGenVAr-lookup ctxA ctxB ctxC f
 
-{-# REWRITE   weakenGenVAr-lookup lookup-++ʳ #-}
+{-# REWRITE lookup-++ʳ #-}
 
 lookup-++ʳᴴ : ∀ {A : Set}{F : A → Set} {n m} {xs : Vec A n} {ys : Vec A m} (hxs : HVec F xs)  (hys : HVec F ys)(f : Fin m )   → hlookup (hxs ++ᴴ hys) (raise n f) ≡ hlookup hys f 
 lookup-++ʳᴴ []ᴴ (x ∷ᴴ hys) zero = refl
 lookup-++ʳᴴ []ᴴ (x ∷ᴴ hys) (suc f) = refl
 lookup-++ʳᴴ (x ∷ᴴ hxs) hys f = lookup-++ʳᴴ hxs hys f
 
+{-# REWRITE weakenGenVAr-lookup #-}
 
 weakenGenVAr-hlookup :  ∀ {A : Set}{F : A → Set}{n m o}  {ctxA : Vec A n} {ctxB : Vec A  m} {ctxC : Vec A o} (valsA : HVec F ctxA ) (valsB : HVec F ctxB )(valsC : HVec F ctxC ) (f : Fin (n + o)) →
   hlookup (valsA ++ᴴ valsB ++ᴴ valsC) (weakenGenVar n m o f) ≡
@@ -171,21 +165,6 @@ weakenGenEq {n} {m} {o} {ctxA} {ctxB} {ctxC} valsA valsB valsC (P {G = G}{P = ty
 
 weaken : ∀ {n m : ℕ} {ctx : Ctx n} {tyA } (ctx' : Ctx m)  →  Exp ctx tyA → Exp (ctx ++ ctx') tyA
 weaken {ctx = ctx} ctx' exp = weakenGen ctx ctx' [] exp
--- weaken ctx `0 = `0
--- weaken ctx (App f x) = App (weaken ctx f) (weaken ctx x)
--- weaken {n} {m} {ctx} ctx' (Var f)  rewrite lookup-++ˡ ctx ctx' f = Var  {n + m}  ((inject+ m f)) 
--- weaken ctx (Lam exp) = Lam (weaken ctx exp)
--- weaken ctx (`# l r) = `# (weaken ctx l) (weaken ctx r)
--- weaken ctx (π₁ exp) = π₁ (weaken ctx exp)
--- weaken ctx (π₂ exp) = π₂ (weaken ctx exp)
--- weaken ctx (ι₁ exp) = ι₁ (weaken ctx exp)
--- weaken ctx (ι₂ exp) = ι₂ (weaken ctx exp)
--- weaken ctx (`case c l r) = `case (weaken ctx c) (weaken ctx l) (weaken ctx r) 
--- weaken ctx (fold exp) = fold (weaken ctx exp)
--- weaken ctx (P e1 ) = P (weaken ctx e1)
-
-
-
 
 
 weaken-Eq : ∀ {n m : ℕ} {ctx : Ctx n} {ctx' : Ctx m}  {tyA } (vals : HVec (λ x → ⟦ x ⟧ᵀ) ctx ) (vals' : HVec (λ x → ⟦ x ⟧ᵀ) ctx' ) (exp : Exp ctx tyA) → eval (weaken ctx' exp) (vals ++ᴴ vals') ≡ eval exp vals
@@ -219,9 +198,6 @@ PF→NPF {(ind G `× U)} (PF.P {T} {U} {G} h) = Lam (App (P (Lam (App ((weaken (
 PF→NPF (PF.F {T} {U} {G} exp) = Lam (App (P (Lam (App (weaken (sub₀ T G ∷ ind G `× U ∷ []) (PF→NPF exp)) (`# (Var zero) (π₂ (Var (suc zero))))))) (π₁ (Var zero))) 
 
 
--- λ {(x , u) → foldF (λ gu → eval h (fmap (λ u' → u' , x) G gu , u)) x}
---P : ∀ {n : ℕ} {ctx : Ctx n} {G}{P} →  Exp ctx ((sub₀ P G) ⇒ P) → Exp ctx (ind G ⇒  P)
-
 PF→NPF-sound-Helper : ∀ {T} {U} {G} (f : sub₀ T G `× U PR-CC-ind-alt.→ᴾ T) (x : ⟦ sub₀ T G ⟧ᵀ ) (fst : Alg G) (snd : ⟦ U ⟧ᵀ) → eval (weaken  (sub₀ T G ∷ ind G `× U ∷ []) (PF→NPF f)) (x ∷ᴴ ((⟨ fst , snd ⟩) ∷ᴴ []ᴴ)) (⟨ x , snd ⟩) ≡ PR-CC-ind-alt.eval f (⟨ x , snd ⟩)
 
 
@@ -247,9 +223,6 @@ PF→NPF-sound (PR-CC-ind-alt.F  {T} {U} {G} f) (⟨ fst , snd ⟩)   = cong₂ 
 PF→NPF-sound-Helper f x fst snd rewrite weaken-Eq []ᴴ (x ∷ᴴ ((⟨ fst , snd ⟩) ∷ᴴ []ᴴ))  (PF→NPF f) | PF→NPF-sound f (⟨ x , snd ⟩) = refl
 
 
-
-
-
 embedd-ST-Ty : ST.Ty → Ty
 embedd-ST-Ty ST.TyNat = Nat
 embedd-ST-Ty (tyA ST.⇒ tyB) = (embedd-ST-Ty tyA) ⇒ (embedd-ST-Ty tyB)
@@ -259,7 +232,7 @@ lookupMap : ∀ {A B : Set}{n}  (vs : Vec A n) (f : Fin n) (g : A → B) → loo
 lookupMap (x ∷ vs) zero g = refl
 lookupMap (v ∷ vs) (suc f) g = lookupMap vs f g
 
-{-# REWRITE   lookupMap #-}
+
 
 
 ℕ→Nat : ℕ → Alg G-Nat 
@@ -288,6 +261,7 @@ Nat→ℕ∘ℕ→Nat≡id (suc x) = cong suc (Nat→ℕ∘ℕ→Nat≡id x)
 
 embedd-ST : ∀ {n}  {ctx : ST.Ctx n} {ty} → ST.Exp ctx ty → Exp (map embedd-ST-Ty ctx) (embedd-ST-Ty ty) 
 
+{-# REWRITE   lookupMap #-}
 
 embedd-ST-P :  ∀ {n}  {ctx : ST.Ctx n} {ty} → (h  : ST.Exp ctx (ty ST.⇒ (ST.TyNat ST.⇒ ty))) → (acc : ST.Exp ctx ty) → (counter : ST.Exp ctx ST.TyNat) → Exp (map embedd-ST-Ty ctx) (embedd-ST-Ty ty)
 embedd-ST-P {n} {ctx} {ty} h acc counter = 
@@ -302,24 +276,11 @@ embedd-ST-P {n} {ctx} {ty} h acc counter =
                       (fold (ι₂(π₂ (Var zero))))))
               x = (P {n} {map embedd-ST-Ty ctx}  {G-Nat } {(embedd-ST-Ty ty) `×  Nat} h'') in 
          π₁(App x (  counter'  ))
-
 embedd-ST {n} {ctx} (ST.Var f)  = Var f
 embedd-ST (ST.Lam exp) = Lam (embedd-ST exp)
 embedd-ST ST.CZero = fold (ι₁ `0)
 embedd-ST ST.Suc = Lam (fold (ι₂ (Var zero)))
 embedd-ST (ST.App f x) = App (embedd-ST f) (embedd-ST x)
--- embedd-ST {n} {ctx} {ty} (ST.PrecT h acc counter) = 
---         let h' =  (embedd-ST h) 
---             acc' = embedd-ST acc
---             counter' = embedd-ST counter 
---             h'' = Lam (`case (Var zero) 
---                   (`# ( weaken' (`𝟙 ∷ `𝟙 `+ (embedd-ST-Ty ty `× Nat) ∷ []) acc' ) (fold (ι₁ `0))) 
-                  
---                   (`# 
---                       (App (App (weaken' (embedd-ST-Ty ty `× Nat ∷ `𝟙 `+ (embedd-ST-Ty ty `× Nat) ∷ []) h') (π₁ (Var zero))) (π₂ (Var zero)))  
---                       (π₂ (Var zero))))
---             x = (P {n} {map embedd-ST-Ty ctx}  {G-Nat } {(embedd-ST-Ty ty) `×  Nat} h'') in 
---          π₁(App x (  counter'  ))
 embedd-ST {n} {ctx} {ty} (ST.PrecT h acc counter) = embedd-ST-P {n} {ctx} {ty} h acc counter 
 embedd-ST (ST.Nat n) = ℕ→ExpNat n
 
@@ -335,9 +296,6 @@ embeddSTValsInv {(tyA ST.⇒ tyB)} v = λ x → embeddSTValsInv {tyB} (v (embedd
 
 embeddSTVals {ST.TyNat} v = ℕ→Nat v
 embeddSTVals {(tyA ST.⇒ tyB)} v = λ x → embeddSTVals {tyB} (v (embeddSTValsInv {tyA} x))
-
-
-
 
 
 embeddSTVals∘embeddSTValsInv≡id : ∀ {ty : ST.Ty } (v : ⟦ (embedd-ST-Ty ty) ⟧ᵀ) → embeddSTVals (embeddSTValsInv {ty} v ) ≡ v
@@ -358,7 +316,6 @@ embeddSTValsInv∘embeddSTVals≡id {tyA ST.⇒ tyB} v = extensionality (λ x �
           ≡⟨ embeddSTValsInv∘embeddSTVals≡id {tyB} (v x) ⟩ 
       (v x) ∎))
 
-{-# REWRITE   embeddSTVals∘embeddSTValsInv≡id #-}
 
 ℕ→Nat≡eval∘ℕ→ExpNat :  ∀ {n}  {ctx : Ctx n} (x : ℕ) (ctx' : HVec (λ x → ⟦ x ⟧ᵀ) ctx) →  ℕ→Nat x ≡ eval (ℕ→ExpNat x) ctx'
 ℕ→Nat≡eval∘ℕ→ExpNat zero ctx = refl
@@ -369,26 +326,23 @@ lookupMapᴴ : ∀ {S T : Set} {F : S → Set}{G : T → Set}{n}{ss : Vec S n} {
 lookupMapᴴ zero f (x ∷ᴴ hvs) = refl
 lookupMapᴴ (suc i) f (x ∷ᴴ hvs) = lookupMapᴴ i f hvs
 
--- helper2 :  ∀  {tyA tyB : ST.Ty} (f : ST.evalTy (tyA ST.⇒ tyB)) (x : ST.evalTy tyA) →  embeddSTVals (f x) ≡  (embeddSTVals f) (embeddSTVals x)
--- helper2 {tyA} f x  rewrite embeddSTValsInv∘embeddSTVals≡id x = refl
-
-
 switchembeddSTValsApp :  ∀  {tyA tyB tyC : ST.Ty} (f : ST.evalTy (tyA ST.⇒ (tyB ST.⇒ tyC))) (x : ST.evalTy tyA) (y : ST.evalTy tyB) →  embeddSTVals (f x y) ≡  (embeddSTVals f) (embeddSTVals x)(embeddSTVals y)
 switchembeddSTValsApp {tyA} f x y rewrite  embeddSTValsInv∘embeddSTVals≡id x | embeddSTValsInv∘embeddSTVals≡id y = refl
-
-
 
 cong-app2 : ∀ {A B C : Set } {f g : A → B → C} →
            f ≡ g → (x : A) → (y : B) → f x y ≡ g x y
 cong-app2 refl x y = refl
--- foldF : {F : PolyTyOp}{A : Set} -> (⟦ F ⟧ₚ A -> A) -> Alg F -> A
 
 
-helper7 : ∀ {A : Set}  {F : PolyTyOp}  (f : (⟦ F ⟧ₚ (A × Alg F) ) -> A × Alg F ) (c : Alg F) →   (foldF f (c)) ≡  (PR-CC-ind-alt.mapFold `t (F) f ( c))
-helper7 f (fold x) =  refl
+helper2Gen : {F : PolyTyOp}{A : Set} →  (φ : ⟦ F ⟧ₚ A →  A) →  (c : Alg F) →
+   (foldF φ c) ≡  PR-CC-ind-alt.mapFold `t F φ c
+ 
+helper2Gen φ (fold x) = refl
 
-helper5 : ∀ {n}  {ctx : ST.Ctx n} {ty} → (ctx' : HVec ST.evalTy ctx) → (h  : ST.Exp ctx (ty ST.⇒ (ST.TyNat ST.⇒ ty))) → (acc : ST.Exp ctx ty) → (c : ℕ ) →  proj₁
-  (foldF
+
+
+helper2 : ∀ {n}  {ctx : ST.Ctx n} {ty} → (ctx' : HVec ST.evalTy ctx) → (h  : ST.Exp ctx (ty ST.⇒ (ST.TyNat ST.⇒ ty))) → (acc : ST.Exp ctx ty) → (c : ℕ ) →  proj₁
+  (foldF 
   (λ x →
       eval
       (`case (Var zero)
@@ -431,10 +385,9 @@ helper5 : ∀ {n}  {ctx : ST.Ctx n} {ty} → (ctx' : HVec ST.evalTy ctx) → (h 
       (x ∷ᴴ mapᴴ' embeddSTVals ctx')
       )
   (ℕ→Nat c))
--- helper5 {n} {ctx} {ty} ctx' h acc zero = refl
--- helper5 {n} {ctx} {ty} ctx' h acc ( suc c) = refl
-helper5 {n} {ctx} {ty} ctx' h acc ( c) = cong proj₁ (helper7 ((λ x →
-      eval
+helper2 {n} {ctx} {ty} ctx' h acc c with (ℕ→Nat c)
+... | fold x = refl 
+helper2 {n} {ctx} {ty} ctx' h acc c = cong proj₁( helper2Gen {G-Nat} (λ x → eval
       (`case (Var zero)
       (`#
         (weakenGen [] [ `𝟙 , `𝟙 `+ (embedd-ST-Ty ty `× ind (`𝟙 `+ `t)) ]
@@ -450,11 +403,11 @@ helper5 {n} {ctx} {ty} ctx' h acc ( c) = cong proj₁ (helper7 ((λ x →
           (π₁ (Var zero)))
         (π₂ (Var zero)))
         (fold (ι₂ (π₂ (Var zero))))))
-      (x ∷ᴴ mapᴴ' embeddSTVals ctx')
-      )) ((ℕ→Nat c)))
+      (x ∷ᴴ mapᴴ' embeddSTVals ctx')) ((ℕ→Nat c)) )
 
 
-helper6 : ∀ {n}  {ctx : ST.Ctx n} {ty} → (ctx' : HVec ST.evalTy ctx) → (h  : ST.Exp ctx (ty ST.⇒ (ST.TyNat ST.⇒ ty))) → (acc : ST.Exp ctx ty) → (c : ℕ ) →  (ℕ→Nat c) ≡  (proj₂
+
+helper3 : ∀ {n}  {ctx : ST.Ctx n} {ty} → (ctx' : HVec ST.evalTy ctx) → (h  : ST.Exp ctx (ty ST.⇒ (ST.TyNat ST.⇒ ty))) → (acc : ST.Exp ctx ty) → (c : ℕ ) →  (ℕ→Nat c) ≡  (proj₂
        (PR-CC-ind-alt.mapFold `t (`𝟙 `+ `t)
         (λ x →
            eval
@@ -476,8 +429,8 @@ helper6 : ∀ {n}  {ctx : ST.Ctx n} {ty} → (ctx' : HVec ST.evalTy ctx) → (h 
            (x ∷ᴴ mapᴴ' embeddSTVals ctx')
            )
         (ℕ→Nat c)))
-helper6 {n} {ctx} {ty} ctx' h acc zero = refl
-helper6 {n} {ctx} {ty} ctx' h acc (suc c) = cong fold (cong inj₂ (helper6 {n} {ctx} {ty} ctx' h acc c))
+helper3  ctx h acc zero = refl
+helper3  ctx h acc (suc c) = cong fold (cong inj₂ (helper3  ctx h acc c))
 
 embedd-ST-sound : ∀ {n}  {ctx : ST.Ctx n} {ty} → (ctx' : HVec ST.evalTy ctx) → (sTExp : ST.Exp ctx ty)  → embeddSTVals {ty} ((ST.evalExp sTExp ctx') ) ≡  ( eval (embedd-ST sTExp) (mapᴴ' (embeddSTVals) ctx') ) 
 
@@ -507,8 +460,6 @@ helper4 : ∀ {n}  {ctx : ST.Ctx n} {ty} → (ctx' : HVec ST.evalTy ctx) → (h 
           (x ∷ᴴ mapᴴ' embeddSTVals ctx')
           )
        (ℕ→Nat c))
-
-       
 helper4 ctx' h acc  zero rewrite embedd-ST-sound ctx' acc = sym (weaken'-Eq (tt ∷ᴴ (inj₁ tt ∷ᴴ  []ᴴ)) (mapᴴ' embeddSTVals ctx') (embedd-ST acc))
 helper4 {n} {ctx} {ty} ctx' h acc  (suc c) rewrite weaken'-Eq {ctxB = [ embedd-ST-Ty ty `× ind (`𝟙 `+ `t) ,
        `𝟙 `+ (embedd-ST-Ty ty `× ind (`𝟙 `+ `t)) ] }{ctxC = map embedd-ST-Ty ctx}  ( PR-CC-ind-alt.mapFold `t (`𝟙 `+ `t)
@@ -554,7 +505,7 @@ helper4 {n} {ctx} {ty} ctx' h acc  (suc c) rewrite weaken'-Eq {ctxB = [ embedd-S
               (fold (ι₂(π₂ (Var zero))))))
             (x ∷ᴴ mapᴴ' embeddSTVals ctx')
             )
-         (ℕ→Nat c)) ∷ᴴ []ᴴ) ) (mapᴴ' embeddSTVals ctx') ((embedd-ST h)) | helper5 {n} {ctx} {ty} ctx' h acc c = 
+         (ℕ→Nat c)) ∷ᴴ []ᴴ) ) (mapᴴ' embeddSTVals ctx') ((embedd-ST h)) | helper2 {n} {ctx} {ty} ctx' h acc c = 
          
           (embeddSTVals (ST.evalExp h ctx' (para (ST.evalExp h ctx') (ST.evalExp acc ctx') c) c)) 
               ≡⟨ switchembeddSTValsApp  (ST.evalExp h ctx') ((para (ST.evalExp h ctx') (ST.evalExp acc ctx') c)) c  ⟩ 
@@ -586,7 +537,7 @@ helper4 {n} {ctx} {ty} ctx' h acc  (suc c) rewrite weaken'-Eq {ctxB = [ embedd-S
            )
         (ℕ→Nat c)))
       (ℕ→Nat c) 
-                  ≡⟨ cong₂ (eval (embedd-ST h) (mapᴴ' embeddSTVals ctx')) (helper5 {n} {ctx} {ty} ctx' h acc c) ((helper6 {n} {ctx} {ty} ctx' h acc c))  ⟩ 
+                  ≡⟨ cong₂ (eval (embedd-ST h) (mapᴴ' embeddSTVals ctx')) (helper2 {n} {ctx} {ty} ctx' h acc c) ((helper3 {n} {ctx} {ty} ctx' h acc c))  ⟩ 
                   
       (eval (embedd-ST h) (mapᴴ' embeddSTVals ctx')
       (proj₁
@@ -634,6 +585,7 @@ helper4 {n} {ctx} {ty} ctx' h acc  (suc c) rewrite weaken'-Eq {ctxB = [ embedd-S
            )
         (ℕ→Nat c)))) ∎ )
 
+{-# REWRITE   embeddSTVals∘embeddSTValsInv≡id #-}
 
 
 embedd-ST-sound  ( ctx') (ST.Var ( f)) = lookupMapᴴ f embeddSTVals ctx' 
