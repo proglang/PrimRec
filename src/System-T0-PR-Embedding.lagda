@@ -6,8 +6,8 @@ module System-T0-PR-Embedding where
 
 open import Data.Fin using (Fin; suc; zero; opposite; raise; inject+; fromℕ)
 open import Data.Nat using (ℕ; suc; zero; _+_)
-open import Data.Vec using (Vec; []; _∷_; _++_; lookup; map) -- ; _ʳ++_) 
-open import Data.Vec.Properties using (lookup-++ˡ; map-cong; lookup-++ʳ)
+open import Data.Vec using (Vec; []; _∷_; _++_; lookup; map)
+open import Data.Vec.Properties using (lookup-++ˡ; lookup-++ʳ)
 import Relation.Binary.PropositionalEquality as Eq
 open Eq using (_≡_; refl; cong; sym)
 open Eq.≡-Reasoning using (begin_; _≡⟨⟩_; step-≡; _∎)
@@ -56,14 +56,14 @@ helperLookupMapInject xs ys (f ∷ fins) rewrite lookup-++ˡ xs ys f = cong ((lo
 
 lookupToN=id : ∀  {A : Set} {n : ℕ} (xs : Vec A n) → map (lookup xs) (toN n) ≡ xs
 lookupToN=id [] = refl
-lookupToN=id {A} {suc n} (x ∷ xs) rewrite helperLookupConsSuc x xs (toN n) = cong (x ∷_) (lookupToN=id xs)
+lookupToN=id {_}{suc n} (x ∷ xs) rewrite helperLookupConsSuc x xs (toN n) = cong (x ∷_) (lookupToN=id xs)
 
 
 mapToNRaiseEq : ∀ {A : Set} {n m}  (ys : Vec A m) (xs : Vec A n) → map (λ f → lookup (ys ++ xs) f) (mToM+N n m)  ≡ xs 
-mapToNRaiseEq {_}{n} {m} ys xs rewrite helperLookupMapRaise ys xs (toN n) = lookupToN=id xs
+mapToNRaiseEq {_}{n} ys xs rewrite helperLookupMapRaise ys xs (toN n) = lookupToN=id xs
 
 mapToNInjectEq : ∀ {A : Set}{n m}  (ys : Vec A m) (xs : Vec A n) → map (λ f → lookup (ys ++ xs) f) (zeroToM-Inject+N n m)  ≡   ys 
-mapToNInjectEq  {_}{n} {m} ys xs rewrite helperLookupMapInject ys xs (toN m) = lookupToN=id ys
+mapToNInjectEq  {_}{_} {m} ys xs rewrite helperLookupMapInject ys xs (toN m) = lookupToN=id ys
 
 
 
@@ -72,7 +72,7 @@ mapToNInjectEq  {_}{n} {m} ys xs rewrite helperLookupMapInject ys xs (toN m) = l
 -- -- ------------------------------------------------------------------------------
 natToPR : ℕ → (m : ℕ) → PR m
 natToPR zero m = C Z []
-natToPR (suc n) m = C σ ( [ natToPR n m ])
+natToPR (suc n) m = C σ [ natToPR n m ]
 
 convApp : ∀ {n m}  (f : Exp n (suc m)) (x : Exp n zero) → PR (n + m)
 
@@ -110,7 +110,7 @@ embeddST-PR-Sound : ∀  {n m : ℕ} (exp : Exp n m) (ctx : Vec ℕ n) (args : V
         eval (sTtoPR exp) (ctx ++r args) ≡ T0.eval exp ctx args
 \end{code}}
 \begin{code}[hide]
-embeddST-PR-SoundClose : ∀  {m : ℕ} ( exp : Exp 0 m)(args : Vec ℕ m ) → eval (sTtoPR exp) args ≡ evalClosed exp  args
+embeddST-PR-SoundClose : ∀  {m : ℕ} (exp : Exp 0 m)(args : Vec ℕ m) → eval (sTtoPR exp) args ≡ evalClosed exp  args
 embeddST-PR-SoundClose exp args  rewrite embeddST-PR-Sound exp [] args = refl
 
 
@@ -126,11 +126,11 @@ natToPRSound (suc m) args = cong suc (natToPRSound m args)
 
 
 evalProjVec=map-lookup : ∀ {n m : ℕ} (fins : Vec (Fin n) m) (args : Vec ℕ n) → map (λ p → eval p args) (map π ( fins))  ≡ map (λ f → lookup args f) fins
-evalProjVec=map-lookup {n} {.zero} [] args = refl
-evalProjVec=map-lookup {n} {.(suc _)} (f ∷ fins) args rewrite evalProjVec=map-lookup fins args = refl 
+evalProjVec=map-lookup [] args = refl
+evalProjVec=map-lookup (f ∷ fins) args rewrite evalProjVec=map-lookup fins args = refl 
 
 mkApp : ∀ {n m} → PR (n + suc m) → PR n → PR (n + m)
-mkApp {n} {m} f x = C (f) ((map π (zeroToM-Inject+N m n)) ++ (C ( x) (map π (zeroToM-Inject+N m n))) ∷ map π (mToM+N m n))
+mkApp {n} {m} f x = C f ((map π (zeroToM-Inject+N m n)) ++ (C x (map π (zeroToM-Inject+N m n))) ∷ map π (mToM+N m n))
 
 
 convApp {n} {m} f x = mkApp {n} {m} (sTtoPR f) (sTtoPR x)
@@ -151,7 +151,7 @@ evalAppHelper {n} {m} args ctx x rewrite
         = refl
 
 evalAppEq : ∀ {n m} (f : PR (n + suc m)) (x : PR n) (ctx : Vec ℕ n) (args : Vec ℕ m) → eval (mkApp {n} {m} f x) (ctx ++r args) ≡ eval ( f) (ctx ++r (eval ( x) (ctx ++r []) ∷ args))
-evalAppEq f x ctx args  rewrite evalAppHelper args ctx x = refl
+evalAppEq _ x ctx args  rewrite evalAppHelper args ctx x = refl
 
 
 convAppSound :  ∀  {n m : ℕ}  (f : Exp n (suc m)) (x : Exp n zero) (ctx : Vec ℕ n) (args : Vec ℕ m)  → eval (convApp f x) (ctx ++r args)   ≡ T0.eval f ctx (T0.eval x ctx [] ∷ args)
@@ -191,11 +191,11 @@ convPRSoundHelper x y h ctx rewrite eval*swapArgs x y (fastReverse ctx) | revers
 
 convPRSound : ∀  {n : ℕ}  (h : Exp n 2) (acc : Exp n 0) (counter : Exp n 0) (ctx : Vec ℕ n) → eval (convPR h acc counter) (fastReverse ctx)  ≡ para (λ acc' counter' → T0.eval h ctx [ acc' , counter' ]) (T0.eval acc ctx []) (T0.eval counter ctx [])
 convPRSound {n} h acc counter ctx  = 
-        (eval (convPR h acc counter) (fastReverse ctx)) 
+        begin (eval (convPR h acc counter) (fastReverse ctx)) 
                 ≡⟨ evalmkPr (sTtoPR h) (sTtoPR acc) (sTtoPR counter) ctx ⟩ 
         (eval (P (sTtoPR acc) (C (sTtoPR h) (swapArgs n))) (eval (sTtoPR counter) (fastReverse ctx) ∷ fastReverse ctx) 
                 ≡⟨ evalP≡paraNat' (sTtoPR acc) (C (sTtoPR h) (swapArgs n)) (eval (sTtoPR counter) (fastReverse ctx) ∷ fastReverse ctx) ⟩ 
-        para (λ acc₁ n₁ → eval (sTtoPR h) (eval* (swapArgs n) (acc₁ ∷ n₁ ∷ fastReverse ctx)))(eval (sTtoPR acc) (fastReverse ctx))(eval (sTtoPR counter) (fastReverse ctx))
+        para (λ acc' n' → eval (sTtoPR h) (eval* (swapArgs n) (acc' ∷ n' ∷ fastReverse ctx)))(eval (sTtoPR acc) (fastReverse ctx))(eval (sTtoPR counter) (fastReverse ctx))
                 ≡⟨ cong3 para (ext2 (λ x y → convPRSoundHelper x y h ctx)) (embeddST-PR-Sound acc ctx []) (embeddST-PR-Sound counter ctx [])  ⟩ 
         (para (λ acc' counter' → T0.eval h ctx [ acc' , counter' ])(T0.eval acc ctx []) (T0.eval counter ctx [])) ∎  )
 
@@ -214,7 +214,7 @@ embeddST-PR-Sound (Var x) ctx [] = lookupOpRev x ctx
 embeddST-PR-Sound (Lam exp) ctx (x ∷ args) = embeddST-PR-Sound exp (x ∷ ctx)(args)
 \end{code}}
 \begin{code}[hide]
-embeddST-PR-Sound CZero ctx args = refl
+embeddST-PR-Sound CZero _ _ = refl
 \end{code}
 \newcommand{\sTtoPRSoundSuc}{%
 \begin{code}
@@ -222,6 +222,6 @@ embeddST-PR-Sound Suc ctx [ x ] = cong suc (lkupfromN ctx [])
 \end{code}}
 \begin{code}[hide]
 embeddST-PR-Sound (App f x) ctx args   = convAppSound f x ctx args
-embeddST-PR-Sound {n} {zero} (Nat x) ctx [] = natToPRSound x (fastReverse ctx)
+embeddST-PR-Sound (Nat x) ctx [] = natToPRSound x (fastReverse ctx)
 embeddST-PR-Sound (PRecT h acc counter) ctx [] = convPRSound h acc counter ctx -- 
 \end{code}

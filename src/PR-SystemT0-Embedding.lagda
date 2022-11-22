@@ -13,7 +13,7 @@ open Eq.≡-Reasoning using (begin_; _≡⟨⟩_; step-≡; _∎)
 
 open import System-T0 using (Exp; mkConstZero; mkProj; raseExp0=id; raiseExP; evalClosed; evalMkConstZero; evalMkProj; generalComp; evalGeneralComp; paraT; evalParaT; cong3; extensionality)
 open System-T0.Exp
-open import EvalPConstructor using (para; paraNat'; paraNatPR; paraNatEq; paraNat; evalP≡paraNat')
+open import EvalPConstructor using (para; paraNat'; evalP≡paraNat')
 
 
 open import PR-Nat
@@ -93,9 +93,9 @@ embeddPR-ST-Sound  (P g h) vs = convParaSound g h vs
 
 prToSt* : ∀ {m : ℕ}    → Vec (PR m) n → Vec (Exp zero m) n
 prToSt*  [] = []
-prToSt* {m}  (x ∷ vs) = (prToST′  x) ∷ (prToSt*  vs)
+prToSt*  (x ∷ vs) = (prToST′  x) ∷ (prToSt*  vs)
 
-convComp {n} {m} f gs = generalComp (prToST′ f) (prToSt*  gs)
+convComp f gs = generalComp (prToST′ f) (prToSt*  gs)
 
 
 eval*≡evalPrToST* : ∀ {n m}  (vs : Vec ℕ m) (gs : Vec (PR m) n) → (map (λ g → evalClosed g vs) (prToSt* gs)) ≡ (eval* gs vs)
@@ -105,7 +105,8 @@ eval*≡evalPrToST* vs (g ∷ gs) rewrite embeddPR-ST-Sound  g vs | eval*≡eval
 convCompSoundHelper : ∀ {n m} (f : PR n) (vs : Vec ℕ m) (gs : Vec (PR m) n) → evalClosed (prToST′ f) (map (λ g → evalClosed g vs) (prToSt* gs))≡ eval f (eval* gs vs)
 convCompSoundHelper f vs gs rewrite eval*≡evalPrToST* vs gs | embeddPR-ST-Sound f (eval* gs vs) = refl
 
-convCompSound f gs vs = (evalClosed (convComp f gs) vs) 
+convCompSound f gs vs = begin 
+                (evalClosed (convComp f gs) vs) 
         ≡⟨⟩ 
                 (((evalClosed (generalComp (prToST′ f) (prToSt* gs)) vs)) 
         ≡⟨ evalGeneralComp (prToST′ f) (prToSt* gs) vs ⟩ 
@@ -123,7 +124,8 @@ convCompSound f gs vs = (evalClosed (convComp f gs) vs)
 convPR g h = paraT ((prToST′  g )) (prToST′  h)
 
 
-convParaSound g h (x ∷ args) = (evalClosed (prToST′ (P g h)) (x ∷ args))
+convParaSound g h (x ∷ args) = begin 
+                        (evalClosed (prToST′ (P g h)) (x ∷ args))
                                 ≡⟨⟩ 
                         evalClosed (paraT ((prToST′  g )) (prToST′  h)) (x ∷ args) 
                                 ≡⟨ evalParaT (prToST′  g ) (prToST′  h) args ⟩ 
@@ -131,7 +133,7 @@ convParaSound g h (x ∷ args) = (evalClosed (prToST′ (P g h)) (x ∷ args))
                                 ≡⟨⟩ 
                         paraNat' (evalClosed (prToST′ g)) (evalClosed (prToST′ h)) ((x ∷ args)) 
                                 ≡⟨ cong3 { w = x ∷ args } paraNat'  ((extensionality (λ v →  embeddPR-ST-Sound g v))) (((extensionality (λ v →  (embeddPR-ST-Sound h v))))) refl  ⟩  
-                        (para (λ acc n₁ → eval h (acc ∷ n₁ ∷ args)) (eval g args) x) 
+                        (para (λ acc n → eval h (acc ∷ n ∷ args)) (eval g args) x) 
                                 ≡⟨ sym (evalP≡paraNat' g h (x ∷ args) ) ⟩ 
                         (eval (P g h) (x ∷ args)) ∎
 \end{code}
