@@ -29,9 +29,13 @@ data Exp n : ℕ → Set where
     CZero :  Exp n zero
     Suc : Exp n (suc zero)
     App : Exp n (suc m) → Exp n (zero) → Exp n m
-    Nat : ℕ → Exp n zero
     PRecT : Exp n 2 → Exp n zero → Exp n zero → Exp n zero
 \end{code}}
+
+\begin{code}[hide]
+    Nat : ℕ → Exp n zero
+\end{code}
+
 
 \newcommand{\evalST}{%
 \begin{code}
@@ -41,10 +45,16 @@ eval (Lam e) ctx (x ∷ args) = eval e (x ∷ ctx) args
 eval CZero _ _ = 0
 eval Suc _ [ x ] = suc x
 eval (App f e) ctx args = eval f ctx ( eval e ctx [] ∷ args)
-eval (Nat n) _ [] = n
 eval (PRecT h e₀ en) ctx [] = para (λ acc counter → (eval h ctx) [ acc , counter ]) 
                                                 (eval e₀ ctx []) (eval en ctx []) 
+\end{code}}
 
+\begin{code}[hide]
+eval (Nat n) _ [] = n
+\end{code}
+
+\newcommand{\evalSTClosed}{%
+\begin{code}
 evalClosed : Exp zero m → Vec ℕ m → ℕ
 evalClosed e = eval e []
 \end{code}}
