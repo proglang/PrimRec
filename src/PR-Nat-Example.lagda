@@ -5,10 +5,13 @@ import Relation.Binary.PropositionalEquality as Eq
 open Eq
   using (_≡_; _≢_; refl; sym; trans; cong; cong₂; subst)
 open Eq.≡-Reasoning using (begin_; _≡⟨⟩_; step-≡˘; step-≡; _∎)
+open import Data.Empty using (⊥; ⊥-elim)
 open import Data.Bool using (Bool; true; false)
 open import Data.Fin using (Fin; suc; zero)
-open import Data.Nat using (ℕ; suc; zero; _+_; _*_; _^_; _∸_; pred)
-open import Data.Nat.Properties using (+-identityʳ; +-suc; +-∸-assoc; ∸-+-assoc; 0∸n≡0)
+open import Data.Nat using (ℕ; suc; zero; _+_; _*_; _^_; _∸_; pred; _≤_; z≤n; s≤s; _<_)
+open import Data.Nat.Properties using (+-identityʳ; +-suc; +-∸-assoc; ∸-+-assoc; 0∸n≡0; ≤-trans; ≤-refl; m≤n+m)
+open import Data.Product using (_×_) renaming (_,_ to ⟨_,_⟩)
+open import Data.Sum using (_⊎_; inj₁; inj₂)
 open import Data.Vec using (Vec; []; _∷_; _++_)
 open import Agda.Builtin.Nat public
   using () renaming (_<_ to _<ᵇ_)
@@ -197,5 +200,194 @@ remP=rem (suc m) n
   with suc (rem m n) <ᵇ n
 ... | false = refl
 ... | true = refl
+
+----------------------------------------------------------------------
+-- pairing
+
+triangle : ℕ → ℕ
+triangle zero = 0
+triangle (suc n) = suc n + triangle n
+
+triangleP : PR 1
+triangleP = P Z (C addP [ C σ [ π (suc zero) ] , π zero ])
+
+triangleP=triangle : ∀ n → eval triangleP [ n ] ≡ triangle n
+triangleP=triangle zero = refl
+triangleP=triangle (suc n)
+  rewrite triangleP=triangle n = addP=+ (suc n) (triangle n)
+
+mkpair : ℕ → ℕ → ℕ
+mkpair x y = triangle (x + y) + y
+
+mkpairP : PR 2
+mkpairP = C addP [ C triangleP [ (C addP [ π zero , π (suc zero) ]) ] , π (suc zero) ]
+
+mkpairP=mkpair : ∀ m n → eval mkpairP [ m , n ] ≡ mkpair m n
+mkpairP=mkpair m n
+  rewrite addP=+ m n
+        | triangleP=triangle (m + n)
+        | addP=+ (triangle (m + n)) n = refl
+
+----------------------------------------------------------------------
+-- unpairing
+
+toBool : ℕ → ℕ
+toBool zero = 0
+toBool (suc n) = 1
+
+toBoolP=toBool : ∀ m → eval toBoolP [ m ] ≡ toBool m
+toBoolP=toBool zero = refl
+toBoolP=toBool (suc m) = refl
+
+not : ℕ → ℕ
+not zero = 1
+not (suc n) = 0
+
+notP=not : ∀ m → eval notP [ m ] ≡ not m
+notP=not zero = refl
+notP=not (suc m) = refl
+
+equal : ℕ → ℕ → ℕ
+equal m n = not ((m ∸ n) + (n ∸ m))
+
+equalP : PR 2
+equalP = C notP [ (C addP [ (C subP [ π zero , π (suc zero) ]) , (C subP [ π (suc zero) , π zero ]) ]) ]
+
+equalP=equal : ∀ m n → eval equalP [ m , n ] ≡ equal m n
+equalP=equal m n
+  rewrite subP=∸ m n
+        | subP=∸ n m
+        | addP=+ (m ∸ n) (n ∸ m) = notP=not (m ∸ n + (n ∸ m))
+
+-- check stdlib
+
+m∸m≡0 : ∀ m → m ∸ m ≡ 0
+m∸m≡0 zero = refl
+m∸m≡0 (suc m) = m∸m≡0 m
+
+m∸n≡0⇒m≤n : ∀ m n → m ∸ n ≡ 0 → m ≤ n
+m∸n≡0⇒m≤n zero n m∸n≡0 = z≤n
+m∸n≡0⇒m≤n (suc m) (suc n) m∸n≡0 = s≤s (m∸n≡0⇒m≤n m n m∸n≡0)
+
+n≤suc-n : ∀ n → n ≤ suc n
+n≤suc-n zero = z≤n
+n≤suc-n (suc n) = s≤s (n≤suc-n n)
+
+n≤m-≡/sucn≤m : ∀ n m → n ≤ m → n ≡ m ⊎ suc n ≤ m
+n≤m-≡/sucn≤m .zero zero z≤n = inj₁ refl
+n≤m-≡/sucn≤m .zero (suc m) z≤n = inj₂ (s≤s z≤n)
+n≤m-≡/sucn≤m .(suc _) .(suc _) (s≤s n≤m)
+  with n≤m-≡/sucn≤m _ _ n≤m
+... | inj₁ refl = inj₁ refl
+... | inj₂ sucm≤n = inj₂ (s≤s sucm≤n)
+
+
+≤-antisymm : ∀ m n → m ≤ n → n ≤ m → m ≡ n
+≤-antisymm .zero .zero z≤n z≤n = refl
+≤-antisymm .(suc _) .(suc _) (s≤s m≤n) (s≤s n≤m)
+  rewrite ≤-antisymm _ _ m≤n n≤m = refl
+
+≡-≤ : ∀ {m n : ℕ} → m ≡ n → m ≤ n
+≡-≤ refl = ≤-refl
+
+-- check stdlib end
+
+≡-equal : ∀ m n → m ≡ n → equal m n ≡ 1
+≡-equal m .m refl rewrite m∸m≡0 m = refl
+
+equal-≡ : ∀ m n → equal m n ≡ 1 → m ≡ n
+equal-≡ m n eql-mn-1
+  with m ∸ n in m∸n≡0
+... | zero
+  with n ∸ m in n∸m≡0
+... | zero
+  = ≤-antisymm m n (m∸n≡0⇒m≤n m n m∸n≡0) (m∸n≡0⇒m≤n n m n∸m≡0)
+
+1≢0 : 1 ≢ 0
+1≢0 ()
+
+equal-≢ : ∀ m n → equal m n ≡ 0 → m ≢ n
+equal-≢ m .m eql-mn-0 refl
+  with ≡-equal m m refl
+... | eq rewrite eq = ⊥-elim (1≢0 eql-mn-0)
+
+not<2 : ∀ m → not m < 2
+not<2 zero = s≤s (s≤s z≤n)
+not<2 (suc m) = s≤s z≤n
+
+equal<2 : ∀ m n → equal m n < 2
+equal<2 m n = not<2 ((m ∸ n) + (n ∸ m))
+
+¬not>1 : ∀ m k → not m ≡ suc (suc k) → ⊥
+¬not>1 zero k ()
+¬not>1 (suc m) k ()
+
+-- m = untriangle n → triangle m ≤ n /\ n < triangle (suc m)
+untriangle : ℕ → ℕ
+untriangle zero = 0
+untriangle (suc n) = equal (triangle (suc (untriangle n))) (suc n) + untriangle n
+
+-- i          = 0 1 2 3  4  5
+-- triangle i = 0 1 3 6 10 15
+
+-- n   = 0 1 2 3 4 5 6 7 8 9 10
+-- u n = 0 1 1 2 2 2 3 3 3 3
+
+module untriangle-tests where
+  _ : untriangle 0 ≡ 0
+  _ = refl
+  _ : untriangle 1 ≡ 1
+  _ = refl
+  _ : untriangle 2 ≡ 1
+  _ = refl
+  _ : untriangle 3 ≡ 2
+  _ = refl
+  _ : untriangle 4 ≡ 2
+  _ = refl
+  _ : untriangle 5 ≡ 2
+  _ = refl
+  _ : untriangle 6 ≡ 3
+  _ = refl
+
+untriangleP : PR 1
+untriangleP = P Z (C addP [ C equalP [ (C triangleP [ (C σ [ π zero ]) ]) , C σ [ π (suc zero) ] ] , π zero ])
+
+untriangleP=untriangle : ∀ n → eval untriangleP [ n ] ≡ untriangle n
+untriangleP=untriangle zero = refl
+untriangleP=untriangle (suc n)
+  with untriangleP=untriangle n
+... | ih =
+  begin
+    eval untriangleP [ suc n ]
+    ≡⟨⟩
+      eval addP [ eval equalP [ eval triangleP [ suc (eval untriangleP [ n ]) ] , suc n ] , eval untriangleP [ n ] ]
+    ≡⟨ cong (λ m → eval addP [ eval equalP [ eval triangleP [ suc m ] , suc n ] , m ]) ih ⟩
+      eval addP [ eval equalP [ eval triangleP [ suc (untriangle n) ] , suc n ] , untriangle n ]
+    ≡⟨ cong (λ m → eval addP [ eval equalP [ m , suc n ] , untriangle n ]) (triangleP=triangle (suc (untriangle n))) ⟩
+      eval addP [ eval equalP [ triangle (suc (untriangle n)) , suc n ] , untriangle n ]
+    ≡⟨ cong (λ m → eval addP [ m , untriangle n ]) (equalP=equal (triangle (suc (untriangle n))) (suc n)) ⟩
+      eval addP [ equal (triangle (suc (untriangle n))) (suc n) , untriangle n ]
+    ≡⟨ addP=+ (equal (triangle (suc (untriangle n))) (suc n)) (untriangle n) ⟩
+      equal (triangle (suc (untriangle n))) (suc n) + untriangle n
+    ≡⟨⟩
+      untriangle (suc n)
+    ∎
+    
+untriangle-spec : ℕ → ℕ → Set
+untriangle-spec m n = m ≡ untriangle n → triangle m ≤ n × n < triangle (suc m)
+
+untriangle-spec-holds : ∀ m n → untriangle-spec m n
+untriangle-spec-holds .(untriangle zero) zero refl = ⟨ z≤n , s≤s z≤n ⟩
+untriangle-spec-holds .(untriangle (suc n)) (suc n) refl
+  with untriangle-spec-holds (untriangle n) n refl
+... | ⟨ tr-untr-n≤n , s≤s n≤un-n+tr-un-n ⟩
+  with equal (triangle (suc (untriangle n))) (suc n) in eqlr
+... | suc zero = ⟨ ≡-≤ (equal-≡ (triangle (suc (untriangle n))) (suc n) eqlr)
+                 , s≤s (s≤s (≤-trans n≤un-n+tr-un-n (≤-trans (m≤n+m (untriangle n + triangle (untriangle n)) (suc (untriangle n))) (≡-≤ (sym (+-suc (untriangle n) _)))))) ⟩
+... | suc (suc r) = ⊥-elim (¬not>1 _ _ eqlr)
+... | zero
+  with n≤m-≡/sucn≤m n (untriangle n + triangle (untriangle n)) n≤un-n+tr-un-n
+... | inj₁ x = ⊥-elim (equal-≢ (triangle (suc (untriangle n))) (suc n) eqlr (cong suc (sym x)))
+... | inj₂ suc-n≤un-n+tr-un-n = ⟨ (≤-trans tr-untr-n≤n (n≤suc-n n)) , s≤s suc-n≤un-n+tr-un-n ⟩
 
 \end{code}
