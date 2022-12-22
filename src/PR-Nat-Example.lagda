@@ -9,8 +9,8 @@ open import Data.Empty using (⊥; ⊥-elim)
 open import Data.Bool using (Bool; true; false)
 open import Data.Fin using (Fin; suc; zero)
 open import Data.Nat using (ℕ; suc; zero; _+_; _*_; _^_; _∸_; pred; _≤_; z≤n; s≤s; _<_)
-open import Data.Nat.Properties using (+-identityʳ; +-suc; +-∸-assoc; ∸-+-assoc; 0∸n≡0; ≤-trans; ≤-refl; m≤n+m)
-open import Data.Product using (_×_) renaming (_,_ to ⟨_,_⟩)
+open import Data.Nat.Properties using (+-identityʳ; +-cancelʳ-≡; suc-injective; +-suc; +-comm; +-∸-assoc; ∸-+-assoc; 0∸n≡0; ≤-trans; ≤-refl; m≤n+m; m∸n+n≡m; m+n∸m≡n; m+n∸n≡m)
+open import Data.Product using (Σ; _×_; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
 open import Data.Sum using (_⊎_; inj₁; inj₂)
 open import Data.Vec using (Vec; []; _∷_; _++_)
 open import Agda.Builtin.Nat public
@@ -322,6 +322,14 @@ equal<2 m n = not<2 ((m ∸ n) + (n ∸ m))
 ¬not>1 zero k ()
 ¬not>1 (suc m) k ()
 
+≢-equal : ∀ m n → m ≢ n → equal m n ≡ 0
+≢-equal m n m≢n
+  with equal m n in eq-mn
+... | zero = refl
+... | suc (suc r) = ⊥-elim (¬not>1 _ _ eq-mn)
+... | suc zero with equal-≡ m n eq-mn
+... | refl = ⊥-elim (m≢n refl)
+
 -- m = untriangle n → triangle m ≤ n /\ n < triangle (suc m)
 untriangle : ℕ → ℕ
 untriangle zero = 0
@@ -372,9 +380,11 @@ untriangleP=untriangle (suc n)
     ≡⟨⟩
       untriangle (suc n)
     ∎
-    
+
 untriangle-spec : ℕ → ℕ → Set
 untriangle-spec m n = m ≡ untriangle n → triangle m ≤ n × n < triangle (suc m)
+
+-- triangle (untriangle n) ≤ n × n < triangle (suc (untriangle n))
 
 untriangle-spec-holds : ∀ m n → untriangle-spec m n
 untriangle-spec-holds .(untriangle zero) zero refl = ⟨ z≤n , s≤s z≤n ⟩
@@ -390,4 +400,148 @@ untriangle-spec-holds .(untriangle (suc n)) (suc n) refl
 ... | inj₁ x = ⊥-elim (equal-≢ (triangle (suc (untriangle n))) (suc n) eqlr (cong suc (sym x)))
 ... | inj₂ suc-n≤un-n+tr-un-n = ⟨ (≤-trans tr-untr-n≤n (n≤suc-n n)) , s≤s suc-n≤un-n+tr-un-n ⟩
 
+
+triangle-prop : ∀ m → m + triangle m ≡ triangle (suc m) ∸ 1
+triangle-prop zero = refl
+triangle-prop (suc m) = refl
+
+triangle-prop1 : ∀ m → suc m + triangle m ≡ triangle (suc m)
+triangle-prop1 m = refl
+
+-- properties of untriangle ∘ triangle
+
+untriangle-triangle : ∀ m y → y ≤ m → untriangle (y + triangle m) ≡ m
+untriangle-triangle zero .zero z≤n = refl
+untriangle-triangle (suc m) zero y≤m =
+  begin
+    untriangle (triangle (suc m))
+  ≡⟨⟩
+    untriangle (suc m + triangle m)
+  ≡⟨⟩
+    equal (triangle (suc (untriangle (m + triangle m)))) (suc m + triangle m) + untriangle (m + triangle m)
+  ≡⟨ cong (λ r → equal (triangle (suc r)) (suc m + triangle m) + r) (untriangle-triangle m m ≤-refl) ⟩
+    equal (triangle (suc m)) (suc m + triangle m) + m
+  ≡⟨ cong (_+ m) (≡-equal (triangle (suc m)) (suc m + triangle m) refl) ⟩
+    refl
+untriangle-triangle (suc m) (suc y) (s≤s y≤m) =
+  begin
+    untriangle (suc y + triangle (suc m))
+  ≡⟨⟩
+    untriangle (suc y + (suc m + triangle m))
+  ≡⟨⟩
+    equal (triangle (suc (untriangle (y + triangle (suc m))))) (suc y + (suc m + triangle m)) + untriangle (y + triangle (suc m))
+  ≡⟨ cong (λ ih → equal (triangle (suc ih)) (suc y + (suc m + triangle m)) + ih) (untriangle-triangle (suc m) y (≤-trans y≤m (n≤suc-n m))) ⟩
+    equal ((suc (suc m)) + triangle (suc m)) (suc y + triangle (suc m)) + (suc m)
+  ≡⟨ cong (_+ suc m) (not-equal (suc m) (suc y) (s≤s y≤m)) ⟩
+    suc m
+  ∎
+  where
+    -- -- +-cancelˡ-≡
+    -- lemma-0 : ∀ a b c → a + b ≡ a + c → b ≡ c
+    -- lemma-0 zero b c ab≡ac = ab≡ac
+    -- lemma-0 (suc a) b c ab≡ac = lemma-0 a b c (suc-injective ab≡ac)
+
+    -- -- +-cancelʳ-≡
+    -- lemma-0′ : ∀ a b c → b + a ≡ c + a → b ≡ c
+    -- lemma-0′ a b c ba≡ca = lemma-0 a b c (trans (+-comm a b) (trans ba≡ca (+-comm c a)))
+
+    lemma : ∀ m y → suc m + triangle m ≡ y + triangle m → suc m ≡ y
+    lemma m y = +-cancelʳ-≡ (suc m) y
+
+    lemma-contra : ∀ m y → suc m ≢ y → suc m + triangle m ≢ y + triangle m
+    lemma-contra m y sm≢y smt≡yt = sm≢y (lemma m y smt≡yt)
+
+    y≤m⇒sm≢y : ∀ y m → y ≤ m → suc m ≢ y
+    y≤m⇒sm≢y .zero m z≤n = λ ()
+    y≤m⇒sm≢y (suc y) (suc m) (s≤s y≤m) = λ{ refl → y≤m⇒sm≢y y m y≤m refl }
+
+    not-equal : ∀ m y → y ≤ m → equal ((suc m) + triangle m) (y + triangle m) ≡ 0
+    not-equal m y y≤m = ≢-equal ((suc m) + triangle m) (y + triangle m) (lemma-contra m y (y≤m⇒sm≢y y m y≤m))
+    
+
+unpair-y : ℕ → ℕ
+unpair-y p = p ∸ triangle (untriangle p)
+
+unpair-x : ℕ → ℕ
+unpair-x p = untriangle p ∸ unpair-y p
+
+-- pair/unpair is an isomorphism
+
+pair-unpair-identity : ∀ p → mkpair (unpair-x p) (unpair-y p) ≡ p
+pair-unpair-identity p =
+  begin
+    mkpair (unpair-x p) (unpair-y p)
+  ≡⟨⟩
+    triangle (unpair-x p + unpair-y p) + unpair-y p
+  ≡⟨⟩
+    triangle (untriangle p ∸ (p ∸ triangle (untriangle p)) + (p ∸ triangle (untriangle p))) + (p ∸ triangle (untriangle p))
+  ≡⟨ cong (λ m → triangle m + (p ∸ triangle (untriangle p))) (m∸n+n≡m (lemma1 p)) ⟩
+    triangle (untriangle p) + (p ∸ triangle (untriangle p))
+  ≡˘⟨ +-∸-assoc (triangle (untriangle p)) (lemma2 p) ⟩
+    (triangle (untriangle p) + p) ∸ triangle (untriangle p)
+  ≡⟨ m+n∸m≡n (triangle (untriangle p)) p ⟩
+    p
+  ∎
+  where
+    lemma1 : ∀ p → p ∸ triangle (untriangle p) ≤ untriangle p
+    lemma1 p = {!!}
+    lemma2 : ∀ n → triangle (untriangle n) ≤ n
+    lemma2 n = proj₁ (untriangle-spec-holds (untriangle n) n refl)
+
+un-tr-x+y : ∀ x y → untriangle (triangle (x + y) + y) ≡ x + y
+un-tr-x+y x y = trans (cong untriangle (+-comm (triangle (x + y)) y)) (untriangle-triangle (x + y) y (m≤n+m y x))
+
+unpair-pair-identity-y : ∀ x y → unpair-y (mkpair x y) ≡ y
+unpair-pair-identity-y x y =
+  begin
+    unpair-y (mkpair x y)
+  ≡⟨⟩
+    unpair-y (triangle (x + y) + y)
+  ≡⟨⟩
+    (triangle (x + y) + y) ∸ triangle (untriangle (triangle (x + y) + y))
+  ≡⟨ cong (λ m → triangle (x + y) + y ∸ triangle m) (un-tr-x+y x y) ⟩
+    triangle (x + y) + y ∸ triangle (x + y)
+  ≡⟨ m+n∸m≡n (triangle (x + y)) y ⟩
+    y
+  ∎
+    
+
+unpair-pair-identity-x : ∀ x y → unpair-x (mkpair x y) ≡ x
+unpair-pair-identity-x x y =
+  begin
+    unpair-x (mkpair x y)
+  ≡⟨⟩
+    untriangle (mkpair x y) ∸ unpair-y (mkpair x y)
+  ≡⟨ cong (untriangle (mkpair x y) ∸_) (unpair-pair-identity-y x y) ⟩
+    untriangle (mkpair x y) ∸ y
+  ≡⟨⟩
+    untriangle (triangle (x + y) + y) ∸ y
+  ≡⟨ cong (_∸ y) (un-tr-x+y x y) ⟩
+    x + y ∸ y
+  ≡⟨ m+n∸n≡m x y ⟩
+    x
+  ∎
+
+-- primitive recursive encoding
+
+unpair-yP : PR 1
+unpair-yP = C subP [ π zero , C triangleP [ untriangleP ] ]
+
+unpair-xP : PR 1
+unpair-xP = C subP [ untriangleP , unpair-yP ]
+
+unpair-yP=unpair-y : ∀ p → eval unpair-yP [ p ] ≡ unpair-y p
+unpair-yP=unpair-y p
+  rewrite untriangleP=untriangle p
+        | triangleP=triangle (untriangle p)
+        | subP=∸ p (triangle (untriangle p))
+  = refl
+
+unpair-xP=unpair-x : ∀ p → eval unpair-xP [ p ] ≡ unpair-x p
+unpair-xP=unpair-x p
+  rewrite untriangleP=untriangle p 
+        | triangleP=triangle (untriangle p)
+        | subP=∸ p (triangle (untriangle p))
+        | subP=∸ (untriangle p) (p ∸ (triangle (untriangle p)))
+  = refl
 \end{code}
