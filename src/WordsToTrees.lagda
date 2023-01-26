@@ -20,6 +20,7 @@ open import Utils
 import PR-Words as Words
 import PR-Trees as Trees
 \end{code}
+\newcommand\PRWordsToTreesEncodingRanks{
 \begin{code}
 make-R : ∀ A → Trees.Ranked
 make-R A = Trees.mkRanked {Maybe A} (maybe (const 1) 0)
@@ -28,13 +29,11 @@ make-R A = Trees.mkRanked {Maybe A} (maybe (const 1) 0)
 ⟦ []ᴸ ⟧ⱽ     = Trees.con nothing []
 ⟦ a ∷ᴸ a* ⟧ⱽ = Trees.con (just a) [ ⟦ a* ⟧ⱽ ]
 \end{code}
+}
 \begin{code}[hide]
 {-# TERMINATING #-}
 \end{code}
-The mapping of the syntax requires a few twists.
-The $n$-ary $0$-function must be simulated by composing the corresponding $0$-ary tree constructor with an empty vector of $n$-ary functions.
-Normal constructors, projection, and composition are as before.
-The translation for primitive recursion merges the functions $g$ and $h$ into a single indexed function.
+\newcommand\PRWordsToTreesEncoding{
 \begin{code}
 ⟦_⟧ : Words.PR A n → Trees.PR (make-R A) n
 ⟦ Words.Z ⟧      = Trees.σ nothing
@@ -43,11 +42,13 @@ The translation for primitive recursion merges the functions $g$ and $h$ into a 
 ⟦ Words.C f g* ⟧ = Trees.C ⟦ f ⟧ (map ⟦_⟧ g*)
 ⟦ Words.P g h ⟧  = Trees.P λ{ nothing → ⟦ g ⟧ ; (just a) → ⟦ h a ⟧}
 \end{code}
-It is again straightforward to prove the soundness of this embedding by induction on \AgdaBound{p}.
+}
+\newcommand\PRWordsToTreesEncodingSound{
 \begin{code}
 sound : ∀ (p : Words.PR A n) (v* : Vec (List A) n)
   → ⟦ Words.eval p v* ⟧ⱽ ≡ Trees.eval ⟦ p ⟧ (map ⟦_⟧ⱽ v*)
 \end{code}
+}
 \begin{code}[hide]
 sound* : ∀ (p* : Vec (Words.PR A n) m) (v* : Vec (List A) n)
   → map ⟦_⟧ⱽ (Words.eval* p* v*) ≡ Trees.eval* (map ⟦_⟧ p*) (map ⟦_⟧ⱽ v*)

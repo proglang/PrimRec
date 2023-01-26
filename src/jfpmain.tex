@@ -42,6 +42,7 @@
 \newunicodechar{ᵀ}{\ensuremath{^T}}
 \newunicodechar{⊎}{\ensuremath{\uplus}}
 \newunicodechar{ι}{\ensuremath{\iota}}
+\newunicodechar{⇐}{\ensuremath{\Leftarrow}}
 \newcommand\Nat{ℕ}
 
 \newcommand{\xn}{x_1,\dots,x_n }
@@ -194,12 +195,30 @@ syntax, thus cleanly separating syntax and semantics.
 The following Agda definition formalizes syntax and semantics of pr
 functions precisely (and strictly separated).
 \input{latex/PR-Nat}
+The datatype \APR{n} defines an abstract syntax for $n$-ary primitive recursive functions.
+The type \AVec{A}{n} contains vectors of size $n$ with elements of type $A$.
+The type \AFin{n} comprises the elements $\{0, 1, \dots, n-1\}$, which
+are exactly the valid indices for a vector of type \AVec{A}{n}. 
+The function \AgdaFunction{lookup v* i} accesses such a vector at index $i$.
+
+\PRNat
+
+The function \AgdaFunction{eval} maps a pr function to its semantics.
+We represent ${ℕ}^n$ by the vector type \AVec{ℕ}n and use the bracket notation for vectors: \Anil, \Aone{x}, \Atwo{x}{y}, etc.
+
+\PRNatEval
+
+The function \AgdaFunction{eval*} can be expressed equivalently as a
+map over the vector of functions \AgdaBound{g*}, alas the termination
+checker does not accept this definition.  
+
 
 It is a good exercise to remind ourselves that the standard arithmetic
 functions are pr defineable and correspond to their definitions in
 Agda. Here is the easy case for addition; the online supplement
 considers further operations. 
 \input{latex/PR-Nat-Example}
+\PRNatExampleAdd
 The function \AgdaFunction{addP} is defined by primitive recursion, which
 decomposes the first argument. The $g$-function is just the identity;
 the $h$-function composes the successor with inductive result.
@@ -235,7 +254,7 @@ Compared with the natural numbers, we can say that a word is
 constructed from one nullary constructor, typically called
 $\varepsilon$, and then a successor, $\sigma_a$, for each symbol $a\in A$.
 
-Rosza Peter~\cite{peter35:_uber_zusam_begrif_funkt} defines primitive recursion on words
+\citet{peter35:_uber_zusam_begrif_funkt} defines primitive recursion on words
 accordingly. The $n$-ary $0$-function becomes the $n$-ary
 $\varepsilon$-function; the single successor $\sigma$ generalizes to a
 family of successors $\sigma_a$; projection and composition do not
@@ -243,25 +262,61 @@ change; and for primitive recursion we have a $g$-function to handle the
 case for $\varepsilon$ and a family of functions $h_a$ to handle the
 case for $\sigma_a$. The arities of the functions are the same as before.
 \input{latex/PR-Words}
+\PRWords
+We superscript the list operations with $^L$ to distinguish them from the vector operations.
+\PRWordsEval
+
 Natural numbers arise as the special case where the alphabet $A$ is a
 one-element set: we can prove that $\Nat \cong \text{\AList\ATop}$. Hence, we
 can soundly embed pr on natural numbers into pr on words over an
 alphabet by instantiating $A$ to $\ATop$.
 \input{latex/NatsToWords}
+\PRNatsToWords
+To state soundness of the embedding, we need the embedding
+{\PRNatsToWordsEncoding} which we extend to vectors in the natural
+way. 
+
+\PRNatsToWordsSound
+The proof is by induction on the program \AgdaBound{p}.
+
 
 \subsection{Primitive recursion on terms}
 \label{sec:prim-recurs-trees}
+\input{latex/PR-Trees}
 
 To move from words to terms requires generalizing alphabets to
 \emph{ranked alphabets}. A ranked alphabet consists of a set of
 symbols and a ranking function that assigns each symbol a rank (arity) in \Nat.
-\input{latex/PR-Trees}
+We can express the concept of a ranked alphabet literally in Agda. 
+\PRTreesRanked
+The set of terms over a ranked alphabet $R : \ARanked$ is also called the term algebra over $R$.
+To construct a term, we need a symbol $a$ and as many terms as indicated by the rank of $a$.
+\PRTreesTerm
+The syntax of pr functions gets simpler for terms as we do not have to make amends for a special $0$-function.
+Instead, there is a family of constructor operators $σ$, which is indexed by a symbol $a∈$\Asymbols{R} and the arity of which is determined by the rank of $a$. Projection and composition remain as before, but primitive recursion generalizes.
+Instead of distinguishing between $g$-functions and $h$-functions, there is a single \Asymbols{R}-indexed family of functions $h$.
+The function constructed by primitive recursion on the family $h$ takes $n+1$ arguments with the first argument being the designated recursion argument.
+The function $h_a$ handles recursion on terms starting with $a$ of rank $r_a$, say.
+As there are $r_a$ subterms, the results of $r_a$ recursive invocations, the $r_a$ subterms, and the remaining $n$ are arguments of $h_a$.
+Consequently, $h_a$ takes $r_a + r_a + n$ arguments.
+\PRTreesDefinition
+The definition of the semantics follows the explanation precisely.
+
 Again, we can establish pr over words as a special case of pr on
 terms. Given an alphabet $A$ we define a ranked alphabet with symbols
 $A + \ATop \cong \text{\AMaybe{A}}$ and ranks defined such that the element
 from $\ATop$ has arity $0$ and all other element from $A$ have arity
 $1$. This mapping of types also determines the embedding of values.
 \input{latex/WordsToTrees}
+\PRWordsToTreesEncodingRanks
+The mapping of the syntax requires a few twists.
+The $n$-ary $0$-function must be simulated by composing the corresponding $0$-ary tree constructor with an empty vector of $n$-ary functions.
+Normal constructors, projection, and composition are as before.
+The translation for primitive recursion merges the functions $g$ and $h$ into a single indexed function.
+\PRWordsToTreesEncoding
+It is again straightforward to prove the soundness of this embedding
+by induction on \AgdaBound{p}.
+\PRWordsToTreesEncodingSound
 
 \subsection{Primitive recursion on many-sorted terms}
 \label{sec:prim-recurs-sort}
@@ -283,6 +338,34 @@ function that assigns each symbol an arity of the form $(w, s)$ where
 $w \in S^*$ and $s \in S$. This definition translates roughly to:
 every constructor has a simple first-order type.
 \input{latex/PR-HTrees}
+This concept translates directly to Agda where \Arank{a}, \Asin{a}, and \Asout{a} are the rank, the input sorts, and the output sort of symbol $a$.
+\PRHTreesSorted
+The definition of the term algebra is conceptually the same as before, but there is additional complication due to the sorting.
+\PRHTreesTerm
+In principle, \ATerms{Sig\ s*} is just a vector of terms, but each element has a different type as indicated by \AgdaGeneralizable{s*}.
+While one can define a suitably indexed heterogeneous vector type, say \AHVec{F}{s*}, where $F :$ S → {\ASet} and $s*$ : \AVec{S}{n}, this type creates new problems.
+To see this, consider the type of the second argument of {\Acon}, which would have to be \AHVec{(\ATerm{Sig})}{(\Asin{Sig} a)}.
+Unfortunately, this type is not accepted as it (formally) violates the requirement that datatypes definitions are strictly positive. Hence, the split into \ATerm{Sig\ s} and \ATerms{Sig\ s*}.
+
+The same issue arises in the definition of the abstract syntax for primitive recursion, but we exclude the details.
+\PRHTreesDefinition
+The interesting part is the definition of the {\AP} constructor.
+The function \AgdaBound{res} maps the sort of the recursion argument to the return sort---all further arguments are passed through the recursion unchanged so they should not affect the return sort.
+The function \AgdaBound{h} maps a symbol $a$ to a pr function that takes the results of the recursive calls on the subterms of $a$, then the subterms themselves, and finally the further, pass-through arguments to produce a result determined by the return sort determined by the sort of $a$.
+
+Evaluation is analogous to evaluation for trees, but there are some additional twists to handle heterogeneous vectors of type \ATerms{sig\ s*}.
+We need lookup, concatenation, and a map function for heterogeneous vectors.
+The first two are straightforward to define, but the latter is worth some discussion.
+\PRHTreesAlookup
+\PRHTreesAppend
+\PRHTreesMap
+Mapping over a heterogeneous vector like \ATerms{Sig\ ss} requires a family of functions, rather than a single one as for vectors or lists, and a way to predict the heterogeneous return type.
+We address the latter using the result type function \AgdaBound{res}.
+The former is addressed by having the \AgdaFunction{mapᴬ} function take an indexed function.
+Given the index $i$, we can calculate the required function type from the sort vector \AgdaBound{ss} and the result function \AgdaBound{res}.
+
+Given all these tools and the explanation of the \AP{} constructor, the definition of the semantics is a simple generalization of previous definitions.
+\PRHTreesEval
 
 \section{Primitive recursion for inductive types}
 \label{sec:prim-recurs-gener}
@@ -299,25 +382,40 @@ Types are indexed by a number $n \in \ANat$ denoting the number of free
 type variables in the type. A type is either a unit type, a product, a
 sum, a variable, or an inductive type. The body of an inductive type
 binds a new type variable for recursive occurrences of the
-type. Mostly, we need \ATy{0} which we abbreviate to $\ATY$.
+type. Types with free variables are sometimes called
+\emph{pretypes}. We use $\ATY$ for closed types.
 
 To define primitive recursion on this type structure in pointfree
 style, we have to extend our vocabulary compared to previous attempts.
 \ccDataPR
-The first part defines arrows concerned with categorical structure,
-the injection into the unit type, the identity arrow at all
-types, and type-respecting composition of arrows.\footnote{The
-  cognoscenti will see that we are defining the arrows of 
-  a cartesian closed category.} The second part has arrows to
-introduce and eliminate product types. The third part has arrows to
-introduce and eliminate sum types, which are very obviously dual to
-the respective arrows involving products. The fourth and final part
-defines arrow to introduce {\Afold} and eliminate inductive types
-{\AP}. This treatment is still 100\% first order, without higher-order functions.
+The first compartment defines arrows concerned with categorical structure: the identity arrow at all
+types, and type-respecting composition of arrows.
+The second compartment names the unique arrow from any type into the
+terminal object (the unit type). 
+The third compartment has arrows to introduce and eliminate product types.
+The fourth compartment has arrows to introduce and eliminate sum types, which are very obviously dual to
+the respective arrows involving products.
+The fifth compartment specifies a distributive law of sum types over product types.
+The final compartment
+defines arrows to introduce {\Afold} and eliminate inductive types
+{\AP}. This treatment is still 100\% first order, without higher-order
+functions.
 
-In the definition of {\Afold} and {\AP}, we find that $G :$~\ATy1, a type with a
-single type variable. It will be important to view $G$ as a functor
-that acts on types $T:$~{\ATY} by substitution, i.e., $T \mapsto$~\Asubnull~$T$~$G$. 
+Looking at these postulated arrows, we realize that any interpretation
+of this syntax must take place in a distributive category
+(\cite{cockett_1993}), which is  cartesian (part 2 and 3), cocartesian
+(part 4), and obeys the distributive law. Subsequent examples show
+that each of these requirements (including distributivity) is
+necessary to simulate standard definitions of primitive recursion. 
+Distributive categories are not uncommon. In fact, every cartesian
+closed category with coproducts is also distributive (folklore
+according to \cite{https://doi.org/10.48550/arxiv.1406.0961}).
+
+Considering the arrows dealing with inductive types, 
+in the definition of {\Afold} and {\AP}, we find that $G :$~\ATy1, a type with a
+single type variable. It will be convenient to view $G$ as a functor
+that acts on types $T:$~{\ATY} by substitution, i.e., $T \mapsto (G
+\Leftarrow T)$. 
 
 Elimination of inductive types is by primitive recursion /
 paramorphism. The arrow constructed by {\AP} maps a pair of an element
@@ -330,6 +428,11 @@ arrows. Thanks to the rich type structure, the dispatch on different
 input of $h$ is a pair where the top-level induction for $G$ is
 unfolded and applied to a pair of $T$, the result of the inductive
 evaluation, and \Aind~$G$, the inductive subterm.
+
+Alternatively, we can equip inductive types with the standard
+catamorphism (aka fold operator) at this type:
+\ccDataPRF
+We omit the details.
 
 To define evaluation, we first define the interpretation of types in Agda.
 \ccDataAlg
@@ -346,8 +449,8 @@ The only interesting case is the one for primitive recursion. It is
 interpreted by a function taking a pair of \Aind~$G$ and some $U$. The
 first component of the argument must evaluate to some \Afold~$x$, so the $x$ corresponds
 to the constructor arguments, and the second component $u:U$ is the
-extra argument. Now we run the function $h$ essentially on $x :{}
-$\Asubnull~(\Aind~$G$)~$G$ and $u$, but 
+extra argument. Now we run the function $h$ essentially on
+$x :{} G \Leftarrow \Aind~G$ and $u$, but 
 after replacing recursive occurrences of the inductive type by a pair
 of the subterm and the recursive call of {\AP}~$h$ on the subterm. We
 identify the recursive occurrences by traversing $x$ according to the
@@ -368,8 +471,8 @@ natural numbers into inductive types. We start with the functor $G$
 for natural numbers:
 \ccDefGNat
 
-The encoding is straightforward, but it reveals a shortcoming of our
-combinator language for inductive types. To start with, it requires an
+The encoding is straightforward, but it reveals the necessity for
+distributivity. To start with, it requires an 
 encoding of vectors and vector lookup.
 \ccFunMkvec
 \ccDefNatToInd
@@ -379,8 +482,12 @@ the encoding of primitive recursion, we need two helper arrows. One
 arrow that implements associativity of the product and another that
 implements distributivity of sum over product. While the first one is
 definable with the arrows given in the definition of {\APR n}, the
-distributivity arrow has to be postulated as a new primitive!
+distributivity arrow cannot be composed from the remaining arrows!
 \ccFunAssocDist
+We conclude with the remark that the language is sufficiently rich to
+express the commutative monoidal structure of product types as well as
+associativity and commutativity of the sum type (not monoidal as it
+lacks the empty type to serve as identity).
 
 \section{Vector-valued primitive recursion}
 \label{sec:vect-valu-prim}
@@ -433,7 +540,6 @@ the outermost free variables are abstracted.
 \prepLambdas
 
 \input{latex/VecProperties}
-
 
 These lemmas prove that evaluation of a closed expression generated with
 \AgdaFunction{prepLambdas} corresponds to evaluation of the wrapped

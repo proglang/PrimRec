@@ -43,29 +43,25 @@ module obsolete where
   eval* [] v* = []
   eval* (x ∷ p*) v* = (eval x v*) ∷ (eval* p* v*)
 \end{code}
-We can express the concept of a ranked alphabet literally in Agda. 
+\newcommand\PRTreesRanked{
 \begin{code}
 record Ranked : Set₁ where
   constructor mkRanked
   field
     {symbols} : Set
     rank : symbols → ℕ
+\end{code}
+}
+\begin{code}[hide]
 open Ranked public
 \end{code}
-The set of terms over a ranked alphabet $R : \ARanked$ is also called the term algebra over $R$.
-To construct a term, we need a symbol $a$ and as many terms as indicated by the rank of $a$.
+\newcommand\PRTreesTerm{
 \begin{code}
 data Term R : Set where
   con : (a : symbols R) → Vec (Term R) (rank R a) → Term R
 \end{code}
-
-The syntax of pr functions gets simpler for terms as we do not have to make amends for a special $0$-function.
-Instead, there is a family of constructor operators $σ$, which is indexed by a symbol $a∈$\Asymbols{R} and the arity of which is determined by the rank of $a$. Projection and composition remain as before, but primitive recursion generalizes.
-Instead of distinguishing between $g$-functions and $h$-functions, there is a single \Asymbols{R}-indexed family of functions $h$.
-The function constructed by primitive recursion on the family $h$ takes $n+1$ arguments with the first argument being the designated recursion argument.
-The function $h_a$ handles recursion on terms starting with $a$ of rank $r_a$, say.
-As there are $r_a$ subterms, the results of $r_a$ recursive invocations, the $r_a$ subterms, and the remaining $n$ are arguments of $h_a$.
-Consequently, $h_a$ takes $r_a + r_a + n$ arguments.
+}
+\newcommand\PRTreesDefinition{
 \begin{code}
 data PR R : ℕ → Set where
   σ : (a : symbols R) → PR R (rank R a)
@@ -73,6 +69,7 @@ data PR R : ℕ → Set where
   C : (f : PR R m) → (g* : Vec (PR R n) m) → PR R n
   P : (h : (a : symbols R) → PR R (rank R a + rank R a + n)) → PR R (suc n)
 \end{code}
+}
 \begin{code}[hide]
 variable
   R : Ranked
@@ -80,7 +77,7 @@ variable
 {-# TERMINATING #-}
 eval* : Vec (PR R n) m → Vec (Term R) n → Vec (Term R) m
 \end{code}
-The definition of the semantics follows the explanation precisely.
+\newcommand\PRTreesEval{
 \begin{code}
 eval  : PR R n → Vec (Term R) n → Term R
 eval (σ a) v* = con a v*
@@ -88,6 +85,7 @@ eval (π i) v* = lookup v* i
 eval (C f g*) v* = eval f (eval* g* v*)
 eval (P h) (con a xs ∷ v*) = eval (h a) (((map (λ x → eval (P h) (x ∷ v*)) xs) ++ xs) ++ v*)
 \end{code}
+}
 \begin{code}[hide]
 eval* [] v* = []
 eval* (p ∷ p*) v* = eval p v* ∷ eval* p* v*
@@ -99,4 +97,3 @@ data PR′ R : ℕ → Set where
 eval′ : PR′ R n → Vec (Term R) n → Term R
 eval′ (P′ h) (con a xs ∷ v*) = eval′ (h a) ((concat (map (λ x → [ eval′ (P′ h) (x ∷ v*) , x ]) xs)) ++ v*)
 \end{code}
-

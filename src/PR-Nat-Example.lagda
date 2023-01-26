@@ -9,7 +9,9 @@ open import Data.Empty using (⊥; ⊥-elim)
 open import Data.Bool using (Bool; true; false)
 open import Data.Fin using (Fin; suc; zero)
 open import Data.Nat using (ℕ; suc; zero; _+_; _*_; _^_; _∸_; pred; _≤_; z≤n; s≤s; _<_)
-open import Data.Nat.Properties using (+-identityʳ; +-cancelʳ-≡; suc-injective; +-suc; +-comm; +-∸-assoc; ∸-+-assoc; 0∸n≡0; ≤-trans; ≤-refl; m≤n+m; m∸n+n≡m; m+n∸m≡n; m+n∸n≡m)
+open import Data.Nat.Properties using (+-identityʳ; +-cancelʳ-≡; suc-injective; +-suc; +-comm; +-assoc; *-comm; +-∸-assoc; ∸-+-assoc; 0∸n≡0;
+                                      ≤-trans; ≤-refl; m≤n+m; +-monoˡ-≤; ∸-monoˡ-≤; n≤1+n; m≤n⇒m<n∨m≡n; ≤-antisym; ≤-reflexive;
+                                      m∸n+n≡m; m+n∸m≡n; m+n∸n≡m; n∸n≡0; m∸n≡0⇒m≤n)
 open import Data.Product using (Σ; _×_; proj₁; proj₂) renaming (_,_ to ⟨_,_⟩)
 open import Data.Sum using (_⊎_; inj₁; inj₂)
 open import Data.Vec using (Vec; []; _∷_; _++_)
@@ -23,6 +25,7 @@ open import PR-Nat
 ----------------------------------------------------------------------
 -- addition
 \end{code}
+\newcommand\PRNatExampleAdd{
 \begin{code}
 addP : PR 2
 addP = P (π zero) (C σ [ π zero ])
@@ -31,6 +34,7 @@ addP=+ : ∀ m n → eval addP [ m , n ] ≡ m + n
 addP=+ zero n = refl
 addP=+ (suc m) n rewrite addP=+ m n = refl
 \end{code}
+}
 \begin{code}[hide]
 ----------------------------------------------------------------------
 -- multiplication
@@ -228,6 +232,36 @@ mkpairP=mkpair m n
         | triangleP=triangle (m + n)
         | addP=+ (triangle (m + n)) n = refl
 
+-- triangle n is the sum of the numbers up to n
+
+triangle-spec : ∀ n → 2 * triangle n ≡ suc n * n
+triangle-spec zero = refl
+triangle-spec (suc n)
+  with triangle-spec n
+... | ih
+  rewrite +-identityʳ (triangle n) -- applies to ih
+  = begin
+    2 * triangle (suc n)
+  ≡⟨⟩
+    2 * (suc n + triangle n)
+  ≡⟨⟩
+    (suc n + triangle n) + ((suc n + triangle n) + 0)
+  ≡⟨ cong (suc n + triangle n +_) (+-identityʳ (suc n + triangle n)) ⟩
+    (suc n + triangle n) + (suc n + triangle n)
+  ≡⟨ cong suc (+-assoc n (triangle n) (suc n + triangle n)) ⟩
+    suc (n + (triangle n + suc (n + triangle n)))
+  ≡⟨ cong suc (cong (n +_) (+-comm (triangle n) (suc (n + triangle n)))) ⟩
+    suc (n + suc (n + triangle n + triangle n))
+  ≡⟨ cong suc (cong (n +_) (cong suc (+-assoc n (triangle n) (triangle n)))) ⟩
+    suc (n + suc (n + (triangle n + triangle n)))
+  ≡⟨ cong (λ h → suc (n + suc (n + h))) ih ⟩
+    suc (n + suc (n + (n + n * n)))
+  ≡⟨⟩
+    suc (n + suc (n + (suc n * n)))
+  ≡⟨ cong (λ h → suc (n + suc (n + h))) (*-comm (suc n) n) ⟩
+    suc (n + suc (n + n * suc n))
+  ∎
+
 ----------------------------------------------------------------------
 -- unpairing
 
@@ -259,41 +293,8 @@ equalP=equal m n
         | subP=∸ n m
         | addP=+ (m ∸ n) (n ∸ m) = notP=not (m ∸ n + (n ∸ m))
 
--- check stdlib
-
-m∸m≡0 : ∀ m → m ∸ m ≡ 0
-m∸m≡0 zero = refl
-m∸m≡0 (suc m) = m∸m≡0 m
-
-m∸n≡0⇒m≤n : ∀ m n → m ∸ n ≡ 0 → m ≤ n
-m∸n≡0⇒m≤n zero n m∸n≡0 = z≤n
-m∸n≡0⇒m≤n (suc m) (suc n) m∸n≡0 = s≤s (m∸n≡0⇒m≤n m n m∸n≡0)
-
-n≤suc-n : ∀ n → n ≤ suc n
-n≤suc-n zero = z≤n
-n≤suc-n (suc n) = s≤s (n≤suc-n n)
-
-n≤m-≡/sucn≤m : ∀ n m → n ≤ m → n ≡ m ⊎ suc n ≤ m
-n≤m-≡/sucn≤m .zero zero z≤n = inj₁ refl
-n≤m-≡/sucn≤m .zero (suc m) z≤n = inj₂ (s≤s z≤n)
-n≤m-≡/sucn≤m .(suc _) .(suc _) (s≤s n≤m)
-  with n≤m-≡/sucn≤m _ _ n≤m
-... | inj₁ refl = inj₁ refl
-... | inj₂ sucm≤n = inj₂ (s≤s sucm≤n)
-
-
-≤-antisymm : ∀ m n → m ≤ n → n ≤ m → m ≡ n
-≤-antisymm .zero .zero z≤n z≤n = refl
-≤-antisymm .(suc _) .(suc _) (s≤s m≤n) (s≤s n≤m)
-  rewrite ≤-antisymm _ _ m≤n n≤m = refl
-
-≡-≤ : ∀ {m n : ℕ} → m ≡ n → m ≤ n
-≡-≤ refl = ≤-refl
-
--- check stdlib end
-
 ≡-equal : ∀ m n → m ≡ n → equal m n ≡ 1
-≡-equal m .m refl rewrite m∸m≡0 m = refl
+≡-equal m .m refl rewrite n∸n≡0 m = refl
 
 equal-≡ : ∀ m n → equal m n ≡ 1 → m ≡ n
 equal-≡ m n eql-mn-1
@@ -301,7 +302,7 @@ equal-≡ m n eql-mn-1
 ... | zero
   with n ∸ m in n∸m≡0
 ... | zero
-  = ≤-antisymm m n (m∸n≡0⇒m≤n m n m∸n≡0) (m∸n≡0⇒m≤n n m n∸m≡0)
+  = ≤-antisym {m}{ n} (m∸n≡0⇒m≤n {m}{ n} m∸n≡0) (m∸n≡0⇒m≤n {n}{ m} n∸m≡0)
 
 1≢0 : 1 ≢ 0
 1≢0 ()
@@ -392,13 +393,13 @@ untriangle-spec-holds .(untriangle (suc n)) (suc n) refl
   with untriangle-spec-holds (untriangle n) n refl
 ... | ⟨ tr-untr-n≤n , s≤s n≤un-n+tr-un-n ⟩
   with equal (triangle (suc (untriangle n))) (suc n) in eqlr
-... | suc zero = ⟨ ≡-≤ (equal-≡ (triangle (suc (untriangle n))) (suc n) eqlr)
-                 , s≤s (s≤s (≤-trans n≤un-n+tr-un-n (≤-trans (m≤n+m (untriangle n + triangle (untriangle n)) (suc (untriangle n))) (≡-≤ (sym (+-suc (untriangle n) _)))))) ⟩
+... | suc zero = ⟨ ≤-reflexive (equal-≡ (triangle (suc (untriangle n))) (suc n) eqlr)
+                 , s≤s (s≤s (≤-trans n≤un-n+tr-un-n (≤-trans (m≤n+m (untriangle n + triangle (untriangle n)) (suc (untriangle n))) (≤-reflexive (sym (+-suc (untriangle n) _)))))) ⟩
 ... | suc (suc r) = ⊥-elim (¬not>1 _ _ eqlr)
 ... | zero
-  with n≤m-≡/sucn≤m n (untriangle n + triangle (untriangle n)) n≤un-n+tr-un-n
-... | inj₁ x = ⊥-elim (equal-≢ (triangle (suc (untriangle n))) (suc n) eqlr (cong suc (sym x)))
-... | inj₂ suc-n≤un-n+tr-un-n = ⟨ (≤-trans tr-untr-n≤n (n≤suc-n n)) , s≤s suc-n≤un-n+tr-un-n ⟩
+  with m≤n⇒m<n∨m≡n {n} {untriangle n + triangle (untriangle n)} n≤un-n+tr-un-n
+... | inj₂ x = ⊥-elim (equal-≢ (triangle (suc (untriangle n))) (suc n) eqlr (cong suc (sym x)))
+... | inj₁ suc-n≤un-n+tr-un-n = ⟨ (≤-trans tr-untr-n≤n (n≤1+n n)) , s≤s suc-n≤un-n+tr-un-n ⟩
 
 
 triangle-prop : ∀ m → m + triangle m ≡ triangle (suc m) ∸ 1
@@ -430,7 +431,7 @@ untriangle-triangle (suc m) (suc y) (s≤s y≤m) =
     untriangle (suc y + (suc m + triangle m))
   ≡⟨⟩
     equal (triangle (suc (untriangle (y + triangle (suc m))))) (suc y + (suc m + triangle m)) + untriangle (y + triangle (suc m))
-  ≡⟨ cong (λ ih → equal (triangle (suc ih)) (suc y + (suc m + triangle m)) + ih) (untriangle-triangle (suc m) y (≤-trans y≤m (n≤suc-n m))) ⟩
+  ≡⟨ cong (λ ih → equal (triangle (suc ih)) (suc y + (suc m + triangle m)) + ih) (untriangle-triangle (suc m) y (≤-trans y≤m (n≤1+n m))) ⟩
     equal ((suc (suc m)) + triangle (suc m)) (suc y + triangle (suc m)) + (suc m)
   ≡⟨ cong (_+ suc m) (not-equal (suc m) (suc y) (s≤s y≤m)) ⟩
     suc m
@@ -465,6 +466,25 @@ unpair-y p = p ∸ triangle (untriangle p)
 unpair-x : ℕ → ℕ
 unpair-x p = untriangle p ∸ unpair-y p
 
+-- auxiliary lemma
+
+triangle-untriangle-interval : ∀ p → triangle (untriangle p) ≤ p  ×  p < triangle (suc (untriangle p))
+triangle-untriangle-interval p = untriangle-spec-holds (untriangle p) p refl
+
+tri-untri-+ : ∀ p → p ≤ untriangle p + triangle (untriangle p)
+tri-untri-+ p
+  with triangle-untriangle-interval p
+... | ⟨ fst , s≤s snd ⟩ = snd
+
+tri-untri-implies : ∀ p → p ≤ untriangle p + triangle (untriangle p) → p ∸ triangle (untriangle p) ≤ untriangle p
+tri-untri-implies p p≤
+  with ∸-monoˡ-≤ (triangle (untriangle p)) p≤
+... | lemma
+  rewrite m+n∸n≡m (untriangle p) (triangle (untriangle p)) = lemma
+
+triangle-untriangle : ∀ p → p ∸ triangle (untriangle p) ≤ untriangle p
+triangle-untriangle p = tri-untri-implies p (tri-untri-+ p)
+
 -- pair/unpair is an isomorphism
 
 pair-unpair-identity : ∀ p → mkpair (unpair-x p) (unpair-y p) ≡ p
@@ -475,7 +495,7 @@ pair-unpair-identity p =
     triangle (unpair-x p + unpair-y p) + unpair-y p
   ≡⟨⟩
     triangle (untriangle p ∸ (p ∸ triangle (untriangle p)) + (p ∸ triangle (untriangle p))) + (p ∸ triangle (untriangle p))
-  ≡⟨ cong (λ m → triangle m + (p ∸ triangle (untriangle p))) (m∸n+n≡m (lemma1 p)) ⟩
+  ≡⟨ cong (λ m → triangle m + (p ∸ triangle (untriangle p))) (m∸n+n≡m (triangle-untriangle p)) ⟩
     triangle (untriangle p) + (p ∸ triangle (untriangle p))
   ≡˘⟨ +-∸-assoc (triangle (untriangle p)) (lemma2 p) ⟩
     (triangle (untriangle p) + p) ∸ triangle (untriangle p)
@@ -483,8 +503,6 @@ pair-unpair-identity p =
     p
   ∎
   where
-    lemma1 : ∀ p → p ∸ triangle (untriangle p) ≤ untriangle p
-    lemma1 p = {!!}
     lemma2 : ∀ n → triangle (untriangle n) ≤ n
     lemma2 n = proj₁ (untriangle-spec-holds (untriangle n) n refl)
 

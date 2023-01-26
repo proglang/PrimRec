@@ -13,6 +13,7 @@ open Eq
 open import Utils
 
 \end{code}
+\newcommand\PRWords{
 \begin{code}
 data PR A : ℕ → Set where
   Z : PR A zero
@@ -21,7 +22,8 @@ data PR A : ℕ → Set where
   C : (f : PR A m) → (g* : Vec (PR A n) m) → PR A n
   P : (g : PR A n) → (h : A → PR A (suc (suc n))) → PR A (suc n)
 \end{code}
-We superscript the list operations with $^L$ to distinguish them from the vector operations. 
+}
+\newcommand\PRWordsEval{
 \begin{code}
 eval  : PR A n → Vec (List A) n → List A
 eval* : Vec (PR A n) m → Vec (List A) n → Vec (List A) m
@@ -36,3 +38,4 @@ eval (P g h)  ((x ∷ᴸ xs) ∷ v*) = eval (h x) (eval (P g h) (xs ∷ v*) ∷ 
 eval* []       v*              = []
 eval* (p ∷ p*) v*              = eval p v* ∷ eval* p* v*
 \end{code}
+}

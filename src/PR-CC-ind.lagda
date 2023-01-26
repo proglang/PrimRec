@@ -127,6 +127,10 @@ _,ₛ_ : Sub m n → Ty n → Sub (suc m) n
 sub₀ : Ty 0 → Ty 1 → Ty 0
 sub₀ T       = sub (σ₀ T)
 
+infix 9 _⇐_
+
+_⇐_ : Ty 1 → Ty 0 → Ty 0
+_⇐_ G T = sub₀ T G
 
 record Composable (T₁ T₂ T₃ : ℕ → Set)
    {{_ : Mappable T₁}} {{_ : Mappable T₂}} {{_ : Mappable T₃}} : Set₁ where
@@ -316,9 +320,10 @@ variable
 \newcommand\ccDataPR{%
 \begin{code}
 data _→ᴾ_ : TY → TY → Set where
-  `0 : T →ᴾ `𝟙
   id : T →ᴾ T
   C  : (f : U →ᴾ V) → (g : T →ᴾ U) → (T →ᴾ V)
+  --
+  `⊤ : T →ᴾ `𝟙
   --
   `# : (f : T →ᴾ U) → (g : T →ᴾ V) → (T →ᴾ U `× V)
   π₁ : U `× V →ᴾ U
@@ -328,13 +333,18 @@ data _→ᴾ_ : TY → TY → Set where
   ι₂ : V →ᴾ U `+ V
   `case : (f : U →ᴾ T) → (g : V →ᴾ T) → U `+ V →ᴾ T
   --
-  fold : sub₀ (ind G) G →ᴾ ind G
-  P : (h : sub₀ (T `× ind G) G `× U →ᴾ T) → (ind G `× U →ᴾ T)
+  dist-+-x : (U `+ V) `× T →ᴾ (U `× T) `+ (V `× T)
+  --
+  fold : (G ⇐ ind G) →ᴾ ind G
+  P : (h : (G ⇐ (T `× ind G)) `× U →ᴾ T) → (ind G `× U →ᴾ T)
+\end{code}
+}
+\newcommand\ccDataPRF{%
+\begin{code}
+  F : (h : (G ⇐ T) `× U →ᴾ T) → (ind G `× U →ᴾ T)
 \end{code}
 }
 \begin{code}[hide]
-  F : (h : sub₀ T G `× U →ᴾ T) → (ind G `× U →ᴾ T)
-
 -- interpretation
 \end{code}
 \newcommand\ccDataAlg{%
@@ -342,7 +352,7 @@ data _→ᴾ_ : TY → TY → Set where
 ⟦_⟧ᵀ : TY → Set
 
 data Alg (G : Ty 1) : Set where
-  fold : ⟦ sub₀ (ind G) G ⟧ᵀ → Alg G 
+  fold : ⟦ G ⇐ ind G ⟧ᵀ → Alg G 
 
 ⟦ `𝟙 ⟧ᵀ     = ⊤
 ⟦ T `× U ⟧ᵀ = ⟦ T ⟧ᵀ × ⟦ U ⟧ᵀ
@@ -414,7 +424,7 @@ comm-⨟-σ₀ σ T (suc x) =
 \begin{code}
 fmap : ∀ {S T : TY} (G : Ty 1)
   → (f : ⟦ S ⟧ᵀ → ⟦ T ⟧ᵀ)
-  → ⟦ sub₀ S G ⟧ᵀ → ⟦ sub₀ T G ⟧ᵀ
+  → ⟦ G ⇐ S ⟧ᵀ → ⟦ G ⇐ T ⟧ᵀ
 fmap `𝟙       f tt       = tt
 fmap (G `× H) f (x , y)  = fmap G f x , fmap H f y
 fmap (G `+ H) f (inj₁ x) = inj₁ (fmap G f x)
@@ -447,7 +457,7 @@ fmap {S}{T} (ind G) f (fold x) =
 \newcommand\ccFunEval{%
 \begin{code}
 eval : (T →ᴾ U) → ⟦ T ⟧ᵀ → ⟦ U ⟧ᵀ
-eval `0       = const tt
+eval `⊤       = const tt
 eval id       = λ v → v
 eval (C f g)  = eval f ∘ eval g
 eval (`# f g) = ⟨ eval f , eval g ⟩
@@ -456,6 +466,7 @@ eval π₂       = proj₂
 eval ι₁       = inj₁
 eval ι₂       = inj₂
 eval (`case f g) = λ{ (inj₁ x) → eval f x ; (inj₂ y) → eval g y}
+eval dist-+-x = λ{ (inj₁ x , z) → inj₁ (x , z) ; (inj₂ y , z) → inj₂ (y , z)}
 eval fold     = fold
 eval (P {G = G} h) = λ{ (fold x , u) → eval h ((fmap G (λ v → (eval (P h) (v , u)) , v) x) , u)}
 \end{code}
@@ -478,12 +489,23 @@ lookup (suc i) = C (lookup i) π₂
 \begin{code}
 assoc-× : (U `× V) `× T →ᴾ U `× (V `× T)
 assoc-× = `# (C π₁ π₁) (`# (C π₂ π₁) π₂)
-
-postulate
-  dist-+-x : (U `+ V) `× T →ᴾ (U `× T) `+ (V `× T)
 \end{code}
 }
 \begin{code}[hide]
+-- postulate
+--   dist-+-x : (U `+ V) `× T →ᴾ (U `× T) `+ (V `× T)
+undist-+-× : (U `× T) `+ (V `× T) →ᴾ (U `+ V) `× T
+undist-+-× = `case (`# (C ι₁ π₁) π₂) (`# (C ι₂ π₁) π₂)
+
+comm-× : U `× V →ᴾ V `× U
+comm-× = `# π₂ π₁
+
+comm-+ : U `+ V →ᴾ V `+ U
+comm-+ = `case ι₂ ι₁
+
+assoc-+ : (U `+ V) `+ T →ᴾ U `+ (V `+ T)
+assoc-+ = `case (`case ι₁ (C ι₂ ι₁)) (C ι₂ ι₂)
+
 module FromNats where
 \end{code}
 \newcommand\ccDefGNat{%
@@ -497,7 +519,7 @@ module FromNats where
 
 \begin{code}[hide]
 
-  _ : sub₀ Nat G-Nat ≡ (`𝟙 `+ Nat)
+  _ : G-Nat ⇐ Nat ≡ (`𝟙 `+ Nat)
   _ = refl
 
   -- zero
@@ -528,7 +550,7 @@ module FromNats where
   ⟦ Nats.C f g* ⟧ = C ⟦ f ⟧ ⟦ g* ⟧*
   ⟦ Nats.P g h ⟧  = P (C (`case (C ⟦ g ⟧ π₂) (C ⟦ h ⟧ assoc-×)) dist-+-x)
 
-  ⟦ [] ⟧*         = `0
+  ⟦ [] ⟧*         = `⊤
   ⟦ p ∷ p* ⟧*     = `# ⟦ p ⟧ ⟦ p* ⟧*
 \end{code}
 }
@@ -551,19 +573,19 @@ module FromWords where
   ⟦_⟧  : Words.PR ⟦ Alpha ⟧ᵀ n → mkvec Alpha* n →ᴾ Alpha*
   ⟦_⟧* : Vec (Words.PR ⟦ Alpha ⟧ᵀ n) m → mkvec Alpha* n →ᴾ mkvec Alpha* m
 
-  ⟦ Words.Z ⟧ = C (C fold ι₁) `0
-  ⟦ Words.σ a ⟧ = C (C fold (C ι₂ (`# (C ⟦ a ⟧ᴬ `0) id))) π₁
+  ⟦ Words.Z ⟧ = C (C fold ι₁) `⊤
+  ⟦ Words.σ a ⟧ = C (C fold (C ι₂ (`# (C ⟦ a ⟧ᴬ `⊤) id))) π₁
   ⟦ Words.π i ⟧ = lookup i
   ⟦ Words.C f g* ⟧ = C ⟦ f ⟧ ⟦ g* ⟧*
   ⟦ Words.P g h ⟧ = P (C (`case (C ⟦ g ⟧ π₂) (C (C (C (`case (C ⟦ h (inj₁ tt) ⟧ assoc-×) (C ⟦ h (inj₂ tt) ⟧ assoc-×)) dist-+-x) (`# (C (`case (C ι₁ π₂) (C ι₂ π₂)) π₁) π₂)) (`# (C dist-+-x π₁) π₂))) dist-+-x)
 
-  ⟦ [] ⟧*         = `0
+  ⟦ [] ⟧*         = `⊤
   ⟦ p ∷ p* ⟧*     = `# ⟦ p ⟧ ⟦ p* ⟧*
 
 module FromTrees where
   -- generic stuff
   symbols : (G : Ty 1) → Set
-  symbols G = ⟦ sub₀ `𝟙 G ⟧ᵀ
+  symbols G = ⟦ G ⇐ `𝟙 ⟧ᵀ
 
   data Poly : Ty 1 → Set where
     poly-unit : Poly `𝟙
@@ -611,6 +633,6 @@ module FromTrees where
                               (C ⟦ h (inj₂ (tt , tt)) ⟧ (`# (C π₁ (C π₁ π₁)) (`# (C π₂ (C π₁ π₁)) (`# (C π₁ (C π₂ π₁)) (`# (C π₂ (C π₂ π₁)) π₂))))))
                        dist-+-x)
   
-  ⟦ [] ⟧*         = `0
+  ⟦ [] ⟧*         = `⊤
   ⟦ p ∷ p* ⟧*     = `# ⟦ p ⟧ ⟦ p* ⟧*
 \end{code}
