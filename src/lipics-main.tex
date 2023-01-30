@@ -18,7 +18,7 @@
 
 \bibliographystyle{plainurl}% the mandatory bibstyle
 
-\title{Primitive Recursion in Distributive Categories} %TODO Please add
+\title{Primitive Recursion \\ in Bicartesian Closed Categories} %TODO Please add
 
 %\titlerunning{Dummy short title} %TODO optional, please use if title is longer than one line
 
@@ -77,13 +77,13 @@ functions generalize in several dimensions. One dimension generalizes
 to words, terms, and many-sorted algebras. Another dimension
 generalizes to vector-valued functions. Both of these dimensions are
 subsumed by first-order primitive recursive functions on inductive
-types in a cartesian and cocartesian category (PR1-IND). 
+types in a bicartesion category (PR1-IND). 
 A third dimension adds higher-order functions to obtain System-T from
 primitive recursion on natural numbers; analogous systems for
 words, terms, and many-sorted algebras are conceivable. At this point, we can subsume
 all previous systems in a simply-typed lambda calculus with
 inductive types and a primitive recursor (PR-IND). This calculus is
-situated in a cartesian closed category with all finite coproducts.
+situated in a bicartesian closed category.
 
 We exhibit executable definitions in Agda of several classes of primitive
 recursive functions in pointfree style and give embeddings from each
@@ -93,7 +93,7 @@ While the first-order language PR1-IND requires a distributivity axiom
 (i.e., the underlying category is distributive), this axiom is no
 longer required in PR-IND, because its underlying category has
 exponentials.
-This finding corresponds to a folklore theorem that every cartesian
+This finding corresponds to a folklore theorem that every bicartesian
 closed category is distributive and we give an elementary proof of
 that theorem.
 All definitions, embeddings, and proofs are given in Agda.
