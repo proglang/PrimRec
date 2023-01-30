@@ -76,19 +76,27 @@ class on computability, it is less well known that primitive recursive
 functions generalize in several dimensions. One dimension generalizes
 to words, terms, and many-sorted algebras. Another dimension
 generalizes to vector-valued functions. Both of these dimensions are
-subsumed by first-order primitive recursive functions on inductive types (PR1-IND). 
+subsumed by first-order primitive recursive functions on inductive
+types in a cartesion and cocartesion category (PR1-IND). 
 A third dimension adds higher-order functions to obtain System-T from
-primitive recursion on natural numbers and analogous systems for
-words, terms, and many-sorted algebras. At this point, we can subsume
+primitive recursion on natural numbers; analogous systems for
+words, terms, and many-sorted algebras are conceivable. At this point, we can subsume
 all previous systems in a simply-typed lambda calculus with
-inductive types and a primitive recursor.
+inductive types and a primitive recursor (PR-IND). This calculus is
+situated in a cartesian closed category with all finite coproducts.
 
 We exhibit executable definitions of several classes of primitive
-recursive functions and give embeddings from each class into the more
-general class. We highlight interesting points like PR1-IND and show
-that simply-typed lambda calculus with inductive types is the most
-general language in this class of definitions. All definitions and
-embeddings are given in Agda and proved correct.
+recursive functions in pointfree style and give embeddings from each
+class into the next more general class. We particularly emphasize
+PR1-IND and PR-IND.
+While the first-order language PR1-IND requires a distributivity axiom
+(i.e., the underlying category is distributive), this axiom is no
+longer required in PR-IND, because its underlying category has
+exponentials.
+This finding corresponds to a folklore theorem that every Cartesian
+closed category is distributive and we give an elementary proof of
+that theorem.
+All definitions, embeddings, and proofs are given in Agda.
 \end{abstract}
 
 
