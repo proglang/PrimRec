@@ -561,14 +561,17 @@ dist-+-x′ = theta (`case (lam ι₁) (lam ι₂))
 undist-+-× : (U `× T) `+ (V `× T) ➙ (U `+ V) `× T
 undist-+-× = `case (`# (C ι₁ π₁) π₂) (`# (C ι₂ π₁) π₂)
 
-dist-dist′ : ∀ {U V T} → eval (dist-+-x′{U}{V}{T}) ≡ eval dist-+-x
-dist-dist′ = {!!}
+dist-dist′ : ∀ {U V T} → ∀ x → eval (dist-+-x′{U}{V}{T}) x ≡ eval dist-+-x x
+dist-dist′ (inj₁ x , z) = refl
+dist-dist′ (inj₂ y , z) = refl
 
-dist-undist : ∀ {U V T} → eval (C (dist-+-x′{U}{V}{T}) undist-+-×) ≡ eval id
-dist-undist = {!!}
+dist-undist : ∀ {U V T} → ∀ x → eval (C (dist-+-x′{U}{V}{T}) undist-+-×) x ≡ eval id x
+dist-undist (inj₁ x) = refl
+dist-undist (inj₂ y) = refl
 
-undist-dist : ∀ {U V T} → eval (C undist-+-× (dist-+-x′{U}{V}{T})) ≡ eval id
-undist-dist = {!!}
+undist-dist : ∀ {U V T} → ∀ x → eval (C undist-+-× (dist-+-x′{U}{V}{T})) x ≡ eval id x
+undist-dist (inj₁ x , z) = refl
+undist-dist (inj₂ y , z) = refl
 
 comm-+ : U `+ V ➙ V `+ U
 comm-+ = `case ι₂ ι₁
