@@ -8,3 +8,5 @@ latex
 *.rel
 *.synctex.gz
 *.pdf
+*.out
+*.vtc
