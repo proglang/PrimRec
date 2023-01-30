@@ -70,12 +70,37 @@
 
 %TODO mandatory: add short abstract of the document
 \begin{abstract}
+  The standard definition of PR-NAT, the system of primitive recursive functions on natural
+  numbers, is given in a pointfree style. Generalizations thereof like
+  System T or systems with inductive types are mostly embedded in
+  typed lambda calculi.
+
+  We present two pointfree languages that generalize primitive
+  recursion on natural numbers. PR1-IND defines
+  first-order primitive recursive functions on inductive types in a bicartesian
+  category. PR-IND extends PR1-IND to higher-order functions in a
+  bicartesian closed category.
+
+  We observe that PR1-IND needs to be distributive to properly
+  generalize PR-NAT. While distributivity is an extra axiom of
+  PR1-IND, it is derivable in the higher-order calculus PR-IND.
+
+  We give the first complete, mechanized semantic description of
+  PR1-IND and PR-IND in Agda, embeddings from PR-NAT to PR1-IND and
+  PR1-IND to PR-IND, and an elementary proof of the folklore theorem
+  that every bicartesian closed category is distributive. 
+\end{abstract}
+
+\section{Introduction}
+\label{sec:introduction}
+
 Primitive recursive functions are a class of computable total
 functions on natural numbers. While they are a standard topic in any
 class on computability, it is less well known that primitive recursive
 functions generalize in several dimensions. One dimension generalizes
 to words, terms, and many-sorted algebras. Another dimension
-generalizes to vector-valued functions. Both of these dimensions are
+generalizes to vector-valued functions aka LOOP-computable
+functions. Both of these dimensions are 
 subsumed by first-order primitive recursive functions on inductive
 types in a bicartesion category (PR1-IND). 
 A third dimension adds higher-order functions to obtain System-T from
@@ -97,7 +122,6 @@ This finding corresponds to a folklore theorem that every bicartesian
 closed category is distributive and we give an elementary proof of
 that theorem.
 All definitions, embeddings, and proofs are given in Agda.
-\end{abstract}
 
 
 %%
