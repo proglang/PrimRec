@@ -77,18 +77,16 @@
 
   We present two pointfree languages that generalize primitive
   recursion on natural numbers. PR1-IND defines
-  first-order primitive recursive functions on inductive types in a bicartesian
+  first-order primitive recursive functions on inductive types in a
+  distributive
   category. PR-IND extends PR1-IND to higher-order functions in a
   bicartesian closed category.
-
-  We observe that PR1-IND needs to be distributive to properly
-  generalize PR-NAT. While distributivity is an extra axiom of
-  PR1-IND, it is derivable in the higher-order calculus PR-IND.
 
   We give the first complete, mechanized semantic description of
   PR1-IND and PR-IND in Agda, embeddings from PR-NAT to PR1-IND and
   PR1-IND to PR-IND, and an elementary proof of the folklore theorem
-  that every bicartesian closed category is distributive. 
+  that every bicartesian closed category is distributive. We cannot
+  find a similar elementary proof in published literature.
 \end{abstract}
 
 \section{Introduction}
