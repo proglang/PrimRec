@@ -333,6 +333,18 @@ variable
 
 \begin{code}[hide]
 -- interpretation
+module alternative-alg where
+  data Alg (⟦_⟧ᵀ : Ty 0 → Set) (G : Ty 1) : Set where
+    inj : ⟦ G ⇐ ind G ⟧ᵀ → Alg ⟦_⟧ᵀ G
+
+  {-# TERMINATING #-}
+  ⟦_⟧ᵀ : TY → Set
+  ⟦ `𝟙 ⟧ᵀ     = ⊤
+  ⟦ T `× U ⟧ᵀ = ⟦ T ⟧ᵀ × ⟦ U ⟧ᵀ
+  ⟦ T `+ U ⟧ᵀ = ⟦ T ⟧ᵀ ⊎ ⟦ U ⟧ᵀ
+  ⟦ T `⇒ U ⟧ᵀ = ⟦ T ⟧ᵀ → ⟦ U ⟧ᵀ
+  ⟦ ind G ⟧ᵀ  = Alg ⟦_⟧ᵀ G
+
 \end{code}
 \newcommand\cccDataAlg{%
 \begin{code}
@@ -460,7 +472,7 @@ data _→ᴾ_ : TY → TY → Set where
   ι₂ : V →ᴾ U `+ V
   `case : (f : U →ᴾ T) → (g : V →ᴾ T) → U `+ V →ᴾ T
   --
-  dist-+-x : (U `+ V) `× T →ᴾ (U `× T) `+ (V `× T)
+  -- dist-+-x : (U `+ V) `× T →ᴾ (U `× T) `+ (V `× T)
   --
   lam   : (U `× V) →ᴾ T → U →ᴾ V `⇒ T
   apply : T `⇒ U `× T →ᴾ U
@@ -473,6 +485,7 @@ data _→ᴾ_ : TY → TY → Set where
 
 infix 6 _➙_
 _➙_ = _→ᴾ_
+
 \end{code}
 \begin{code}[hide]
 {-# TERMINATING #-}
@@ -491,7 +504,7 @@ eval ι₂       = inj₂
 eval (`case f g) = λ{ (inj₁ x) → eval f x ; (inj₂ y) → eval g y}
 eval (lam f)  = λ x y → eval f (x , y)
 eval apply    = λ{ (f , x) → f x }
-eval dist-+-x = λ{ (inj₁ x , z) → inj₁ (x , z) ; (inj₂ y , z) → inj₂ (y , z)}
+-- eval dist-+-x = λ{ (inj₁ x , z) → inj₁ (x , z) ; (inj₂ y , z) → inj₂ (y , z)}
 eval fold     = fold
 eval (P {G = G} h) = λ{ (fold x , u) → eval h ((fmap G (λ v → (eval (P h) (v , u)) , v) x) , u)}
 \end{code}
@@ -555,21 +568,24 @@ exp-×-2 = lam (C (C (C apply (map-× apply id)) unassoc-×) (map-× id comm-×)
 exp-×-id : eval (C (exp-×-1{U}{V}{T}) exp-×-2) ≡ eval id
 exp-×-id = refl
 
-dist-+-x′ : (U `+ V) `× T ➙ (U `× T) `+ (V `× T)
-dist-+-x′ = theta (`case (lam ι₁) (lam ι₂))
+eval-dist-+-× : ⟦ (U `+ V) `× T ⟧ᵀ → ⟦ (U `× T) `+ (V `× T) ⟧ᵀ
+eval-dist-+-× = λ{ (inj₁ x , z) → inj₁ (x , z) ; (inj₂ y , z) → inj₂ (y , z)}
+
+dist-+-x : (U `+ V) `× T ➙ (U `× T) `+ (V `× T)
+dist-+-x = theta (`case (lam ι₁) (lam ι₂))
 
 undist-+-× : (U `× T) `+ (V `× T) ➙ (U `+ V) `× T
 undist-+-× = `case (`# (C ι₁ π₁) π₂) (`# (C ι₂ π₁) π₂)
 
-dist-dist′ : ∀ {U V T} → ∀ x → eval (dist-+-x′{U}{V}{T}) x ≡ eval dist-+-x x
+dist-dist′ : ∀ {U V T} → ∀ x → eval (dist-+-x{U}{V}{T}) x ≡ eval-dist-+-× x
 dist-dist′ (inj₁ x , z) = refl
 dist-dist′ (inj₂ y , z) = refl
 
-dist-undist : ∀ {U V T} → ∀ x → eval (C (dist-+-x′{U}{V}{T}) undist-+-×) x ≡ eval id x
+dist-undist : ∀ {U V T} → ∀ x → eval (C (dist-+-x{U}{V}{T}) undist-+-×) x ≡ eval id x
 dist-undist (inj₁ x) = refl
 dist-undist (inj₂ y) = refl
 
-undist-dist : ∀ {U V T} → ∀ x → eval (C undist-+-× (dist-+-x′{U}{V}{T})) x ≡ eval id x
+undist-dist : ∀ {U V T} → ∀ x → eval (C undist-+-× (dist-+-x{U}{V}{T})) x ≡ eval id x
 undist-dist (inj₁ x , z) = refl
 undist-dist (inj₂ y , z) = refl
 
@@ -708,4 +724,110 @@ module FromTrees where
   
   ⟦ [] ⟧*         = `⊤
   ⟦ p ∷ p* ⟧*     = `# ⟦ p ⟧ ⟦ p* ⟧*
+\end{code}
+\begin{code}[hide]
+module FromCC where
+  import PR-CC-ind as CC
+
+  -- translation of types
+
+  T⟦_⟧ : CC.Ty n → Ty n
+  T⟦ CC.`𝟙 ⟧ = `𝟙
+  T⟦ T₁ CC.`× T₂ ⟧ = T⟦ T₁ ⟧ `× T⟦ T₂ ⟧
+  T⟦ T₁ CC.`+ T₂ ⟧ = T⟦ T₁ ⟧ `+ T⟦ T₂ ⟧
+  T⟦ CC.` x ⟧ = ` x
+  T⟦ CC.ind T ⟧ = ind T⟦ T ⟧
+
+  -- translation of types preserves meaning
+
+  record _≅_ A B : Set where
+    field
+      from : A → B
+      to   : B → A
+      to∘from : ∀ (x : A) → to (from x) ≡ x
+      from∘to : ∀ (y : B) → from (to y) ≡ y
+
+  id-≅ : ∀ {A} → A ≅ A
+  id-≅ = record { from = λ x → x ; to = λ y → y ; to∘from = λ x → refl ; from∘to = λ y → refl }
+  open _≅_
+
+  type-trans-preserves : ∀ (T : CC.TY) → CC.⟦ T ⟧ᵀ ≅ ⟦ T⟦ T ⟧ ⟧ᵀ
+  type-alg-preserves : ∀ (G : CC.Ty 1) → CC.Alg G ≅ Alg T⟦ G ⟧
+
+  type-trans-preserves CC.`𝟙 = id-≅
+  type-trans-preserves (T₁ CC.`× T₂)
+    with type-trans-preserves T₁ | type-trans-preserves T₂
+  ... | T₁-≅ | T₂-≅ = record { from = λ{ (fst , snd) → from T₁-≅ fst , from T₂-≅ snd} ;
+                               to = λ (x₁ , x₂) → (to T₁-≅ x₁) , (to T₂-≅ x₂) ;
+                               to∘from = λ (x₁ , x₂) → cong₂ _,_ (to∘from T₁-≅ x₁) (to∘from T₂-≅ x₂) ;
+                               from∘to = λ (x₁ , x₂) → cong₂ _,_ (from∘to T₁-≅ x₁) (from∘to T₂-≅ x₂)}
+  type-trans-preserves (T₁ CC.`+ T₂)
+    with type-trans-preserves T₁ | type-trans-preserves T₂
+  ... | T₁-≅ | T₂-≅ = record { from = λ{ (inj₁ x) → inj₁ (from T₁-≅ x) ; (inj₂ y) → inj₂ (from T₂-≅ y)} ;
+                              to = λ{ (inj₁ x) → inj₁ (to T₁-≅ x) ; (inj₂ y) → inj₂ (to T₂-≅ y)} ;
+                              to∘from = λ{ (inj₁ x) → cong inj₁ (to∘from T₁-≅ x) ; (inj₂ y) → cong inj₂ (to∘from T₂-≅ y)} ;
+                              from∘to = λ{ (inj₁ x) → cong inj₁ (from∘to T₁-≅ x) ; (inj₂ y) → cong inj₂ (from∘to T₂-≅ y)} }
+  type-trans-preserves (CC.ind G) = type-alg-preserves G
+
+  type-alg-preserves CC.`𝟙 = {!!}
+  type-alg-preserves (G CC.`× G₁) = {!!}
+  type-alg-preserves (G CC.`+ G₁) = {!!}
+  type-alg-preserves (CC.` x) = {!!}
+  type-alg-preserves (CC.ind G) = {!!}
+
+  -- translation of types is compatible with substitution
+
+  trans-compat-subst : ∀ G T → T⟦ G CC.⇐ T ⟧ ≡ T⟦ G ⟧ ⇐ T⟦ T ⟧
+  trans-compat-subst CC.`𝟙 T = refl
+  trans-compat-subst (G₁ CC.`× G₂) T rewrite trans-compat-subst G₁ T | trans-compat-subst G₂ T = refl
+  trans-compat-subst (G₁ CC.`+ G₂) T rewrite trans-compat-subst G₁ T | trans-compat-subst G₂ T = refl
+  trans-compat-subst (CC.` zero) T = refl
+  trans-compat-subst (CC.ind G) T = {!!}
+
+  -- translation of arrows
+
+  E⟦_⟧ : ∀ {T U : CC.TY} → T CC.→ᴾ U → T⟦ T ⟧ →ᴾ T⟦ U ⟧
+  E⟦ CC.id ⟧ = id
+  E⟦ CC.C p₁ p₂ ⟧ = C E⟦ p₁ ⟧ E⟦ p₂ ⟧
+  E⟦ CC.`⊤ ⟧ = `⊤
+  E⟦ CC.`# p₁ p₂ ⟧ = `# E⟦ p₁ ⟧ E⟦ p₂ ⟧
+  E⟦ CC.π₁ ⟧ = π₁
+  E⟦ CC.π₂ ⟧ = π₂
+  E⟦ CC.ι₁ ⟧ = ι₁
+  E⟦ CC.ι₂ ⟧ = ι₂
+  E⟦ CC.`case p₁ p₂ ⟧ = `case E⟦ p₁ ⟧ E⟦ p₂ ⟧
+  E⟦ CC.dist-+-x ⟧ = dist-+-x
+  E⟦ CC.fold{G = G} ⟧
+    rewrite trans-compat-subst G (CC.ind G) = fold
+  E⟦ CC.P{G = G}{T = T} p ⟧
+    with E⟦ p ⟧
+  ... | Ep rewrite trans-compat-subst G (T CC.`× CC.ind G) = P Ep
+  E⟦ CC.F{G = G}{T = T} p ⟧
+    with E⟦ p ⟧
+  ... | Ep rewrite trans-compat-subst G T = F Ep
+
+  -- translation preserves semantics
+
+  trans-preserves : ∀ {T U : CC.TY} → (p : T CC.→ᴾ U)
+    → let T-≅ = type-trans-preserves T in
+      let U-≅ = type-trans-preserves U in
+    ∀ x → from U-≅ (CC.eval p x) ≡ eval E⟦ p ⟧ (from T-≅ x)
+  trans-preserves CC.id x = refl
+  trans-preserves (CC.C p₁ p₂) x
+    rewrite trans-preserves p₁ (CC.eval p₂ x)
+          | trans-preserves p₂ x = refl
+  trans-preserves CC.`⊤ x = refl
+  trans-preserves (CC.`# p₁ p₂) x
+    rewrite trans-preserves p₁ x
+          | trans-preserves p₂ x = refl
+  trans-preserves CC.π₁ x = refl
+  trans-preserves CC.π₂ x = refl
+  trans-preserves CC.ι₁ x = refl
+  trans-preserves CC.ι₂ x = refl
+  trans-preserves (CC.`case p₁ p₂) (inj₁ x) = trans-preserves p₁ x
+  trans-preserves (CC.`case p₁ p₂) (inj₂ y) = trans-preserves p₂ y
+  trans-preserves CC.dist-+-x x = {!!}
+  trans-preserves CC.fold x = {!!}
+  trans-preserves (CC.P p) x = {!!}
+  trans-preserves (CC.F p) x = {!!}
 \end{code}
