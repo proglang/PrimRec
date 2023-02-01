@@ -27,7 +27,7 @@ infix 8 _`+_
 \begin{code}
 
 data Ty n :  Set where
-  `𝟙   : Ty n
+  `𝟘 `𝟙   : Ty n
   _`×_ : Ty n → Ty n → Ty n
   _`+_ : Ty n → Ty n → Ty n
   `    : Fin n → Ty n
@@ -56,6 +56,7 @@ mapˢᴿ : ∀ {n m}{Trm}{{_ : Mappable Trm}}
   → (Trm ⊢ n ⇒ m)
     -------------------------
   → (Ty n → Ty m)
+mapˢᴿ f `𝟘 = `𝟘
 mapˢᴿ f `𝟙 = `𝟙
 mapˢᴿ f (tyA `× tyB) = mapˢᴿ f tyA `× mapˢᴿ f tyB
 mapˢᴿ f (tyA `+ tyB) = (mapˢᴿ f tyA) `+ (mapˢᴿ f tyB)
@@ -67,6 +68,7 @@ map-cong : ∀{n m}{T}{{_ : Mappable T}}{σ τ : T ⊢ n ⇒ m}
   → (∀(x : Fin n) → σ x ≡ τ x)
   → ∀(ty : Ty n)
   → mapˢᴿ σ ty ≡ mapˢᴿ τ ty
+map-cong eq `𝟘 = refl
 map-cong eq `𝟙 = refl
 map-cong {n} {m} {T} eq (tyA `× tyB) = cong₂ _`×_ (map-cong {n} {m} {T} eq tyA) (map-cong {n} {m} {T} eq tyB)
 map-cong  {n} {m} {T} eq (tyA `+ tyB) = cong₂ _`+_ (map-cong {n} {m} {T} eq tyA) (map-cong {n} {m} {T} eq tyB)
@@ -142,14 +144,12 @@ record Composable (T₁ T₂ T₃ : ℕ → Set)
 
 open Composable {{...}} public
 
--- map-fusionˢ = {!   !}
-
-
 map-fusion : ∀ {n m o}{T₁ T₂ T₃}
    {{_ : Mappable T₁}}{{_ : Mappable T₂}}{{_ : Mappable T₃}}
    {{_ : Composable T₁ T₂ T₃}}
    → (σ : T₁ ⊢ n ⇒ m) → (τ : T₂ ⊢ m ⇒ o) →  (ty : Ty n)
    → mapˢᴿ τ (mapˢᴿ σ ty) ≡ mapˢᴿ (σ ⨟ τ) ty
+map-fusion σ τ `𝟘 = refl
 map-fusion σ τ `𝟙 = refl
 map-fusion σ τ (tyA `× tyB) rewrite map-fusion σ τ tyA  | map-fusion σ τ tyB = refl
 map-fusion σ τ (tyA `+ tyB) rewrite map-fusion σ τ tyA  | map-fusion σ τ tyB = refl
@@ -354,6 +354,7 @@ data _→ᴾ_ : TY → TY → Set where
 data Alg (G : Ty 1) : Set where
   fold : ⟦ G ⇐ ind G ⟧ᵀ → Alg G 
 
+⟦ `𝟘 ⟧ᵀ     = ⊥
 ⟦ `𝟙 ⟧ᵀ     = ⊤
 ⟦ T `× U ⟧ᵀ = ⟦ T ⟧ᵀ × ⟦ U ⟧ᵀ
 ⟦ T `+ U ⟧ᵀ = ⟦ T ⟧ᵀ ⊎ ⟦ U ⟧ᵀ
@@ -377,6 +378,7 @@ extˢ~ σ₁~σ₂ (suc x) = cong (mapˢᴿ suc) (σ₁~σ₂ x)
 sub~ : ∀ {m n} {σ₁ σ₂ : Sub m n} {t}
   → σ₁ ~ σ₂
   → sub σ₁ t ≡ sub σ₂ t
+sub~ {t = `𝟘} f       = refl
 sub~ {t = `𝟙} f       = refl
 sub~ {t = t₁ `× t₂} f = cong₂ _`×_ (sub~ {t = t₁} f) (sub~ {t = t₂} f)
 sub~ {t = t₁ `+ t₂} f = cong₂ _`+_ (sub~ {t = t₁} f) (sub~ {t = t₂} f)
@@ -388,6 +390,7 @@ extˢ-idₛ zero    = refl
 extˢ-idₛ (suc x) = refl
 
 sub-idₛ : ∀ {n} (t : Ty n) → sub idₛ t ≡ t
+sub-idₛ `𝟘         = refl
 sub-idₛ `𝟙         = refl
 sub-idₛ (t₁ `× t₂) = cong₂ _`×_ (sub-idₛ t₁) (sub-idₛ t₂)
 sub-idₛ (t₁ `+ t₂) = cong₂ _`+_ (sub-idₛ t₁) (sub-idₛ t₂)

@@ -47,7 +47,7 @@ variable
   Θ : Ctx
 
 data Ty Δ : Set where
-  `𝟙   : Ty Δ
+  `𝟘 `𝟙   : Ty Δ
   _`×_ : Ty Δ → Ty Δ → Ty Δ
   _`+_ : Ty Δ → Ty Δ → Ty Δ
   _`⇒_ : Ty ∅ → Ty Δ → Ty Δ
@@ -74,6 +74,7 @@ mapˢᴿ : ∀ {Trm : Structure}{{_ : Mappable Trm}}
     -------------------------
   → (Ty Γ → Ty Δ)
 
+mapˢᴿ f `𝟘 = `𝟘
 mapˢᴿ f `𝟙 = `𝟙
 mapˢᴿ f (t₁ `× t₂) = mapˢᴿ f t₁ `× mapˢᴿ f t₂
 mapˢᴿ f (t₁ `+ t₂) = mapˢᴿ f t₁ `+ mapˢᴿ f t₂
@@ -86,6 +87,7 @@ map-cong : ∀ {Trm : Structure}{{_ : Mappable Trm}}
   → (∀(x : Var Γ) → σ x ≡ τ x)
   → ∀ (ty : Ty Γ) → mapˢᴿ σ ty ≡ mapˢᴿ τ ty
 
+map-cong eq `𝟘 = refl
 map-cong eq `𝟙 = refl
 map-cong eq (t₁ `× t₂) = cong₂ _`×_ (map-cong eq t₁) (map-cong eq t₂)
 map-cong eq (t₁ `+ t₂) = cong₂ _`+_ (map-cong eq t₁) (map-cong eq t₂)
@@ -182,6 +184,7 @@ map-fusion : ∀{T₁ T₂ T₃ : Structure}
    → (σ : T₁ ⊢ Γ ⇒ Δ) → (τ : T₂ ⊢ Δ ⇒ Θ)
    → (ty : Ty Γ)
    → mapˢᴿ τ (mapˢᴿ σ ty) ≡ mapˢᴿ (σ ⨟ τ) ty
+map-fusion σ τ `𝟘 = refl
 map-fusion σ τ `𝟙 = refl
 map-fusion σ τ (t₁ `× t₂) = cong₂ _`×_ (map-fusion σ τ t₁) (map-fusion σ τ t₂)
 map-fusion σ τ (t₁ `+ t₂) = cong₂ _`+_ (map-fusion σ τ t₁) (map-fusion σ τ t₂)
@@ -339,6 +342,7 @@ module alternative-alg where
 
   {-# TERMINATING #-}
   ⟦_⟧ᵀ : TY → Set
+  ⟦ `𝟘 ⟧ᵀ     = ⊥
   ⟦ `𝟙 ⟧ᵀ     = ⊤
   ⟦ T `× U ⟧ᵀ = ⟦ T ⟧ᵀ × ⟦ U ⟧ᵀ
   ⟦ T `+ U ⟧ᵀ = ⟦ T ⟧ᵀ ⊎ ⟦ U ⟧ᵀ
@@ -353,6 +357,7 @@ module alternative-alg where
 data Alg G : Set where
   fold : ⟦ G ⇐ ind G ⟧ᵀ → Alg G 
 
+⟦ `𝟘 ⟧ᵀ     = ⊥
 ⟦ `𝟙 ⟧ᵀ     = ⊤
 ⟦ T `× U ⟧ᵀ = ⟦ T ⟧ᵀ × ⟦ U ⟧ᵀ
 ⟦ T `+ U ⟧ᵀ = ⟦ T ⟧ᵀ ⊎ ⟦ U ⟧ᵀ
@@ -377,6 +382,7 @@ extˢ~ σ₁~σ₂ (suc x) = cong (mapˢᴿ suc) (σ₁~σ₂ x)
 sub~ : ∀ {σ₁ σ₂ : Sub Γ Δ} {t}
   → σ₁ ~ σ₂
   → sub σ₁ t ≡ sub σ₂ t
+sub~ {t = `𝟘} f       = refl
 sub~ {t = `𝟙} f       = refl
 sub~ {t = t₁ `× t₂} f = cong₂ _`×_ (sub~ {t = t₁} f) (sub~ {t = t₂} f)
 sub~ {t = t₁ `+ t₂} f = cong₂ _`+_ (sub~ {t = t₁} f) (sub~ {t = t₂} f)
@@ -389,6 +395,7 @@ extˢ-ids zero    = refl
 extˢ-ids (suc x) = refl
 
 sub-ids : ∀ {n} (t : Ty n) → sub ids t ≡ t
+sub-ids `𝟘         = refl
 sub-ids `𝟙         = refl
 sub-ids (t₁ `× t₂) = cong₂ _`×_ (sub-ids t₁) (sub-ids t₂)
 sub-ids (t₁ `+ t₂) = cong₂ _`+_ (sub-ids t₁) (sub-ids t₂)
@@ -732,6 +739,7 @@ module FromCC where
   -- translation of types
 
   T⟦_⟧ : CC.Ty n → Ty n
+  T⟦ CC.`𝟘 ⟧ = `𝟘
   T⟦ CC.`𝟙 ⟧ = `𝟙
   T⟦ T₁ CC.`× T₂ ⟧ = T⟦ T₁ ⟧ `× T⟦ T₂ ⟧
   T⟦ T₁ CC.`+ T₂ ⟧ = T⟦ T₁ ⟧ `+ T⟦ T₂ ⟧
@@ -754,6 +762,7 @@ module FromCC where
   type-trans-preserves : ∀ (T : CC.TY) → CC.⟦ T ⟧ᵀ ≅ ⟦ T⟦ T ⟧ ⟧ᵀ
   type-alg-preserves : ∀ (G : CC.Ty 1) → CC.Alg G ≅ Alg T⟦ G ⟧
 
+  type-trans-preserves CC.`𝟘 = id-≅
   type-trans-preserves CC.`𝟙 = id-≅
   type-trans-preserves (T₁ CC.`× T₂)
     with type-trans-preserves T₁ | type-trans-preserves T₂
@@ -769,6 +778,7 @@ module FromCC where
                               from∘to = λ{ (inj₁ x) → cong inj₁ (from∘to T₁-≅ x) ; (inj₂ y) → cong inj₂ (from∘to T₂-≅ y)} }
   type-trans-preserves (CC.ind G) = type-alg-preserves G
 
+  type-alg-preserves CC.`𝟘 = {!!}
   type-alg-preserves CC.`𝟙 = {!!}
   type-alg-preserves (G CC.`× G₁) = {!!}
   type-alg-preserves (G CC.`+ G₁) = {!!}
@@ -778,6 +788,7 @@ module FromCC where
   -- translation of types is compatible with substitution
 
   trans-compat-subst : ∀ G T → T⟦ G CC.⇐ T ⟧ ≡ T⟦ G ⟧ ⇐ T⟦ T ⟧
+  trans-compat-subst CC.`𝟘 T = refl
   trans-compat-subst CC.`𝟙 T = refl
   trans-compat-subst (G₁ CC.`× G₂) T rewrite trans-compat-subst G₁ T | trans-compat-subst G₂ T = refl
   trans-compat-subst (G₁ CC.`+ G₂) T rewrite trans-compat-subst G₁ T | trans-compat-subst G₂ T = refl
