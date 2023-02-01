@@ -788,13 +788,55 @@ module FromCC where
 
   -- translation of types is compatible with substitution
 
-  trans-compat-subst : ∀ G T → T⟦ G CC.⇐ T ⟧ ≡ T⟦ G ⟧ ⇐ T⟦ T ⟧
-  trans-compat-subst CC.`𝟘 T = refl
-  trans-compat-subst CC.`𝟙 T = refl
-  trans-compat-subst (G₁ CC.`× G₂) T rewrite trans-compat-subst G₁ T | trans-compat-subst G₂ T = refl
-  trans-compat-subst (G₁ CC.`+ G₂) T rewrite trans-compat-subst G₁ T | trans-compat-subst G₂ T = refl
-  trans-compat-subst (CC.` zero) T = refl
-  trans-compat-subst (CC.ind G) T = {!!}
+  postulate
+    extensionality : ∀ {A B : Set} {f g : A → B}
+      → (∀ (x : A) → f x ≡ g x)
+        -----------------------
+      → f ≡ g
+
+  lemma-ren : ∀ (ρ : CC.Ren Γ Δ) → ∀ x → ext ρ x ≡ CC.ext ρ x
+  lemma-ren ρ zero = refl
+  lemma-ren ρ (suc x) = refl
+
+  trans-compat-ren : ∀ (ρ : CC.Ren Γ Δ) (T : CC.Ty Γ) → ren ρ T⟦ T ⟧ ≡ T⟦ CC.ren ρ T ⟧
+  trans-compat-ren ρ CC.`𝟘 = refl
+  trans-compat-ren ρ CC.`𝟙 = refl
+  trans-compat-ren ρ (T₁ CC.`× T₂) = cong₂ _`×_ (trans-compat-ren ρ T₁) (trans-compat-ren ρ T₂)
+  trans-compat-ren ρ (T₁ CC.`+ T₂) = cong₂ _`+_ (trans-compat-ren ρ T₁) (trans-compat-ren ρ T₂)
+  trans-compat-ren ρ (CC.` x) = refl
+  trans-compat-ren ρ (CC.ind T) = cong ind (trans (trans-compat-ren (extᴿ ρ) T) 
+                                                  (cong (λ hole → T⟦ CC.ren hole T ⟧) (extensionality (λ x → lemma-ren ρ x))) )
+
+  trans-compat-ext : ∀ (σ : CC.Sub Γ Δ) x → T⟦ CC.extˢ σ x ⟧ ≡ extˢ (T⟦_⟧ ∘ σ) x
+  trans-compat-ext σ zero = refl
+  trans-compat-ext σ (suc x) = sym (trans-compat-ren suc (σ x))
+
+  trans-compat-subst : ∀ (G : CC.Ty Γ) (σ : CC.Sub Γ Δ) → T⟦ CC.sub σ G ⟧ ≡ sub (T⟦_⟧ ∘ σ) T⟦ G ⟧
+  trans-compat-subst CC.`𝟘 σ = refl
+  trans-compat-subst CC.`𝟙 σ = refl
+  trans-compat-subst (G₁ CC.`× G₂) σ = cong₂ _`×_ (trans-compat-subst G₁ σ) (trans-compat-subst G₂ σ)
+  trans-compat-subst (G₁ CC.`+ G₂) σ = cong₂ _`+_ (trans-compat-subst G₁ σ) (trans-compat-subst G₂ σ)
+  trans-compat-subst (CC.` x) σ = refl
+  trans-compat-subst (CC.ind G) σ = cong ind (trans (trans-compat-subst G (CC.extˢ σ))
+                                                    (cong (λ hole → sub hole T⟦ G ⟧) (extensionality (λ x → trans-compat-ext σ x))))
+
+  trans-compat-lemma : ∀ (T : CC.Ty Γ) x → T⟦ CC.σ₀ T x ⟧ ≡ σ₀ T⟦ T ⟧ x
+  trans-compat-lemma T zero = refl
+  trans-compat-lemma T (suc x) = refl
+
+  trans-compat-subst0 : ∀ G T → T⟦ G CC.⇐ T ⟧ ≡ T⟦ G ⟧ ⇐ T⟦ T ⟧
+  -- trans-compat-subst0 G T = trans (trans-compat-subst G (CC.σ₀ T)) {!trans (cong sub!}
+  trans-compat-subst0 CC.`𝟘 T = refl
+  trans-compat-subst0 CC.`𝟙 T = refl
+  trans-compat-subst0 (G₁ CC.`× G₂) T rewrite trans-compat-subst0 G₁ T | trans-compat-subst0 G₂ T = refl
+  trans-compat-subst0 (G₁ CC.`+ G₂) T rewrite trans-compat-subst0 G₁ T | trans-compat-subst0 G₂ T = refl
+  trans-compat-subst0 (CC.` zero) T = refl
+  trans-compat-subst0 (CC.ind G) T = cong ind (trans (trans-compat-subst G (CC.extˢ (CC.σ₀ T)))
+                                                     (cong (λ hole → sub hole T⟦ G ⟧)
+                                                           (extensionality (λ x → trans (trans-compat-ext (CC.σ₀ T) x)
+                                                                                        (cong (λ hole → extˢ hole x)
+                                                                                              (extensionality (λ x₁ → trans-compat-lemma T x₁)))))))
+
 
   -- translation of arrows
 
@@ -802,6 +844,7 @@ module FromCC where
   E⟦ CC.id ⟧ = id
   E⟦ CC.C p₁ p₂ ⟧ = C E⟦ p₁ ⟧ E⟦ p₂ ⟧
   E⟦ CC.`⊤ ⟧ = `⊤
+  E⟦ CC.`⊥ ⟧ = `⊥
   E⟦ CC.`# p₁ p₂ ⟧ = `# E⟦ p₁ ⟧ E⟦ p₂ ⟧
   E⟦ CC.π₁ ⟧ = π₁
   E⟦ CC.π₂ ⟧ = π₂
@@ -810,13 +853,15 @@ module FromCC where
   E⟦ CC.`case p₁ p₂ ⟧ = `case E⟦ p₁ ⟧ E⟦ p₂ ⟧
   E⟦ CC.dist-+-x ⟧ = dist-+-x
   E⟦ CC.fold{G = G} ⟧
-    rewrite trans-compat-subst G (CC.ind G) = fold
+    rewrite trans-compat-subst0 G (CC.ind G) = fold
   E⟦ CC.P{G = G}{T = T} p ⟧
     with E⟦ p ⟧
-  ... | Ep rewrite trans-compat-subst G (T CC.`× CC.ind G) = P Ep
+  ... | Ep
+    rewrite trans-compat-subst0 G (T CC.`× CC.ind G) = P Ep
   E⟦ CC.F{G = G}{T = T} p ⟧
     with E⟦ p ⟧
-  ... | Ep rewrite trans-compat-subst G T = F Ep
+  ... | Ep
+    rewrite trans-compat-subst0 G T = F Ep
 
   -- translation preserves semantics
 
