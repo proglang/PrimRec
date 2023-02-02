@@ -747,45 +747,6 @@ module FromCC where
   T⟦ CC.` x ⟧ = ` x
   T⟦ CC.ind T ⟧ = ind T⟦ T ⟧
 
-  -- translation of types preserves meaning
-
-  record _≅_ A B : Set where
-    field
-      from : A → B
-      to   : B → A
-      to∘from : ∀ (x : A) → to (from x) ≡ x
-      from∘to : ∀ (y : B) → from (to y) ≡ y
-
-  id-≅ : ∀ {A} → A ≅ A
-  id-≅ = record { from = λ x → x ; to = λ y → y ; to∘from = λ x → refl ; from∘to = λ y → refl }
-  open _≅_
-
-  type-trans-preserves : ∀ (T : CC.TY) → CC.⟦ T ⟧ᵀ ≅ ⟦ T⟦ T ⟧ ⟧ᵀ
-  type-alg-preserves : ∀ (G : CC.Ty 1) → CC.Alg G ≅ Alg T⟦ G ⟧
-
-  type-trans-preserves CC.`𝟘 = id-≅
-  type-trans-preserves CC.`𝟙 = id-≅
-  type-trans-preserves (T₁ CC.`× T₂)
-    with type-trans-preserves T₁ | type-trans-preserves T₂
-  ... | T₁-≅ | T₂-≅ = record { from = λ{ (fst , snd) → from T₁-≅ fst , from T₂-≅ snd} ;
-                               to = λ (x₁ , x₂) → (to T₁-≅ x₁) , (to T₂-≅ x₂) ;
-                               to∘from = λ (x₁ , x₂) → cong₂ _,_ (to∘from T₁-≅ x₁) (to∘from T₂-≅ x₂) ;
-                               from∘to = λ (x₁ , x₂) → cong₂ _,_ (from∘to T₁-≅ x₁) (from∘to T₂-≅ x₂)}
-  type-trans-preserves (T₁ CC.`+ T₂)
-    with type-trans-preserves T₁ | type-trans-preserves T₂
-  ... | T₁-≅ | T₂-≅ = record { from = λ{ (inj₁ x) → inj₁ (from T₁-≅ x) ; (inj₂ y) → inj₂ (from T₂-≅ y)} ;
-                              to = λ{ (inj₁ x) → inj₁ (to T₁-≅ x) ; (inj₂ y) → inj₂ (to T₂-≅ y)} ;
-                              to∘from = λ{ (inj₁ x) → cong inj₁ (to∘from T₁-≅ x) ; (inj₂ y) → cong inj₂ (to∘from T₂-≅ y)} ;
-                              from∘to = λ{ (inj₁ x) → cong inj₁ (from∘to T₁-≅ x) ; (inj₂ y) → cong inj₂ (from∘to T₂-≅ y)} }
-  type-trans-preserves (CC.ind G) = type-alg-preserves G
-
-  type-alg-preserves CC.`𝟘 = {!!}
-  type-alg-preserves CC.`𝟙 = {!!}
-  type-alg-preserves (G CC.`× G₁) = {!!}
-  type-alg-preserves (G CC.`+ G₁) = {!!}
-  type-alg-preserves (CC.` x) = {!!}
-  type-alg-preserves (CC.ind G) = {!!}
-
   -- translation of types is compatible with substitution
 
   postulate
@@ -805,7 +766,7 @@ module FromCC where
   trans-compat-ren ρ (T₁ CC.`+ T₂) = cong₂ _`+_ (trans-compat-ren ρ T₁) (trans-compat-ren ρ T₂)
   trans-compat-ren ρ (CC.` x) = refl
   trans-compat-ren ρ (CC.ind T) = cong ind (trans (trans-compat-ren (extᴿ ρ) T) 
-                                                  (cong (λ hole → T⟦ CC.ren hole T ⟧) (extensionality (λ x → lemma-ren ρ x))) )
+                                                  (cong (λ hole → T⟦ CC.ren hole T ⟧) (extensionality (lemma-ren ρ))) )
 
   trans-compat-ext : ∀ (σ : CC.Sub Γ Δ) x → T⟦ CC.extˢ σ x ⟧ ≡ extˢ (T⟦_⟧ ∘ σ) x
   trans-compat-ext σ zero = refl
@@ -818,13 +779,14 @@ module FromCC where
   trans-compat-subst (G₁ CC.`+ G₂) σ = cong₂ _`+_ (trans-compat-subst G₁ σ) (trans-compat-subst G₂ σ)
   trans-compat-subst (CC.` x) σ = refl
   trans-compat-subst (CC.ind G) σ = cong ind (trans (trans-compat-subst G (CC.extˢ σ))
-                                                    (cong (λ hole → sub hole T⟦ G ⟧) (extensionality (λ x → trans-compat-ext σ x))))
+                                                    (cong (λ hole → sub hole T⟦ G ⟧) (extensionality (trans-compat-ext σ))))
 
   trans-compat-lemma : ∀ (T : CC.Ty Γ) x → T⟦ CC.σ₀ T x ⟧ ≡ σ₀ T⟦ T ⟧ x
   trans-compat-lemma T zero = refl
   trans-compat-lemma T (suc x) = refl
 
   trans-compat-subst0 : ∀ G T → T⟦ G CC.⇐ T ⟧ ≡ T⟦ G ⟧ ⇐ T⟦ T ⟧
+  -- there should be a more direct proof along the lines of the case for `CC.ind G`
   -- trans-compat-subst0 G T = trans (trans-compat-subst G (CC.σ₀ T)) {!trans (cong sub!}
   trans-compat-subst0 CC.`𝟘 T = refl
   trans-compat-subst0 CC.`𝟙 T = refl
@@ -835,8 +797,126 @@ module FromCC where
                                                      (cong (λ hole → sub hole T⟦ G ⟧)
                                                            (extensionality (λ x → trans (trans-compat-ext (CC.σ₀ T) x)
                                                                                         (cong (λ hole → extˢ hole x)
-                                                                                              (extensionality (λ x₁ → trans-compat-lemma T x₁)))))))
+                                                                                              (extensionality (trans-compat-lemma T)))))))
 
+
+  -- translation of types preserves meaning
+
+  record _≅_ A B : Set where
+    field
+      from : A → B
+      to   : B → A
+      to∘from : ∀ (x : A) → to (from x) ≡ x
+      from∘to : ∀ (y : B) → from (to y) ≡ y
+
+  id-≅ : ∀ {A} → A ≅ A
+  id-≅ = record { from = λ x → x ; to = λ y → y ; to∘from = λ x → refl ; from∘to = λ y → refl }
+  open _≅_
+
+  from-fmap : (G : CC.Ty 1) (H : CC.Ty 1) → (∀ T → CC.⟦ T ⟧ᵀ → ⟦ T⟦ T ⟧ ⟧ᵀ) → (CC.⟦ G CC.⇐ CC.ind H ⟧ᵀ → ⟦ T⟦ G ⟧ ⇐ ind T⟦ H ⟧ ⟧ᵀ)
+  from-fmap CC.`𝟙 H f tt = tt
+  from-fmap (G₁ CC.`× G₂) H f (x₁ , x₂) = (from-fmap G₁ H f x₁) , (from-fmap G₂ H f x₂)
+  from-fmap (G₁ CC.`+ G₂) H f (inj₁ x) = inj₁ (from-fmap G₁ H f x)
+  from-fmap (G₁ CC.`+ G₂) H f (inj₂ y) = inj₂ (from-fmap G₂ H f y)
+  from-fmap (CC.` zero) H f x = f (CC.ind H) x
+  from-fmap (CC.ind G) H f (CC.fold x) =
+    let from-x = subst CC.⟦_⟧ᵀ (from-eq (CC.σ₀ (CC.ind H))) in
+    fold (subst ⟦_⟧ᵀ (to-eq (σ₀ (ind (T⟦ H ⟧))))
+          (from-fmap G′ H f
+           {!x  !}) )
+    where
+      G′ : CC.Ty 1
+      G′ = CC.sub (CC.σ₀ (CC.ind G)) G
+      to-eq : ∀ (τ : Sub 1 0) → sub τ (T⟦ G′ ⟧) ≡ sub₀ (ind (sub (extˢ τ) (T⟦ G ⟧))) (sub (extˢ τ) (T⟦ G ⟧))
+      to-eq τ = begin
+          sub τ (T⟦ G′ ⟧)
+        ≡⟨ cong (sub τ) (trans-compat-subst G (CC.σ₀ (CC.ind G))) ⟩
+          sub τ (sub (T⟦_⟧ ∘ CC.σ₀ (CC.ind G)) T⟦ G ⟧)
+        ≡⟨ sub-sub (T⟦_⟧ ∘ (CC.σ₀ (CC.ind G))) τ T⟦ G ⟧ ⟩
+          sub ((T⟦_⟧ ∘ CC.σ₀ (CC.ind G)) ˢ⨟ˢ τ) T⟦ G ⟧
+        ≡⟨ {!sub~ {t = T⟦ G ⟧} !} ⟩
+          {!!}
+      from-eq : ∀ (τ : CC.Sub 1 0) → CC.sub τ G′ ≡ CC.sub₀ (CC.ind (CC.sub (CC.extˢ τ) G)) (CC.sub (CC.extˢ τ) G)
+      from-eq = {!!}
+      
+
+  to-fmap : (G : CC.Ty 1) (H : CC.Ty 1) → (∀ T → ⟦ T⟦ T ⟧ ⟧ᵀ → CC.⟦ T ⟧ᵀ) → (⟦ T⟦ G ⟧ ⇐ ind T⟦ H ⟧ ⟧ᵀ → CC.⟦ G CC.⇐ CC.ind H ⟧ᵀ)
+  to-fmap CC.`𝟙 H f tt = tt
+  to-fmap (G₁ CC.`× G₂) H f (x₁ , x₂) = (to-fmap G₁ H f x₁) , (to-fmap G₂ H f x₂)
+  to-fmap (G₁ CC.`+ G₂) H f (inj₁ x) = inj₁ (to-fmap G₁ H f x)
+  to-fmap (G₁ CC.`+ G₂) H f (inj₂ y) = inj₂ (to-fmap G₂ H f y)
+  to-fmap (CC.` zero) H f x = f (CC.ind H) x
+  to-fmap (CC.ind G) H f (fold x) = CC.fold {!!}
+
+  {-# TERMINATING #-}
+  from-T : ∀ (T : CC.TY) → CC.⟦ T ⟧ᵀ → ⟦ T⟦ T ⟧ ⟧ᵀ
+  to-T : ∀ (T : CC.TY) → ⟦ T⟦ T ⟧ ⟧ᵀ → CC.⟦ T ⟧ᵀ
+
+  from-T CC.`𝟙 tt = tt
+  from-T (T₁ CC.`× T₂) (x , y) = (from-T T₁ x) , (from-T T₂ y)
+  from-T (T₁ CC.`+ T₂) (inj₁ x) = inj₁ (from-T T₁ x)
+  from-T (T₁ CC.`+ T₂) (inj₂ y) = inj₂ (from-T T₂ y)
+  from-T (CC.ind G) (CC.fold x) = fold (from-fmap G G from-T x)
+
+  to-T CC.`𝟙 tt = tt
+  to-T (T₁ CC.`× T₂) (x , y) = (to-T T₁ x) , (to-T T₂ y)
+  to-T (T₁ CC.`+ T₂) (inj₁ x) = inj₁ (to-T T₁ x)
+  to-T (T₁ CC.`+ T₂) (inj₂ y) = inj₂ (to-T T₂ y)
+  to-T (CC.ind G) (fold x) = CC.fold (to-fmap G G to-T x)
+
+  to∘from-T : ∀ (T : CC.TY) → ∀ x → to-T T (from-T T x) ≡ x
+  to∘from-fmap-T : ∀ (G H : CC.Ty 1) → ∀ x → to-fmap G H to-T (from-fmap G H from-T x) ≡ x
+
+  to∘from-T CC.`𝟙 x = refl
+  to∘from-T (T₁ CC.`× T₂) (x₁ , x₂) = cong₂ _,_ (to∘from-T T₁ x₁) (to∘from-T T₂ x₂)
+  to∘from-T (T₁ CC.`+ T₂) (inj₁ x) = cong inj₁ (to∘from-T T₁ x)
+  to∘from-T (T₁ CC.`+ T₂) (inj₂ y) = cong inj₂ (to∘from-T T₂ y)
+  to∘from-T (CC.ind G) (CC.fold x) = cong CC.fold (to∘from-fmap-T G G x)
+
+  to∘from-fmap-T CC.`𝟙 H tt = refl
+  to∘from-fmap-T (G₁ CC.`× G₂) H (x₁ , x₂) = cong₂ _,_ (to∘from-fmap-T G₁ H x₁) (to∘from-fmap-T G₂ H x₂)
+  to∘from-fmap-T (G₁ CC.`+ G₂) H (inj₁ x) = cong inj₁ (to∘from-fmap-T G₁ H x)
+  to∘from-fmap-T (G₁ CC.`+ G₂) H (inj₂ y) = cong inj₂ (to∘from-fmap-T G₂ H y)
+  to∘from-fmap-T (CC.` zero) H x = to∘from-T (CC.ind H) x
+  to∘from-fmap-T (CC.ind G) H (CC.fold x) = cong CC.fold {!!}
+
+  from∘to-T : ∀ (T : CC.TY) → ∀ x → from-T T (to-T T x) ≡ x
+  from∘to-fmap-T : ∀ (G H : CC.Ty 1) → ∀ x → from-fmap G H from-T (to-fmap G H to-T x) ≡ x
+
+  from∘to-T T x = {!!}
+  from∘to-fmap-T G H x = {!!}
+
+  type-trans-preserves : ∀ (T : CC.TY) → CC.⟦ T ⟧ᵀ ≅ ⟦ T⟦ T ⟧ ⟧ᵀ
+  type-trans-preserves T =
+    record {
+      from = from-T T ;
+      to = to-T T ;
+      to∘from = to∘from-T T ;
+      from∘to = from∘to-T T }
+
+  {-
+  type-trans-preserves : ∀ (T : CC.TY) → CC.⟦ T ⟧ᵀ ≅ ⟦ T⟦ T ⟧ ⟧ᵀ
+  type-alg-preserves : ∀ (G : CC.Ty 1) → CC.Alg G ≅ Alg T⟦ G ⟧
+
+  type-trans-preserves CC.`𝟘 = id-≅
+  type-trans-preserves CC.`𝟙 = id-≅
+  type-trans-preserves (T₁ CC.`× T₂)
+    with type-trans-preserves T₁ | type-trans-preserves T₂
+  ... | T₁-≅ | T₂-≅ = record { from = λ{ (fst , snd) → from T₁-≅ fst , from T₂-≅ snd} ;
+                               to = λ (x₁ , x₂) → (to T₁-≅ x₁) , (to T₂-≅ x₂) ;
+                               to∘from = λ (x₁ , x₂) → cong₂ _,_ (to∘from T₁-≅ x₁) (to∘from T₂-≅ x₂) ;
+                               from∘to = λ (x₁ , x₂) → cong₂ _,_ (from∘to T₁-≅ x₁) (from∘to T₂-≅ x₂)}
+  type-trans-preserves (T₁ CC.`+ T₂)
+    with type-trans-preserves T₁ | type-trans-preserves T₂
+  ... | T₁-≅ | T₂-≅ = record { from = λ{ (inj₁ x) → inj₁ (from T₁-≅ x) ; (inj₂ y) → inj₂ (from T₂-≅ y)} ;
+                              to = λ{ (inj₁ x) → inj₁ (to T₁-≅ x) ; (inj₂ y) → inj₂ (to T₂-≅ y)} ;
+                              to∘from = λ{ (inj₁ x) → cong inj₁ (to∘from T₁-≅ x) ; (inj₂ y) → cong inj₂ (to∘from T₂-≅ y)} ;
+                              from∘to = λ{ (inj₁ x) → cong inj₁ (from∘to T₁-≅ x) ; (inj₂ y) → cong inj₂ (from∘to T₂-≅ y)} }
+  type-trans-preserves (CC.ind G) = {!!}
+
+  -- not sure how this can work
+  type-alg-preserves G = {!!}
+  -}
 
   -- translation of arrows
 
