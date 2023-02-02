@@ -64,7 +64,14 @@
 \ArticleNo{23}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+\input{unicodeletters}
+\input{jfpmacros}
+
 \begin{document}
+\newcommand\Nat{\ensuremath{\mathbb{N}}}
+\newcommand{\many}[2]{{#1}_0,\dots,{#1}_{#2-1}}
+\newcommand{\xs}{\many{x}}
+\newcommand{\xn}{\xs{n}}
 
 \maketitle
 
@@ -92,9 +99,133 @@
 \section{Introduction}
 \label{sec:introduction}
 
-Primitive recursive functions are a class of computable total
-functions on natural numbers. While they are a standard topic in any
-class on computability, it is less well known that primitive recursive
+Primitive recursive functions, PR-NAT, are a class of total computable
+functions on natural numbers. They are a standard topic in any
+class on computability theory and serve as a stepping stone for
+defining general recursive functions
+\cite{kleene36:_gener_recur_funct_natur_number}.
+System~T adds higher-order functions to PR-NAT (e.g.,
+\cite[Chapter 9]{DBLP:books/cu/Ha2016}). The resulting class of functions is a
+proper extension of PR-NAT. For example, the
+Ackermann function \cite{szasz1991machine}, Knuth's uparrow
+notation, and Conway's arrow notation are total functions on natural
+numbers, which are not primitive recursive, but definable in System~T
+\cite{DBLP:journals/corr/Widemann16}.
+
+The concept of primitive recursion can be generalized in several
+dimensions. One dimension is first-order vs.\ higher-order,
+corresponding to PR-NAT vs.\ System~T. A second dimension generalizes
+to functions over words, terms, and many-sorted algebras. A third
+dimension generalizes to vector-valued functions aka LOOP-computable
+functions. The second and third dimensions can be subsumed by
+situating primitive recursion in a bicartesian category, i.e., a
+first-order language with finite product and sum types augmented with
+an inductive type, which we call PR1-IND.  Closely related, but
+subtly different, languages are discussed in Harper's book
+\cite[Chapter 15]{DBLP:books/cu/Ha2016} and in the bananas paper
+\cite{DBLP:conf/fpca/MeijerFP91}. 
+
+Adding the higher-order dimension to PR1-IND leads to studying
+primitive recursion in a bicartesian closed category, as considered
+by Meijer and Hutton \cite{DBLP:conf/fpca/MeijerH95} and which is
+implicitly and often unknowingly used by Haskell programmers. Such
+categories have all finite products and coproducts (sums) as well as
+exponentials. We call this language PR-IND.
+
+We start our work from the observation that the standard definition of
+PR-NAT is very close to a categorical description. Taken literally,
+primitive recursive functions are defined in a pointfree style by
+composing and combining predefined arrows. We define syntax and
+semantics of PR-Nat in Agda, give examples, and prove their correctness.
+
+Inspired by this observation, we go on to define PR1-IND in the same
+pointfree style. Defining the semantics turns out to be surprisingly
+subtle because, unlike Harper's definition \cite[Chapter
+15]{DBLP:books/cu/Ha2016}, PR1-IND admits nested inductive types.
+Clearly, it should be possible to translate any PR-NAT program into a
+semantically equivalent program in PR1-IND, but this attempt reveals
+that a bicartesian category is not sufficient for this translation,
+but a distributive category is needed. That is, distributivity needs
+to be added to our language as a family of axiomatic arrows.
+
+Finally, we extend PR1-IND with exponentials to PR-IND. The definition
+of the semantics smoothly extends the one for PR1-IND. As an
+additional twist, surprising to the authors who are not category
+theorists, the distributivity axiom becomes obsolete as it derivable in
+a bicartesian closed category. We give an elementary proof of this
+folklore result \cite{https://doi.org/10.48550/arxiv.1406.0961}. 
+
+All definitions, results, and proofs are mechanized using Agda and
+publicly available in a GitHub
+repository.\footnote{\url{https://github.com/proglang/PrimRec/}
+  release 2023-02 corresponds to the submitted paper} 
+
+\section{Primitive recursion on natural numbers}
+\label{sec:prim-recurs-natur}
+
+Here is a typical textbook definition~\cite{martin2019logik,wiki:Primitive_recursive_function}:
+
+
+The set of primitive recursive functions is the smallest family PR of functions
+from ${ℕ}^n$  to ${ℕ}$, for $n\in {ℕ}$, that contains the following
+basic functions:
+\begin{itemize}
+\item for all $n\in {ℕ}$ the $n$-ary constant zero function
+  \begin{align*}
+	Z^n  &\colon \mathbb{N}^n \rightarrow \mathbb{N}  &
+	Z^n    (\xn) &= 0  
+  \end{align*}
+\item the successor function
+  \begin{align*}
+	S &\colon \mathbb{N} \rightarrow \mathbb{N} &
+	S  (x)  &=  x + 1
+  \end{align*}
+\item for all $n\in {ℕ}$ and $0\le i< n$ the $n$-ary projection on
+  the $i$-th argument
+\begin{align*}
+	\pi^{n}_{i} &\colon \mathbb{N}^n \rightarrow \mathbb{N} &
+	\pi^{n}_{i}  (x_0,\dots,x_i,\dots,x_{n-1})  &= x_i
+\end{align*}
+\end{itemize}
+PR is closed under the operations \emph{composition} and \emph{primitive recursion}.
+\begin{description}
+\item[Composition] 
+If $f$ is a primitive recursive function with arity $m \in {ℕ}$ and
+$\many{g}{m}$ are primitive recursive functions with arity $n$ then
+the composition of $f$ and $\many gm$ is an $n$-ary primitive recursive function
+$h := C (h,(\many gm)) \colon \mathbb{N}^n \rightarrow \mathbb{N} $ defined by
+\begin{align*}
+	h  (\xn)  &= f (g_1(\xn),\dots,g_m(\xn)) \\
+\end{align*}
+
+\item[Primitive recursion] 
+If $g$ and $h$ are primitive recursive functions with arities $n$ and
+$n+2$ then $f := P (g,h)$ is a primitive recursive function of arity $n+1$ that is defined as follows.
+\begin{align*}
+	f&\colon \mathbb{N}^{n+1} \rightarrow \mathbb{N} \\
+	f  (0,\xn)  &= g (\xn) \\
+	f  (y + 1,\xn) &= h(  f(y,\xn),y,\xn)
+\end{align*}
+
+\end{description}
+
+Clearly, PR is inductively defined, but unfortunately the boundary
+between syntax and semantics is blurred.
+
+
+In programming languages terminology, primitive
+recursive functions are given by a domain-specific language where a
+sentence of the language specifies a function of type ${ℕ}^n \to {ℕ}$
+in a pointfree style. The syntax of the language is inductively
+defined and consequently its semantics is defined by induction on the
+syntax, thus cleanly separating syntax and semantics.
+
+
+\section{Frontier}
+
+
+
+, it is less well known that primitive recursive
 functions generalize in several dimensions. One dimension generalizes
 to words, terms, and many-sorted algebras. Another dimension
 generalizes to vector-valued functions aka LOOP-computable
