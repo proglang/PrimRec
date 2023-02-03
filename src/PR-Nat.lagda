@@ -30,12 +30,17 @@ data PR : ℕ → Set where
     → PR (suc n)
 \end{code}
 }
+\begin{code}[hide]
+para : (Vec ℕ n → ℕ) → (Vec ℕ (suc (suc n)) → ℕ) → (Vec ℕ (suc n) → ℕ)
+para g h (zero ∷ v*) = g v*
+para g h (suc x ∷ v*) = h (para g h (x ∷ v*) ∷ x ∷ v*)
+\end{code}
 \newcommand\PRNatEval{
 \begin{code}
 eval  : PR n → (Vec ℕ n → ℕ)
 eval* : Vec (PR n) m → Vec ℕ n → Vec ℕ m
 
-eval Z        []          = 0
+eval Z        []           = 0
 eval σ        [ x ]        = suc x
 eval (π i)    v*           = lookup v* i
 eval (C f g*) v*           = eval f (eval* g* v*)

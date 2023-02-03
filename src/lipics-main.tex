@@ -11,10 +11,15 @@
 %for enabling a two-column layout for the author/affilation part (only applicable for > 6 authors), use "authorcolumns"
 %for producing a PDF according the PDF/A standard, add "pdfa"
 
-\pdfoutput=1 %uncomment to ensure pdflatex processing (mandatatory e.g. to submit to arXiv)
+\pdfoutput=1
 %\hideLIPIcs  %uncomment to remove references to LIPIcs series (logo, DOI, ...), e.g. when preparing a pre-final version to be uploaded to arXiv or another public repository
 
 %\graphicspath{{./graphics/}}%helpful if your graphic files are in another directory
+
+\usepackage{stmaryrd}
+\usepackage{latex/agda}
+
+
 
 \bibliographystyle{plainurl}% the mandatory bibstyle
 
@@ -104,13 +109,15 @@ functions on natural numbers. They are a standard topic in any
 class on computability theory and serve as a stepping stone for
 defining general recursive functions
 \cite{kleene36:_gener_recur_funct_natur_number}.
-System~T adds higher-order functions to PR-NAT (e.g.,
-\cite[Chapter 9]{DBLP:books/cu/Ha2016}). The resulting class of functions is a
-proper extension of PR-NAT. For example, the
+It is well known that there are total functions on natural
+numbers, which are not primitive recursive. The
 Ackermann function \cite{szasz1991machine}, Knuth's uparrow
-notation, and Conway's arrow notation are total functions on natural
-numbers, which are not primitive recursive, but definable in System~T
-\cite{DBLP:journals/corr/Widemann16}.
+notation, and Conway's arrow notation are standard examples. However,
+these functions are definable in System~T (see
+\cite{DBLP:journals/corr/Widemann16} for definitions), which adds higher-order functions to PR-NAT (see
+\cite[Chapter 9]{DBLP:books/cu/Ha2016}) and thus defines a larger
+class of total computable functions.
+
 
 The concept of primitive recursion can be generalized in several
 dimensions. One dimension is first-order vs.\ higher-order,
@@ -162,6 +169,7 @@ repository.\footnote{\url{https://github.com/proglang/PrimRec/}
 
 \section{Primitive recursion on natural numbers}
 \label{sec:prim-recurs-natur}
+\input{latex/PR-Nat}
 
 Here is a typical textbook definition~\cite{martin2019logik,wiki:Primitive_recursive_function}:
 
@@ -195,7 +203,7 @@ $\many{g}{m}$ are primitive recursive functions with arity $n$ then
 the composition of $f$ and $\many gm$ is an $n$-ary primitive recursive function
 $h := C (h,(\many gm)) \colon \mathbb{N}^n \rightarrow \mathbb{N} $ defined by
 \begin{align*}
-	h  (\xn)  &= f (g_1(\xn),\dots,g_m(\xn)) \\
+	h  (\xn)  &= f (g_1(\xn),\dots,g_m(\xn)) 
 \end{align*}
 
 \item[Primitive recursion] 
@@ -215,10 +223,178 @@ between syntax and semantics is blurred.
 
 In programming languages terminology, primitive
 recursive functions are given by a domain-specific language where a
-sentence of the language specifies a function of type ${ℕ}^n \to {ℕ}$
+sentence of the language specifies a total function of type ${ℕ}^n \to {ℕ}$
 in a pointfree style. The syntax of the language is inductively
 defined and consequently its semantics is defined by induction on the
 syntax, thus cleanly separating syntax and semantics.
+
+The following Agda definition formalizes syntax and semantics of pr
+functions precisely (and strictly separated).
+The datatype \APR{n} defines an abstract syntax for $n$-ary primitive recursive functions.
+The type \AVec{A}{n} contains vectors of size $n$ with elements of type $A$.
+The type \AFin{n} comprises the elements $\{0, 1, \dots, n-1\}$, which
+are exactly the valid indices for a vector of type \AVec{A}{n}. 
+The function \AgdaFunction{lookup v* i} accesses such a vector at index $i$.
+
+\PRNat
+
+The function \AgdaFunction{eval} maps a pr function to its semantics.
+We represent ${ℕ}^n$ by the vector type \AVec{ℕ}n and use the bracket notation for vectors: \Anil, \Aone{x}, \Atwo{x}{y}, etc.
+
+\PRNatEval
+
+The function \AgdaFunction{eval*} can be expressed equivalently as a
+map over the vector of functions \AgdaBound{g*}, alas the termination
+checker does not accept this definition.  
+
+
+It is a good exercise to remind ourselves that the standard arithmetic
+functions are pr defineable and correspond to their definitions in
+Agda. Here is the easy case for addition; the online supplement
+considers further operations. 
+\input{latex/PR-Nat-Example}
+\PRNatExampleAdd
+The function \AgdaFunction{addP} is defined by primitive recursion, which
+decomposes the first argument. The $g$-function is just the identity;
+the $h$-function composes the successor with inductive result.
+The equivalence proof is a
+straightforward induction because the structure of the definitions
+matches.
+
+There are alternative definitions of primitive recursion where the
+zero function takes any number of arguments or where there are
+arbitrary constants. It is easy to show that they are equivalent to
+the definition that we adopt here.
+
+\section{Primitive recursion for inductive types}
+\label{sec:prim-recurs-gener}
+\input{latex/PR-CC-ind}
+
+This section introduces PR1-IND, the first order language with inductive
+types. The modeling of inductive
+types is inspired Harper's textbook \cite{DBLP:books/cu/Ha2016}, but
+with two changes. First, Harper's definition is set in a conventional syntax,
+whereas ours comes in pointfree style. Second, his definition builds
+on polynomial type operators, which we generalize to polynomial
+inductive type operators.
+
+We start with defining the type language.
+\ccDataTy
+Types are indexed by a number $n \in \ANat$ denoting the number of free
+type variables in the type. A type is either the empty type, the unit type, a product, a
+sum, a variable, or an inductive type. Variables use the
+de Bruijn encoding. The body of an inductive type
+binds a new type variable for recursive occurrences of the
+type. We assume that recursive occurrences are guarded, that is, there
+is a sum, product, or inductive type between the binding and the use
+of a type variable. Types with free variables are sometimes called
+\emph{pretypes}. We use $\ATY$ for closed types.
+
+To define primitive recursion on this type structure in pointfree
+style, we have to extend our vocabulary compared to previous attempts.
+\ccDataPR
+The first compartment defines two families of arrows concerned with categorical structure: the identity arrow at all
+types, and type-respecting composition of arrows.
+The second compartment names the unique arrow from any type into the
+terminal object (the unit type) as well as the unique arrow from the
+initial object (the empty type) to any type. 
+The third compartment has arrows to introduce and eliminate product types.
+The fourth compartment has arrows to introduce and eliminate sum types, which are very obviously dual to
+the respective arrows involving products.
+The fifth compartment specifies a distributive law of sum types over product types.
+The final compartment
+defines arrows to introduce {\Afold} and eliminate inductive types
+{\AP}. This treatment is still 100\% first order, without higher-order
+functions.
+
+Looking at these postulated arrows, we realize that any interpretation
+of this syntax must take place in a distributive category
+\cite{cockett_1993}, which is  cartesian (part 2 and 3), cocartesian
+(part 4), and obeys the distributive law. Subsequent examples show
+that each of these requirements (including distributivity) is
+necessary to simulate standard definitions of primitive recursion. 
+Distributive categories are not uncommon. In fact, every cartesian
+closed category with coproducts is also distributive (folklore
+according to \cite{https://doi.org/10.48550/arxiv.1406.0961}).
+
+Considering the arrows dealing with inductive types, 
+in the definition of {\Afold} and {\AP}, we find that $G :$~\ATy1, a type with a
+single type variable. It will be convenient to view $G$ as a functor
+that acts on types $T:$~{\ATY} by substitution, i.e., $T \mapsto (G
+\Leftarrow T)$. 
+
+Elimination of inductive types is by primitive recursion /
+paramorphism. The arrow constructed by {\AP} maps a pair of an element
+of an inductive type and an element of another type $U$ to a result type
+$T$. The type $U$ corresponds to the non-recursion parameters in the
+traditional setting (cf.\ Section~\ref{sec:from-numbers-words}). 
+The single parameter $h$ of {\AP} unifies all subordinate
+arrows. Thanks to the rich type structure, the dispatch on different
+``term constructors'' can be internalized in the calculus. Thus, the
+input of $h$ is a pair where the top-level induction for $G$ is
+unfolded and applied to a pair of $T$, the result of the inductive
+evaluation, and \Aind~$G$, the inductive subterm.
+
+Alternatively, we can equip inductive types with the standard
+catamorphism (aka fold operator) at this type:
+\ccDataPRF
+We omit the details.
+
+To define evaluation, we first define the interpretation of types in Agda.
+\ccDataAlg
+We reuse as much structure as possible by mapping unit, product, and
+sum to the respective Agda types. We interpret all inductive types with a
+single generic inductive type \AAlg{G}, which is indexed by its generating
+functor $G$.\footnote{Technically speaking, this definition uses
+  induction recursion \cite{DBLP:journals/apal/DybjerS03}.}
+
+With this machinery in place, the definition of the evaluation
+function is straightforward.
+\ccFunEval
+The only interesting case is the one for primitive recursion. It is
+interpreted by a function taking a pair of \Aind~$G$ and some $U$. The
+first component of the argument must evaluate to some \Afold~$x$, so the $x$ corresponds
+to the constructor arguments, and the second component $u:U$ is the
+extra argument. Now we run the function $h$ essentially on
+$x :{} G \Leftarrow \Aind~G$ and $u$, but 
+after replacing recursive occurrences of the inductive type by a pair
+of the subterm and the recursive call of {\AP}~$h$ on the subterm. We
+identify the recursive occurrences by traversing $x$ according to the
+structure functor $G$ using the $\Afmap$ function below, which
+implements the action of $G$ on functions. 
+\ccFunFmap
+
+It turns out that we can map all flavors of primitive recursion from
+Section~\ref{sec:from-numbers-words} into primitive recursion in terms
+of inductive types. The main difference is that in
+Sections~\ref{sec:prim-recurs-words}-\ref{sec:prim-recurs-sort} we
+never assumed finiteness of (ranked) alphabets. To successfully map into
+inductive types, alphabets must be finite and this requirement
+matches the usual mathematical definition of alphabets.
+
+As a simple example, we define the mapping from primitive recursion on
+natural numbers into inductive types. We start with the functor $G$
+for natural numbers:
+\ccDefGNat
+
+The encoding is straightforward, but it reveals the necessity for
+distributivity. To start with, it requires an 
+encoding of vectors and vector lookup.
+\ccFunMkvec
+\ccDefNatToInd
+The encodings of the constructors apply {\Afold} to the left and right
+injection, respectively. Projection and composition are as before. For
+the encoding of primitive recursion, we need two helper arrows. One
+arrow that implements associativity of the product and another that
+implements distributivity of sum over product. While the first one is
+definable with the arrows given in the definition of {\APR n}, the
+distributivity arrow cannot be composed from the remaining arrows!
+\ccFunAssocDist
+We conclude with the remark that the language is sufficiently rich to
+express the commutative monoidal structure of product types as well as
+associativity and commutativity of the sum type (not monoidal as it
+lacks the empty type to serve as identity).
+
 
 
 \section{Frontier}
