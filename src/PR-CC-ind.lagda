@@ -126,12 +126,12 @@ _,ₛ_ : Sub m n → Ty n → Sub (suc m) n
 σ₀ : Ty n → Sub (suc n) n
 σ₀ T = idₛ ,ₛ T
 
-sub₀ : Ty 0 → Ty 1 → Ty 0
+sub₀ : Ty n → Ty (suc n) → Ty n
 sub₀ T       = sub (σ₀ T)
 
 infix 9 _⇐_
 
-_⇐_ : Ty 1 → Ty 0 → Ty 0
+_⇐_ : Ty (suc n) → Ty n → Ty n
 _⇐_ G T = sub₀ T G
 
 record Composable (T₁ T₂ T₃ : ℕ → Set)
@@ -424,11 +424,14 @@ comm-⨟-σ₀ σ T (suc x) =
 
 {-# TERMINATING #-}
 \end{code}
-\newcommand\ccFunFmap{%
+\newcommand\ccFunFmapSignature{%
 \begin{code}
 fmap : ∀ {S T : TY} (G : Ty 1)
   → (f : ⟦ S ⟧ᵀ → ⟦ T ⟧ᵀ)
   → ⟦ G ⇐ S ⟧ᵀ → ⟦ G ⇐ T ⟧ᵀ
+\end{code}}
+\newcommand\ccFunFmap{%
+\begin{code}
 fmap `𝟙       f tt       = tt
 fmap (G `× H) f (x , y)  = fmap G f x , fmap H f y
 fmap (G `+ H) f (inj₁ x) = inj₁ (fmap G f x)
@@ -436,39 +439,45 @@ fmap (G `+ H) f (inj₂ y) = inj₂ (fmap H f y)
 fmap (` zero) f v        = f v
 \end{code}
 }
-\begin{code}[hide]
-fmap {S}{T} (ind G) f (fold x) =
+\newcommand\ccFunFmapInd{
+\begin{code}
+fmap {S}{T} (ind H) f (fold x) =
   fold (subst ⟦_⟧ᵀ (eq (σ₀ T))
-        (fmap G′ f
+        (fmap H′ f
          (subst ⟦_⟧ᵀ (sym (eq (σ₀ S))) x)))
   where
-    G′ : Ty 1
-    G′ = sub (σ₀ (ind G)) G
-    eq : ∀ (τ : Sub 1 0) → sub τ G′ ≡ sub₀ (ind (sub (extˢ τ) G)) (sub (extˢ τ) G)
+    H′ : Ty 1
+    H′ = H ⇐ ind H
+    eq : ∀ (τ : Sub 1 0) → sub τ H′  ≡  sub (extˢ τ) H ⇐ ind (sub (extˢ τ) H)
+\end{code}
+}
+\begin{code}[hide]
     eq τ = begin
-       sub τ G′
-     ≡⟨ sub-sub (σ₀ (ind G)) τ G ⟩
-       sub (σ₀ (ind G) ˢ⨟ˢ τ) G
-     ≡⟨ sub~ {t = G} (comm-⨟-σ₀ τ (ind G)) ⟩
-       sub (extˢ τ ˢ⨟ˢ σ₀ (sub τ (ind G))) G
-     ≡⟨ sym (sub-sub (extˢ τ) (σ₀ (sub τ (ind G))) G) ⟩
-       sub₀ (ind (sub (extˢ τ) G)) (sub (extˢ τ) G)
+       sub τ H′
+     ≡⟨ sub-sub (σ₀ (ind H)) τ H ⟩
+       sub (σ₀ (ind H) ˢ⨟ˢ τ) H
+     ≡⟨ sub~ {t = H} (comm-⨟-σ₀ τ (ind H)) ⟩
+       sub (extˢ τ ˢ⨟ˢ σ₀ (sub τ (ind H))) H
+     ≡⟨ sym (sub-sub (extˢ τ) (σ₀ (sub τ (ind H))) H) ⟩
+       sub₀ (ind (sub (extˢ τ) H)) (sub (extˢ τ) H)
      ∎
---- needs to be recursive over `ind G`
+    -- H′ = sub (σ₀ (ind H)) H
+    -- eq : ∀ (τ : Sub 1 0) → sub τ H′ ≡ sub₀ (ind (sub (extˢ τ) H)) (sub (extˢ τ) H)
+--- needs to be recursive over `ind H`
 
 {-# TERMINATING #-}
 \end{code}
 \newcommand\ccFunEval{%
 \begin{code}
 eval : (T →ᴾ U) → ⟦ T ⟧ᵀ → ⟦ U ⟧ᵀ
-eval `⊤       = const tt
-eval id       = λ v → v
-eval (C f g)  = eval f ∘ eval g
+eval `⊤        = const tt
+eval id        = λ v → v
+eval (C f g)   = eval f ∘ eval g
 eval (`# f g) = ⟨ eval f , eval g ⟩
-eval π₁       = proj₁
-eval π₂       = proj₂
-eval ι₁       = inj₁
-eval ι₂       = inj₂
+eval π₁        = proj₁
+eval π₂        = proj₂
+eval ι₁        = inj₁
+eval ι₂        = inj₂
 eval (`case f g) = λ{ (inj₁ x) → eval f x ; (inj₂ y) → eval g y}
 eval dist-+-x = λ{ (inj₁ x , z) → inj₁ (x , z) ; (inj₂ y , z) → inj₂ (y , z)}
 eval fold     = fold
@@ -480,11 +489,11 @@ eval (F {G = G} h) = λ{ (fold x , u) → eval h ((fmap G (λ v → eval (F h) (
 \end{code}
 \newcommand\ccFunMkvec{%
 \begin{code}
-mkvec : TY → ℕ → TY
-mkvec T zero    = `𝟙
-mkvec T (suc n) = T `× mkvec T n
+vec : TY → ℕ → TY
+vec T zero    = `𝟙
+vec T (suc n) = T `× vec T n
 
-lookup : (i : Fin n) → mkvec T n →ᴾ T
+lookup : (i : Fin n) → vec T n →ᴾ T
 lookup zero    = π₁
 lookup (suc i) = C (lookup i) π₂
 \end{code}
@@ -493,13 +502,14 @@ lookup (suc i) = C (lookup i) π₂
 \begin{code}
 assoc-× : (U `× V) `× T →ᴾ U `× (V `× T)
 assoc-× = `# (C π₁ π₁) (`# (C π₂ π₁) π₂)
+
+undist-+-× : (U `× T) `+ (V `× T) →ᴾ (U `+ V) `× T
+undist-+-× = `case (`# (C ι₁ π₁) π₂) (`# (C ι₂ π₁) π₂)
 \end{code}
 }
 \begin{code}[hide]
--- postulate
---   dist-+-x : (U `+ V) `× T →ᴾ (U `× T) `+ (V `× T)
-undist-+-× : (U `× T) `+ (V `× T) →ᴾ (U `+ V) `× T
-undist-+-× = `case (`# (C ι₁ π₁) π₂) (`# (C ι₂ π₁) π₂)
+unassoc-× : U `× (V `× T) →ᴾ (U `× V) `× T
+unassoc-× = `# (`# π₁ (C π₁ π₂)) (C π₂ π₂)
 
 comm-× : U `× V →ᴾ V `× U
 comm-× = `# π₂ π₁
@@ -509,6 +519,34 @@ comm-+ = `case ι₂ ι₁
 
 assoc-+ : (U `+ V) `+ T →ᴾ U `+ (V `+ T)
 assoc-+ = `case (`case ι₁ (C ι₂ ι₁)) (C ι₂ ι₂)
+
+unassoc-+ : U `+ (V `+ T) →ᴾ (U `+ V) `+ T
+unassoc-+ = `case (C ι₁ ι₁) (`case (C ι₁ ι₂) ι₂)
+
+unit-left-× : (`𝟙 `× T) →ᴾ T
+unit-left-× = π₂
+
+unit-right-× : (T `× `𝟙) →ᴾ T
+unit-right-× = π₁
+
+unit-left-+ : (`𝟘 `+ T) →ᴾ T
+unit-left-+ = `case `⊥ id
+
+unit-right-+ : (T `+ `𝟘) →ᴾ T
+unit-right-+ = `case id `⊥
+
+𝟘→𝟙₁ :
+\end{code}
+\newcommand\ccZeroOne{
+\begin{code}[inline]
+  `𝟘 →ᴾ `𝟙
+\end{code}
+}
+\begin{code}[hide]
+𝟘→𝟙₁ = `⊤
+
+𝟘→𝟙₂ : `𝟘 →ᴾ `𝟙
+𝟘→𝟙₂ = `⊥
 
 module FromNats where
 \end{code}
@@ -545,20 +583,22 @@ module FromNats where
 \end{code}
 \newcommand\ccDefNatToInd{%
 \begin{code}
-  ⟦_⟧  : Nats.PR n → mkvec Nat n →ᴾ Nat
-  ⟦_⟧* : Vec (Nats.PR n) m → mkvec Nat n →ᴾ mkvec Nat m
+  ⟦_⟧  : Nats.PR n → vec Nat n →ᴾ Nat
+  ⟦_⟧* : Vec (Nats.PR n) m → vec Nat n →ᴾ vec Nat m
+
+  ⟦ [] ⟧*         = `⊤
+  ⟦ p ∷ p* ⟧*     = `# ⟦ p ⟧ ⟦ p* ⟧*
 
   ⟦ Nats.Z ⟧      = C fold ι₁
   ⟦ Nats.σ ⟧      = C (C fold ι₂) π₁
   ⟦ Nats.π i ⟧    = lookup i
   ⟦ Nats.C f g* ⟧ = C ⟦ f ⟧ ⟦ g* ⟧*
   ⟦ Nats.P g h ⟧  = P (C (`case (C ⟦ g ⟧ π₂) (C ⟦ h ⟧ assoc-×)) dist-+-x)
-
-  ⟦ [] ⟧*         = `⊤
-  ⟦ p ∷ p* ⟧*     = `# ⟦ p ⟧ ⟦ p* ⟧*
 \end{code}
 }
 \begin{code}[hide]
+  ⟦ Nats.F g h ⟧  = F (C (`case (C ⟦ g ⟧ π₂) ⟦ h ⟧) dist-+-x)
+
 module FromWords where
   Alpha : Ty 0
   Alpha = `𝟙 `+ `𝟙
@@ -574,8 +614,8 @@ module FromWords where
 
   import PR-Words as Words
 
-  ⟦_⟧  : Words.PR ⟦ Alpha ⟧ᵀ n → mkvec Alpha* n →ᴾ Alpha*
-  ⟦_⟧* : Vec (Words.PR ⟦ Alpha ⟧ᵀ n) m → mkvec Alpha* n →ᴾ mkvec Alpha* m
+  ⟦_⟧  : Words.PR ⟦ Alpha ⟧ᵀ n → vec Alpha* n →ᴾ Alpha*
+  ⟦_⟧* : Vec (Words.PR ⟦ Alpha ⟧ᵀ n) m → vec Alpha* n →ᴾ vec Alpha* m
 
   ⟦ Words.Z ⟧ = C (C fold ι₁) `⊤
   ⟦ Words.σ a ⟧ = C (C fold (C ι₂ (`# (C ⟦ a ⟧ᴬ `⊤) id))) π₁
@@ -626,8 +666,8 @@ module FromTrees where
   R-Btree : Trees.Ranked
   R-Btree = Trees.mkRanked (rank G-Btree-polynomial)
 
-  ⟦_⟧  : Trees.PR R-Btree n → mkvec Btree n →ᴾ Btree
-  ⟦_⟧* : Vec (Trees.PR R-Btree n) m → mkvec Btree n →ᴾ mkvec Btree m
+  ⟦_⟧  : Trees.PR R-Btree n → vec Btree n →ᴾ Btree
+  ⟦_⟧* : Vec (Trees.PR R-Btree n) m → vec Btree n →ᴾ vec Btree m
 
   ⟦ Trees.σ (inj₁ tt) ⟧ = C fold ι₁
   ⟦ Trees.σ (inj₂ (tt , tt)) ⟧ = C fold (C ι₂ (`# π₁ (C π₁ π₂)))

@@ -31,6 +31,10 @@ data PR : ℕ → Set where
 \end{code}
 }
 \begin{code}[hide]
+  F : (g : PR n)                -- fold over nat
+    → (h : PR (suc n))
+    → PR (suc n)
+
 para : (Vec ℕ n → ℕ) → (Vec ℕ (suc (suc n)) → ℕ) → (Vec ℕ (suc n) → ℕ)
 para g h (zero ∷ v*) = g v*
 para g h (suc x ∷ v*) = h (para g h (x ∷ v*) ∷ x ∷ v*)
@@ -40,18 +44,21 @@ para g h (suc x ∷ v*) = h (para g h (x ∷ v*) ∷ x ∷ v*)
 eval  : PR n → (Vec ℕ n → ℕ)
 eval* : Vec (PR n) m → Vec ℕ n → Vec ℕ m
 
+eval* []       v*          = []
+eval* (p ∷ p*) v*          = eval p v*  ∷ eval* p* v*
+
 eval Z        []           = 0
 eval σ        [ x ]        = suc x
 eval (π i)    v*           = lookup v* i
 eval (C f g*) v*           = eval f (eval* g* v*)
 eval (P g h)  (zero ∷ v*)  = eval g v*
 eval (P g h)  (suc x ∷ v*) = eval h ((eval (P g h) (x ∷ v*)) ∷ (x ∷ v*))
-
-eval* []       v*          = []
-eval* (p ∷ p*) v*          = eval p v*  ∷ eval* p* v*
 \end{code}
 }
 \begin{code}[hide]
+eval (F g h)  (zero ∷ v*)  = eval g v*
+eval (F g h)  (suc x ∷ v*) = eval h ((eval (F g h) (x ∷ v*)) ∷ v*)
+
 eval*≡map-eval : ∀ (p* : Vec (PR n) m) (v* : Vec ℕ n) → eval* p* v* ≡ map (λ p → eval p v*) p*
 eval*≡map-eval [] v* = refl
 eval*≡map-eval (p ∷ p*) v* rewrite eval*≡map-eval p* v* = refl

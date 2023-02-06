@@ -6,7 +6,7 @@ TARGET_FILES= $(addprefix $(PREFIX)/, $(addsuffix .tex, $(TARGET_MODULES)))
 .PHONY: all all_files
 
 all: all_files
-	pdflatex jfpmain
+	pdflatex lipics-main
 
 all_files: $(TARGET_FILES)
 	@echo $(PATH)

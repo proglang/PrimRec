@@ -169,7 +169,7 @@ repository.\footnote{\url{https://github.com/proglang/PrimRec/}
 
 \section{Primitive recursion on natural numbers}
 \label{sec:prim-recurs-natur}
-\input{latex/PR-Nat}
+\input{latex/PR-Nat.tex}
 
 Here is a typical textbook definition~\cite{martin2019logik,wiki:Primitive_recursive_function}:
 
@@ -273,10 +273,15 @@ the definition that we adopt here.
 This section introduces PR1-IND, the first order language with inductive
 types. The modeling of inductive
 types is inspired Harper's textbook \cite{DBLP:books/cu/Ha2016}, but
-with two changes. First, Harper's definition is set in a conventional syntax,
+with two changes. First, Harper's definition is set in the
+conventional syntax of simply-typed lambda calculus with a
+fold-operator for inductive types,
 whereas ours comes in pointfree style. Second, his definition builds
 on polynomial type operators, which we generalize to polynomial
 inductive type operators.
+
+\subsection{Types}
+\label{sec:types}
 
 We start with defining the type language.
 \ccDataTy
@@ -290,32 +295,42 @@ is a sum, product, or inductive type between the binding and the use
 of a type variable. Types with free variables are sometimes called
 \emph{pretypes}. We use $\ATY$ for closed types.
 
+\subsection{Syntax}
+\label{sec:syntax}
+
 To define primitive recursion on this type structure in pointfree
 style, we have to extend our vocabulary compared to previous attempts.
 \ccDataPR
 The first compartment defines two families of arrows concerned with categorical structure: the identity arrow at all
 types, and type-respecting composition of arrows.
-The second compartment names the unique arrow from any type into the
-terminal object (the unit type) as well as the unique arrow from the
-initial object (the empty type) to any type. 
+The second compartment provides arrows from any type into the
+terminal object (to introduce the unit type) as well as arrows from the
+initial object to any type (to eliminate the empty type). 
 The third compartment has arrows to introduce and eliminate product types.
 The fourth compartment has arrows to introduce and eliminate sum types, which are very obviously dual to
 the respective arrows involving products.
 The fifth compartment specifies a distributive law of sum types over product types.
 The final compartment
 defines arrows to introduce {\Afold} and eliminate inductive types
-{\AP}. This treatment is still 100\% first order, without higher-order
-functions.
+{\AP}, where the latter relies on primitive recursion. This treatment
+is fully first order, without higher-order functions.
 
 Looking at these postulated arrows, we realize that any interpretation
 of this syntax must take place in a distributive category
-\cite{cockett_1993}, which is  cartesian (part 2 and 3), cocartesian
-(part 4), and obeys the distributive law. Subsequent examples show
+\cite{cockett_1993}, which is  cartesian (part~2 and~3), cocartesian
+(part~2 and~4), and obeys the distributive law. Subsequent examples show
 that each of these requirements (including distributivity) is
 necessary to simulate standard definitions of primitive recursion. 
 Distributive categories are not uncommon. In fact, every cartesian
 closed category with coproducts is also distributive (folklore
 according to \cite{https://doi.org/10.48550/arxiv.1406.0961}).
+
+While the syntax is inspired by category theory, it cannot fully
+implement it. For example, in a cartesian category, there is a unique
+arrow from any object to the terminal object. In the syntax, this arrow
+can have many names, which are all equated by the semantics. In
+particular, we can write $`\bot$ as well as $`\top$ for the unique arrow
+of type {\ccZeroOne}.
 
 Considering the arrows dealing with inductive types, 
 in the definition of {\Afold} and {\AP}, we find that $G :$~\ATy1, a type with a
@@ -327,11 +342,11 @@ Elimination of inductive types is by primitive recursion /
 paramorphism. The arrow constructed by {\AP} maps a pair of an element
 of an inductive type and an element of another type $U$ to a result type
 $T$. The type $U$ corresponds to the non-recursion parameters in the
-traditional setting (cf.\ Section~\ref{sec:from-numbers-words}). 
+traditional setting (cf.\ Section~\ref{sec:prim-recurs-natur}). 
 The single parameter $h$ of {\AP} unifies all subordinate
 arrows. Thanks to the rich type structure, the dispatch on different
 ``term constructors'' can be internalized in the calculus. Thus, the
-input of $h$ is a pair where the top-level induction for $G$ is
+input of $h$ is a pair where the top-level induction for $\Aind\ G$ is
 unfolded and applied to a pair of $T$, the result of the inductive
 evaluation, and \Aind~$G$, the inductive subterm.
 
@@ -340,16 +355,20 @@ catamorphism (aka fold operator) at this type:
 \ccDataPRF
 We omit the details.
 
+\subsection{Semantics}
+\label{sec:semantics}
+
+
 To define evaluation, we first define the interpretation of types in Agda.
 \ccDataAlg
-We reuse as much structure as possible by mapping unit, product, and
+We reuse as much structure as possible by mapping the empty type, unit, product, and
 sum to the respective Agda types. We interpret all inductive types with a
 single generic inductive type \AAlg{G}, which is indexed by its generating
 functor $G$.\footnote{Technically speaking, this definition uses
   induction recursion \cite{DBLP:journals/apal/DybjerS03}.}
 
 With this machinery in place, the definition of the evaluation
-function is straightforward.
+function is straightforward. Almost.
 \ccFunEval
 The only interesting case is the one for primitive recursion. It is
 interpreted by a function taking a pair of \Aind~$G$ and some $U$. The
@@ -362,38 +381,84 @@ of the subterm and the recursive call of {\AP}~$h$ on the subterm. We
 identify the recursive occurrences by traversing $x$ according to the
 structure functor $G$ using the $\Afmap$ function below, which
 implements the action of $G$ on functions. 
+\ccFunFmapSignature
 \ccFunFmap
 
-It turns out that we can map all flavors of primitive recursion from
-Section~\ref{sec:from-numbers-words} into primitive recursion in terms
-of inductive types. The main difference is that in
-Sections~\ref{sec:prim-recurs-words}-\ref{sec:prim-recurs-sort} we
-never assumed finiteness of (ranked) alphabets. To successfully map into
-inductive types, alphabets must be finite and this requirement
-matches the usual mathematical definition of alphabets.
-
+It turns out that we can map all flavors of primitive recursion (on
+natural numbers, words, terms, \dots) into primitive recursion in terms
+of inductive types.
+% The main difference is that in
+% Sections~\ref{sec:prim-recurs-words}-\ref{sec:prim-recurs-sort} we
+% never assumed finiteness of (ranked) alphabets. To successfully map into
+% inductive types, alphabets must be finite and this requirement
+% matches the usual mathematical definition of alphabets.
 As a simple example, we define the mapping from primitive recursion on
-natural numbers into inductive types. We start with the functor $G$
-for natural numbers:
+natural numbers into inductive types.\footnote{For further examples
+  (words, trees, \dots)
+  see the repository \url{https://github.com/proglang/PrimRec/}.} We
+start with the functor {\AGNat} for natural numbers:
 \ccDefGNat
 
 The encoding is straightforward, but it reveals the necessity for
-distributivity. To start with, it requires an 
-encoding of vectors and vector lookup.
+distributivity. First, we need an 
+encoding of vectors and vector lookup. Vectors are encoded as nested
+tuples, as usual, hence vector lookup compiles to a composition of
+binary projections.
 \ccFunMkvec
 \ccDefNatToInd
-The encodings of the constructors apply {\Afold} to the left and right
-injection, respectively. Projection and composition are as before. For
+The encodings of the constructors {\ACZ} and {\ACS} compose {\Afold} with the left and right
+injection, respectively. Projection is implemented by vector lookup
+and composition by composition. For
 the encoding of primitive recursion, we need two helper arrows. One
 arrow that implements associativity of the product and another that
 implements distributivity of sum over product. While the first one is
-definable with the arrows given in the definition of {\APR n}, the
-distributivity arrow cannot be composed from the remaining arrows!
+definable by composing introduction and elimination arrows for
+products,  the distributivity arrow cannot be composed from the
+remaining arrows and thus must be postulated as an axiom in the
+definition of {\APR n}. Its inverse is easily definable.
 \ccFunAssocDist
+The requirement for distributivity is not an artifact of our
+insistence on primitive recursion (paramorphism) as an eliminator for
+natural numbers. Distributivity is already needed to encode a plain
+catamorphism on natural numbers in PR1-IND.
+
 We conclude with the remark that the language is sufficiently rich to
-express the commutative monoidal structure of product types as well as
-associativity and commutativity of the sum type (not monoidal as it
-lacks the empty type to serve as identity).
+express the commutative monoidal structure of sum and product types.
+
+\subsection{A closer look at fmap}
+\label{sec:closer-look-at}
+
+A second look at the definition of the {\Afmap} function reveals that
+two cases are missing. The first one, for type {\ATZ} can be omitted
+because its domain is empty. The second case, however, deals with
+nested inductive types and is defined as follows:
+\ccFunFmapSignature
+\ccFunFmapInd
+As we are mapping $f$ over the functor $G : \ATy{~1}$, we find an
+inductive component $\Aind~H$ with $H : \ATy{~2}$. Hence, the argument
+must have the form $\Afold\ x$, for some $x : \Aind~H \Leftarrow S$.
+Our strategy is to unfold $H$ at this point to obtain another functor
+$H'$ of type $\ATy{~1}$. The remaining free variable in $H'$
+corresponds to the variable of the outer inductive type. Hence,
+morally $\Afold~ (\Afmap~H'~f~x)$ should do the job. Unfortunately,
+the types do not work out as $\Afmap~H'~f$ expects an argument of type
+$(\Aind~H \Leftarrow H) \Leftarrow S$. So we have to supply a proof,
+\Aeq, that these types are indeed equal.
+We omit this proof, as it is highly technical and makes non-trivial
+use of properties of the composition of substitutions.
+The proof works for any closing substitution $\tau$ that maps the
+single free variable to a closed type. What {$\Aeq~\tau$} says is 
+that substituting $\tau$ into the unfolded type $H'$ is the same as
+first substituting $\Aext^S\ \tau$, the extension of $\tau$, into
+$H$ and then unfolding. The type of $\Aext^S\ \tau$ is $\ASub~2~1$ and
+it substitutes $\tau$ for the inner type variable of $H$ (the one that
+corresponds to the outer inductive type). 
+
+The {\Aeq} lemma is instantiated on the argument side with $\sigma_0~S$ and on the result
+side with $\sigma_0~T$. The latter is necessary, because we also need
+to adjust the return type of the {\Afmap} from $(\Aind~H \Leftarrow H)
+\Leftarrow T$ to $\Aind~H \Leftarrow T$. 
+
 
 
 
