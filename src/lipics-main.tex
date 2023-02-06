@@ -438,29 +438,33 @@ As we are mapping $f$ over the functor $G : \ATy{~1}$, we find an
 inductive component $\Aind~H$ with $H : \ATy{~2}$. Hence, the argument
 must have the form $\Afold\ x$, for some $x : \Aind~H \Leftarrow S$.
 Our strategy is to unfold $H$ at this point to obtain another functor
-$H'$ of type $\ATy{~1}$. The remaining free variable in $H'$
+$H' = \Aind~H \Leftarrow H$ of type $\ATy{~1}$. The remaining free variable in $H'$
 corresponds to the variable of the outer inductive type. Hence,
 morally $\Afold~ (\Afmap~H'~f~x)$ should do the job. Unfortunately,
 the types do not work out as $\Afmap~H'~f$ expects an argument of type
 $(\Aind~H \Leftarrow H) \Leftarrow S$. So we have to supply a proof,
-\Aeq, that these types are indeed equal.
-We omit this proof, as it is highly technical and makes non-trivial
+produced by the lemma \Aeq, that these types are indeed equal.
+\ccEqUnfold
+We omit this proof, as it is technical and makes non-trivial
 use of properties of the composition of substitutions.
 The proof works for any closing substitution $\tau$ that maps the
-single free variable to a closed type. What {$\Aeq~\tau$} says is 
+single free variable to a closed type. What {$\Aeq~\tau~H$} says is 
 that substituting $\tau$ into the unfolded type $H'$ is the same as
 first substituting $\Aext^S\ \tau$, the extension of $\tau$, into
 $H$ and then unfolding. The type of $\Aext^S\ \tau$ is $\ASub~2~1$ and
 it substitutes $\tau$ for the inner type variable of $H$ (the one that
 corresponds to the outer inductive type). 
 
-The {\Aeq} lemma is instantiated on the argument side with $\sigma_0~S$ and on the result
-side with $\sigma_0~T$. The latter is necessary, because we also need
+The {\Aeq} lemma is instantiated on the argument side (first rewrite) with $\sigma_0~S$ and on the result
+side (second rewrite) with $\sigma_0~T$. The latter is necessary, because we also need
 to adjust the return type of the {\Afmap} from $(\Aind~H \Leftarrow H)
 \Leftarrow T$ to $\Aind~H \Leftarrow T$. 
 
 
+\section{Primitive recursion in space}
+\label{sec:prim-recurs-space}
 
+In this section, we add function types to the mix
 
 \section{Frontier}
 

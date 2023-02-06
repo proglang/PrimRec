@@ -421,8 +421,24 @@ comm-⨟-σ₀ σ T (suc x) =
   ≡⟨⟩
     (extˢ σ ˢ⨟ˢ σ₀ (sub σ T)) (suc x)
   ∎
+\end{code}
+\newcommand\ccEqUnfold{
+\begin{code}
+eq-unfold : ∀ (τ : Sub 1 0) (H : Ty 2)
+  → sub τ (H ⇐ ind H)  ≡  sub (extˢ τ) H ⇐ ind (sub (extˢ τ) H)
+\end{code}
+}
+\begin{code}[hide]
+eq-unfold τ H = begin
+   sub τ (H ⇐ ind H)
+ ≡⟨ sub-sub (σ₀ (ind H)) τ H ⟩
+   sub (σ₀ (ind H) ˢ⨟ˢ τ) H
+ ≡⟨ sub~ {t = H} (comm-⨟-σ₀ τ (ind H)) ⟩
+   sub (extˢ τ ˢ⨟ˢ σ₀ (sub τ (ind H))) H
+ ≡⟨ sym (sub-sub (extˢ τ) (σ₀ (sub τ (ind H))) H) ⟩
+   sub₀ (ind (sub (extˢ τ) H)) (sub (extˢ τ) H)
+ ∎
 
-{-# TERMINATING #-}
 \end{code}
 \newcommand\ccFunFmapSignature{%
 \begin{code}
@@ -441,30 +457,15 @@ fmap (` zero) f v        = f v
 }
 \newcommand\ccFunFmapInd{
 \begin{code}
-fmap {S}{T} (ind H) f (fold x) =
-  fold (subst ⟦_⟧ᵀ (eq (σ₀ T))
-        (fmap H′ f
-         (subst ⟦_⟧ᵀ (sym (eq (σ₀ S))) x)))
-  where
-    H′ : Ty 1
-    H′ = H ⇐ ind H
-    eq : ∀ (τ : Sub 1 0) → sub τ H′  ≡  sub (extˢ τ) H ⇐ ind (sub (extˢ τ) H)
+fmap {S}{T} (ind H) f (fold x)
+  rewrite sym (eq-unfold (σ₀ S) H)
+  with fmap (H ⇐ ind H) f x
+... | ih
+  rewrite eq-unfold (σ₀ T) H =
+  fold ih
 \end{code}
 }
 \begin{code}[hide]
-    eq τ = begin
-       sub τ H′
-     ≡⟨ sub-sub (σ₀ (ind H)) τ H ⟩
-       sub (σ₀ (ind H) ˢ⨟ˢ τ) H
-     ≡⟨ sub~ {t = H} (comm-⨟-σ₀ τ (ind H)) ⟩
-       sub (extˢ τ ˢ⨟ˢ σ₀ (sub τ (ind H))) H
-     ≡⟨ sym (sub-sub (extˢ τ) (σ₀ (sub τ (ind H))) H) ⟩
-       sub₀ (ind (sub (extˢ τ) H)) (sub (extˢ τ) H)
-     ∎
-    -- H′ = sub (σ₀ (ind H)) H
-    -- eq : ∀ (τ : Sub 1 0) → sub τ H′ ≡ sub₀ (ind (sub (extˢ τ) H)) (sub (extˢ τ) H)
---- needs to be recursive over `ind H`
-
 {-# TERMINATING #-}
 \end{code}
 \newcommand\ccFunEval{%
