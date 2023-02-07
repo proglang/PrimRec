@@ -25,8 +25,7 @@ infix 7 _`×_
 infix 8 _`+_
 infix 9 _`⇒_
 \end{code}
-\newcommand\cccDataTy{%
-\begin{code}
+\begin{code}[hide]
 Ctx = ℕ
 
 ∅ : Ctx
@@ -45,16 +44,20 @@ variable
   Γ : Ctx
   Δ : Ctx
   Θ : Ctx
-
-data Ty Δ : Set where
-  `𝟘 `𝟙   : Ty Δ
-  _`×_ : Ty Δ → Ty Δ → Ty Δ
-  _`+_ : Ty Δ → Ty Δ → Ty Δ
-  _`⇒_ : Ty ∅ → Ty Δ → Ty Δ
-  `    : Var Δ → Ty Δ
-  ind  : Ty (Δ ⁺) → Ty Δ
-
-TY = Ty ∅
+\end{code}
+\newcommand\cccDataTy{%
+\begin{code}
+data Ty n : Set where
+  `𝟘 `𝟙   : Ty n
+  _`×_ : Ty n → Ty n → Ty n
+  _`+_ : Ty n → Ty n → Ty n
+  _`⇒_ : Ty 0 → Ty n → Ty n
+  `    : Var n → Ty n
+  ind  : Ty (suc n) → Ty n
+\end{code}
+}
+\begin{code}[hide]
+TY = Ty 0
 
 _⊢_⇒_ : Structure → Ctx → Ctx → Set
 _⊢_⇒_ Trm Γ Δ = Var Γ → Trm Δ
@@ -361,10 +364,13 @@ data Alg G : Set where
 ⟦ `𝟙 ⟧ᵀ     = ⊤
 ⟦ T `× U ⟧ᵀ = ⟦ T ⟧ᵀ × ⟦ U ⟧ᵀ
 ⟦ T `+ U ⟧ᵀ = ⟦ T ⟧ᵀ ⊎ ⟦ U ⟧ᵀ
-⟦ T `⇒ U ⟧ᵀ = ⟦ T ⟧ᵀ → ⟦ U ⟧ᵀ
 ⟦ ind G ⟧ᵀ  = Alg G
 \end{code}
 }
+\newcommand\cccDataAlgArrow{%
+\begin{code}
+⟦ T `⇒ U ⟧ᵀ = ⟦ T ⟧ᵀ → ⟦ U ⟧ᵀ
+\end{code}}
 \begin{code}[hide]
 
 -- Extensional Function Equality (Homotopies)
@@ -464,6 +470,7 @@ fmap {S}{T} (ind G) f (fold x) =
 --- needs to be recursive over `ind G`
 \end{code}
 %% syntax of higher-order PR
+\newcommand\cccPRIND{%
 \begin{code}
 data _→ᴾ_ : TY → TY → Set where
   id : T →ᴾ T
@@ -480,15 +487,13 @@ data _→ᴾ_ : TY → TY → Set where
   ι₂ : V →ᴾ U `+ V
   `case : (f : U →ᴾ T) → (g : V →ᴾ T) → U `+ V →ᴾ T
   --
-  -- dist-+-x : (U `+ V) `× T →ᴾ (U `× T) `+ (V `× T)
-  --
   lam   : (U `× V) →ᴾ T → U →ᴾ V `⇒ T
   apply : T `⇒ U `× T →ᴾ U
   --
   fold : (G ⇐ ind G) →ᴾ ind G
   P : (h : (G ⇐ (T `× ind G)) `× U →ᴾ T) → (ind G `× U →ᴾ T)
-\end{code}
-\begin{code}
+\end{code}}
+\begin{code}[hide]
   F : (h : (G ⇐ T) `× U →ᴾ T) → (ind G `× U →ᴾ T)
 
 infix 6 _➙_
@@ -517,16 +522,21 @@ eval fold     = fold
 eval (P {G = G} h) = λ{ (fold x , u) → eval h ((fmap G (λ v → (eval (P h) (v , u)) , v) x) , u)}
 \end{code}
 }
+\newcommand\cccEvalExponential{%
+\begin{code}
+eval (lam f)  = λ x y → eval f (x , y)
+eval apply    = λ{ (f , x) → f x }
+\end{code}}
 \begin{code}[hide]
 eval (F {G = G} h) = λ{ (fold x , u) → eval h ((fmap G (λ v → eval (F h) (v , u)) x) , u) }
 \end{code}
-\newcommand\cccFunMkvec{%
+\newcommand\cccFunVec{%
 \begin{code}
-mkvec : TY → ℕ → TY
-mkvec T zero    = `𝟙
-mkvec T (suc n) = T `× mkvec T n
+vec : TY → ℕ → TY
+vec T zero    = `𝟙
+vec T (suc n) = T `× vec T n
 
-lookup : (i : Fin n) → mkvec T n ➙ T
+lookup : (i : Fin n) → vec T n ➙ T
 lookup zero    = π₁
 lookup (suc i) = C (lookup i) π₂
 \end{code}
@@ -553,16 +563,29 @@ exp-1 = apply
 
 exp-2 : (V `⇒ (U `⇒ T)) `× (U `× V) ➙ T
 exp-2 = C apply (C (C (map-× apply id) unassoc-×) (map-× id comm-×))
-
+\end{code}
+\newcommand\cccThetaDist{%
+\begin{code}
 theta : U ➙ V `⇒ T → U `× V ➙ T
 theta g = C apply (map-× g id)
 
+dist-+-x : (U `+ V) `× T ➙ (U `× T) `+ (V `× T)
+dist-+-x = theta (`case (lam ι₁) (lam ι₂))
+\end{code}}
+\begin{code}
 -- the exponential transpose is just lambda
 tr : ∀ {A B C} → (A `× B) ➙ C → A ➙ B `⇒ C
 tr r = lam r
 
 transpose-lam : ∀ f → eval (theta{U}{V}{T} (lam f)) ≡ eval f
 transpose-lam f = refl
+\end{code}
+\newcommand\cccExpComm{%
+\begin{code}
+exponential-commute : ∀ (f : (U `× V) ➙ T) → eval f ≡ eval (C apply (map-× (lam f) id))
+\end{code}}
+\begin{code}[hide]
+exponential-commute f = refl
 
 alpha : ∀ {A B C} → ((B `× C) `⇒ A) `× C ➙ B `⇒ A
 alpha = lam (C apply (C (map-× id comm-×) assoc-×))
@@ -576,19 +599,19 @@ exp-×-2 = lam (C (C (C apply (map-× apply id)) unassoc-×) (map-× id comm-×)
 exp-×-id : eval (C (exp-×-1{U}{V}{T}) exp-×-2) ≡ eval id
 exp-×-id = refl
 
-eval-dist-+-× : ⟦ (U `+ V) `× T ⟧ᵀ → ⟦ (U `× T) `+ (V `× T) ⟧ᵀ
-eval-dist-+-× = λ{ (inj₁ x , z) → inj₁ (x , z) ; (inj₂ y , z) → inj₂ (y , z)}
-
-dist-+-x : (U `+ V) `× T ➙ (U `× T) `+ (V `× T)
-dist-+-x = theta (`case (lam ι₁) (lam ι₂))
-
 undist-+-× : (U `× T) `+ (V `× T) ➙ (U `+ V) `× T
 undist-+-× = `case (`# (C ι₁ π₁) π₂) (`# (C ι₂ π₁) π₂)
+\end{code}
+\newcommand\cccEvalDistEqual{%
+\begin{code}
+eval-dist-+-× : ⟦ (U `+ V) `× T ⟧ᵀ → ⟦ (U `× T) `+ (V `× T) ⟧ᵀ
+eval-dist-+-× = λ{ (inj₁ x , z) → inj₁ (x , z) ; (inj₂ y , z) → inj₂ (y , z)}
 
 dist-dist′ : ∀ {U V T} → ∀ x → eval (dist-+-x{U}{V}{T}) x ≡ eval-dist-+-× x
 dist-dist′ (inj₁ x , z) = refl
 dist-dist′ (inj₂ y , z) = refl
-
+\end{code}}
+\begin{code}[hide]
 dist-undist : ∀ {U V T} → ∀ x → eval (C (dist-+-x{U}{V}{T}) undist-+-×) x ≡ eval id x
 dist-undist (inj₁ x) = refl
 dist-undist (inj₂ y) = refl
@@ -638,8 +661,8 @@ module FromNats where
 \end{code}
 \newcommand\cccDefNatToInd{%
 \begin{code}
-  ⟦_⟧  : Nats.PR n → mkvec Nat n ➙ Nat
-  ⟦_⟧* : Vec (Nats.PR n) m → mkvec Nat n ➙ mkvec Nat m
+  ⟦_⟧  : Nats.PR n → vec Nat n ➙ Nat
+  ⟦_⟧* : Vec (Nats.PR n) m → vec Nat n ➙ vec Nat m
 
   ⟦ Nats.Z ⟧      = C fold ι₁
   ⟦ Nats.σ ⟧      = C (C fold ι₂) π₁
@@ -667,8 +690,8 @@ module FromWords where
 
   import PR-Words as Words
 
-  ⟦_⟧  : Words.PR ⟦ Alpha ⟧ᵀ n → mkvec Alpha* n ➙ Alpha*
-  ⟦_⟧* : Vec (Words.PR ⟦ Alpha ⟧ᵀ n) m → mkvec Alpha* n ➙ mkvec Alpha* m
+  ⟦_⟧  : Words.PR ⟦ Alpha ⟧ᵀ n → vec Alpha* n ➙ Alpha*
+  ⟦_⟧* : Vec (Words.PR ⟦ Alpha ⟧ᵀ n) m → vec Alpha* n ➙ vec Alpha* m
 
   ⟦ Words.Z ⟧ = C (C fold ι₁) `⊤
   ⟦ Words.σ a ⟧ = C (C fold (C ι₂ (`# (C ⟦ a ⟧ᴬ `⊤) id))) π₁
@@ -719,8 +742,8 @@ module FromTrees where
   R-Btree : Trees.Ranked
   R-Btree = Trees.mkRanked (rank G-Btree-polynomial)
 
-  ⟦_⟧  : Trees.PR R-Btree n → mkvec Btree n ➙ Btree
-  ⟦_⟧* : Vec (Trees.PR R-Btree n) m → mkvec Btree n ➙ mkvec Btree m
+  ⟦_⟧  : Trees.PR R-Btree n → vec Btree n ➙ Btree
+  ⟦_⟧* : Vec (Trees.PR R-Btree n) m → vec Btree n ➙ vec Btree m
 
   ⟦ Trees.σ (inj₁ tt) ⟧ = C fold ι₁
   ⟦ Trees.σ (inj₂ (tt , tt)) ⟧ = C fold (C ι₂ (`# π₁ (C π₁ π₂)))

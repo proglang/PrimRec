@@ -17,7 +17,7 @@
 %\graphicspath{{./graphics/}}%helpful if your graphic files are in another directory
 
 \usepackage{stmaryrd}
-\usepackage{latex/agda}
+\usepackage{agda}
 
 
 
@@ -252,7 +252,7 @@ It is a good exercise to remind ourselves that the standard arithmetic
 functions are pr defineable and correspond to their definitions in
 Agda. Here is the easy case for addition; the online supplement
 considers further operations. 
-\input{latex/PR-Nat-Example}
+\input{latex/PR-Nat-Example.tex}
 \PRNatExampleAdd
 The function \AgdaFunction{addP} is defined by primitive recursion, which
 decomposes the first argument. The $g$-function is just the identity;
@@ -268,7 +268,7 @@ the definition that we adopt here.
 
 \section{Primitive recursion for inductive types}
 \label{sec:prim-recurs-gener}
-\input{latex/PR-CC-ind}
+\input{latex/PR-CC-ind.tex}
 
 This section introduces PR1-IND, the first order language with inductive
 types. The modeling of inductive
@@ -382,6 +382,7 @@ identify the recursive occurrences by traversing $x$ according to the
 structure functor $G$ using the $\Afmap$ function below, which
 implements the action of $G$ on functions. 
 \ccFunFmapSignature
+\vspace{-1.5\baselineskip}
 \ccFunFmap
 
 It turns out that we can map all flavors of primitive recursion (on
@@ -425,14 +426,15 @@ catamorphism on natural numbers in PR1-IND.
 We conclude with the remark that the language is sufficiently rich to
 express the commutative monoidal structure of sum and product types.
 
-\subsection{A closer look at fmap}
+\subsection{Nested inductive types}
 \label{sec:closer-look-at}
 
 A second look at the definition of the {\Afmap} function reveals that
 two cases are missing. The first one, for type {\ATZ} can be omitted
 because its domain is empty. The second case, however, deals with
-nested inductive types and is defined as follows:
+nested inductive types, where functor $G$ has the form $\Aind~H$, defined as follows:
 \ccFunFmapSignature
+\vspace{-1.5\baselineskip}
 \ccFunFmapInd
 As we are mapping $f$ over the functor $G : \ATy{~1}$, we find an
 inductive component $\Aind~H$ with $H : \ATy{~2}$. Hence, the argument
@@ -455,7 +457,8 @@ $H$ and then unfolding. The type of $\Aext^S\ \tau$ is $\ASub~2~1$ and
 it substitutes $\tau$ for the inner type variable of $H$ (the one that
 corresponds to the outer inductive type). 
 
-The {\Aeq} lemma is instantiated on the argument side (first rewrite) with $\sigma_0~S$ and on the result
+The {\Aeq} lemma is instantiated on the argument side (first rewrite,
+applied backwards due to \Asym) with $\sigma_0~S$ and on the result
 side (second rewrite) with $\sigma_0~T$. The latter is necessary, because we also need
 to adjust the return type of the {\Afmap} from $(\Aind~H \Leftarrow H)
 \Leftarrow T$ to $\Aind~H \Leftarrow T$. 
@@ -463,39 +466,45 @@ to adjust the return type of the {\Afmap} from $(\Aind~H \Leftarrow H)
 
 \section{Primitive recursion in space}
 \label{sec:prim-recurs-space}
+\input{latex/PR-CCC-ind.tex}
 
-In this section, we add function types to the mix
+In this section, we add function types to the mix. As we have to avoid
+free inductive variables in negative positions (i.e., on the left of a
+function type), we simply require that argument types are closed.
+\cccDataTy
 
-\section{Frontier}
+The interpretation of types is defined just like in
+Section~\ref{sec:semantics}, with a single extra case for the function type:
+\cccDataAlgArrow
+Adding this case makes the type definition of the inductive type
+${\AAlg{G}}$ (apparently) not strictly positive. However, the
+inductive definition of the type is properly stratified as there are
+no recursive references in the argument part of the function type (as
+it is closed).
 
+We modify the syntax of PR1-IND to PR-IND as follows:
+\cccPRIND
+We add the families of arrows {\Alam} and {\Aapply} that characterize
+exponential objects in categories: {\Aapply} is evaluation and {\Alam}
+is the unique arrow that gives rise to the commutative diagram
+\cccExpComm
 
+Notably, the distributivity axiom can be omitted as distributivity is
+definable in a bicartesian closed category:
+\cccThetaDist
+It is straightforward to prove its equivalence with the semantics of
+distributivity from Section~\ref{sec:semantics}, which allows us to conclude
+the folklore theorem \cite{https://doi.org/10.48550/arxiv.1406.0961}
+for the category of Agda types. 
+\cccEvalDistEqual
 
-, it is less well known that primitive recursive
-functions generalize in several dimensions. One dimension generalizes
-to words, terms, and many-sorted algebras. Another dimension
-generalizes to vector-valued functions aka LOOP-computable
-functions. Both of these dimensions are 
-subsumed by first-order primitive recursive functions on inductive
-types in a bicartesion category (PR1-IND). 
-A third dimension adds higher-order functions to obtain System-T from
-primitive recursion on natural numbers; analogous systems for
-words, terms, and many-sorted algebras are conceivable. At this point, we can subsume
-all previous systems in a simply-typed lambda calculus with
-inductive types and a primitive recursor (PR-IND). This calculus is
-situated in a bicartesian closed category.
+For completeness, we remark that the definition of the semantics is
+unremarkable. We only show the new cases.
+\cccEvalExponential
+We also have to extend {\Afmap} in the obvious way.
 
-We exhibit executable definitions in Agda of several classes of primitive
-recursive functions in pointfree style and give embeddings from each
-class into the next more general class. We particularly emphasize
-PR1-IND and PR-IND.
-While the first-order language PR1-IND requires a distributivity axiom
-(i.e., the underlying category is distributive), this axiom is no
-longer required in PR-IND, because its underlying category has
-exponentials.
-This finding corresponds to a folklore theorem that every bicartesian
-closed category is distributive and we give an elementary proof of
-that theorem.
-All definitions, embeddings, and proofs are given in Agda.
+\section{Conclusion}
+\label{sec:conclusion}
 
 
 %%
