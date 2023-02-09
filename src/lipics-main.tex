@@ -88,15 +88,15 @@
   typed lambda calculi.
 
   We present two pointfree languages that generalize primitive
-  recursion on natural numbers. PR1-IND defines
+  recursion on natural numbers. PR-FO defines
   first-order primitive recursive functions on inductive types in a
   distributive
-  category. PR-IND extends PR1-IND to higher-order functions in a
+  category. PR-HO extends PR-FO to higher-order functions in a
   bicartesian closed category.
 
   We give the first complete, mechanized semantic description of
-  PR1-IND and PR-IND in Agda, embeddings from PR-NAT to PR1-IND and
-  PR1-IND to PR-IND, and an elementary proof of the folklore theorem
+  PR-FO and PR-HO in Agda, embeddings from PR-NAT to PR-FO and
+  PR-FO to PR-HO, and an elementary proof of the folklore theorem
   that every bicartesian closed category is distributive. We cannot
   find a similar elementary proof in published literature.
 \end{abstract}
@@ -105,15 +105,20 @@
 \label{sec:introduction}
 
 Primitive recursive functions, PR-NAT, are a class of total computable
-functions on natural numbers. They are a standard topic in any
-class on computability theory and serve as a stepping stone for
-defining general recursive functions
+functions on natural numbers. Apparently, Curry
+\cite{curry41:_formal_recur_arith} coined the name, but attributes the
+concept to Skolem \cite{skolem23} (who in turn refers to Kronecker's
+principle that mathematical definitions are only valid if their
+instances can be constructed in finitely many steps).
+They are a standard topic in any class on computability theory and
+usually serve as a stepping stone for defining general recursive functions
 \cite{kleene36:_gener_recur_funct_natur_number}.
 It is well known that there are total functions on natural
 numbers, which are not primitive recursive. The
 Ackermann function \cite{szasz1991machine}, Knuth's uparrow
-notation, and Conway's arrow notation are standard examples. However,
-these functions are definable in System~T (see
+notation \cite{knuth76:_mathem_comput_scien}, and Conway's arrow
+notation \cite{conway96:_book_number} are standard examples. However,
+these functions are definable in G\"odel's System~T \cite{goedel58} (see
 \cite{DBLP:journals/corr/Widemann16} for definitions), which adds higher-order functions to PR-NAT (see
 \cite[Chapter 9]{DBLP:books/cu/Ha2016}) and thus defines a larger
 class of total computable functions.
@@ -122,22 +127,27 @@ class of total computable functions.
 The concept of primitive recursion can be generalized in several
 dimensions. One dimension is first-order vs.\ higher-order,
 corresponding to PR-NAT vs.\ System~T. A second dimension generalizes
-to functions over words, terms, and many-sorted algebras. A third
+from natural numbers to words, terms, and many-sorted algebras. A third
 dimension generalizes to vector-valued functions aka LOOP-computable
-functions. The second and third dimensions can be subsumed by
+functions. The literature (e.g.,
+\cite{DBLP:books/cu/Ha2016,DBLP:conf/fpca/MeijerFP91,DBLP:conf/fpca/MeijerH95})
+mostly does not keep the pointfree, categorical style of definition of
+PR-NAT, but embeds operations on general inductive types in type
+lambda calculus.
+
+The language PR-FO, which we propose here, keeps the categorical style
+and subsumes the second and third dimensions by
 situating primitive recursion in a bicartesian category, i.e., a
 first-order language with finite product and sum types augmented with
-an inductive type, which we call PR1-IND.  Closely related, but
-subtly different, languages are discussed in Harper's book
-\cite[Chapter 15]{DBLP:books/cu/Ha2016} and in the bananas paper
-\cite{DBLP:conf/fpca/MeijerFP91}. 
+an inductive type construction.
 
-Adding the higher-order dimension to PR1-IND leads to studying
+Adding the higher-order dimension to PR-FO (while still keeping the
+pointfree, categorical style of definition) leads to studying
 primitive recursion in a bicartesian closed category, as considered
-by Meijer and Hutton \cite{DBLP:conf/fpca/MeijerH95} and which is
+by Meijer and Hutton \cite{DBLP:conf/fpca/MeijerH95}. This setting is
 implicitly and often unknowingly used by Haskell programmers. Such
 categories have all finite products and coproducts (sums) as well as
-exponentials. We call this language PR-IND.
+exponentials. We call this language PR-HO.
 
 We start our work from the observation that the standard definition of
 PR-NAT is very close to a categorical description. Taken literally,
@@ -145,27 +155,41 @@ primitive recursive functions are defined in a pointfree style by
 composing and combining predefined arrows. We define syntax and
 semantics of PR-Nat in Agda, give examples, and prove their correctness.
 
-Inspired by this observation, we go on to define PR1-IND in the same
+Inspired by this observation, we go on to define PR-FO in the same
 pointfree style. Defining the semantics turns out to be surprisingly
 subtle because, unlike Harper's definition \cite[Chapter
-15]{DBLP:books/cu/Ha2016}, PR1-IND admits nested inductive types.
+15]{DBLP:books/cu/Ha2016}, PR-FO admits nested inductive types.
 Clearly, it should be possible to translate any PR-NAT program into a
-semantically equivalent program in PR1-IND, but this attempt reveals
+semantically equivalent program in PR-FO, but this attempt reveals
 that a bicartesian category is not sufficient for this translation,
 but a distributive category is needed. That is, distributivity needs
 to be added to our language as a family of axiomatic arrows.
 
-Finally, we extend PR1-IND with exponentials to PR-IND. The definition
-of the semantics smoothly extends the one for PR1-IND. As an
-additional twist, surprising to the authors who are not category
-theorists, the distributivity axiom becomes obsolete as it derivable in
+Finally, we extend PR-FO with exponentials to PR-HO. The definition
+of the semantics smoothly extends the one for PR-FO. As an
+additional twist the distributivity axiom becomes obsolete as it derivable in
 a bicartesian closed category. We give an elementary proof of this
 folklore result \cite{https://doi.org/10.48550/arxiv.1406.0961}. 
 
-All definitions, results, and proofs are mechanized using Agda and
+In summary, our contributions are
+\begin{itemize}
+\item a fully mechanized study of PR-NAT and its generalizations to
+  words, trees, and many-sorted terms;
+\item the study of PR-FO, a pointfree language to study first-order primitive
+  recursion for inductive types, situated in a distributive category
+  along with proof that PR-NAT is subsumed;
+\item the study of PR-HO, a pointfree language for higher-order
+  primitive recursion, situated in a bicartesian closed category along
+  with an elementary proof that any bicartesian closed category is
+  distributive. 
+\end{itemize}
+
+All definitions, results, and proofs are mechanized using Agda \cite{DBLP:conf/afp/Norell08} and
 publicly available in a GitHub
 repository.\footnote{\url{https://github.com/proglang/PrimRec/}
-  release 2023-02 corresponds to the submitted paper} 
+  release 2023-02 corresponds to the submitted paper} In fact, this
+document includes several literal Agda scripts and we assume that the
+reader has some familiarity with the language.
 
 \section{Primitive recursion on natural numbers}
 \label{sec:prim-recurs-natur}
@@ -270,7 +294,7 @@ the definition that we adopt here.
 \label{sec:prim-recurs-gener}
 \input{latex/PR-CC-ind.tex}
 
-This section introduces PR1-IND, the first order language with inductive
+This section introduces PR-FO, the first order language with inductive
 types. The modeling of inductive
 types is inspired Harper's textbook \cite{DBLP:books/cu/Ha2016}, but
 with two changes. First, Harper's definition is set in the
@@ -421,7 +445,7 @@ definition of {\APR n}. Its inverse is easily definable.
 The requirement for distributivity is not an artifact of our
 insistence on primitive recursion (paramorphism) as an eliminator for
 natural numbers. Distributivity is already needed to encode a plain
-catamorphism on natural numbers in PR1-IND.
+catamorphism on natural numbers in PR-FO.
 
 We conclude with the remark that the language is sufficiently rich to
 express the commutative monoidal structure of sum and product types.
@@ -482,7 +506,7 @@ inductive definition of the type is properly stratified as there are
 no recursive references in the argument part of the function type (as
 it is closed).
 
-We modify the syntax of PR1-IND to PR-IND as follows:
+We modify the syntax of PR-FO to PR-HO as follows:
 \cccPRIND
 We add the families of arrows {\Alam} and {\Aapply} that characterize
 exponential objects in categories: {\Aapply} is evaluation and {\Alam}
