@@ -22,7 +22,22 @@ open import Utils
 infix 6 _→ᴾ_
 infix 7 _`×_
 infix 8 _`+_
+
+module Harper where
 \end{code}
+\newcommand\ccHarper{%
+\begin{code}
+  data PolyOp : Set where
+    `𝕏 `𝟙   : PolyOp
+    _`×_ : PolyOp → PolyOp → PolyOp
+    _`+_ : PolyOp → PolyOp → PolyOp
+
+  data Ty : Set where
+    `𝟘 `𝟙 : Ty
+    _`×_ : Ty → Ty → Ty
+    _`+_ : Ty → Ty → Ty
+    ind  : PolyOp → Ty 
+\end{code}}
 \newcommand\ccDataTy{%
 \begin{code}
 

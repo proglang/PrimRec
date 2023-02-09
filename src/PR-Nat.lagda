@@ -2,7 +2,7 @@
 module PR-Nat where
 
 open import Data.Fin using (Fin; suc; zero)
-open import Data.Nat using (ℕ; suc; zero)
+open import Data.Nat using (ℕ; suc; zero; _+_)
 open import Data.Vec using (Vec; []; _∷_; _++_; lookup; map; toList; head)
 
 import Relation.Binary.PropositionalEquality as Eq
@@ -18,24 +18,24 @@ open import Utils
 \newcommand\PRNat{
 \begin{code}
 data PR : ℕ → Set where
-  Z : PR zero                   -- zero
-  σ : PR (suc zero)             -- successor
+  Z : PR 0                      -- zero
+  σ : PR 1                      -- successor
   π : (i : Fin n)               -- i-th projection
     → PR n
   C : (f : PR m)                -- composition
     → (g* : Vec (PR n) m)
     → PR n
   P : (g : PR n)                -- primitive recursion
-    → (h : PR (suc (suc n)))
-    → PR (suc n)
+    → (h : PR (2 + n))
+    → PR (1 + n)
 \end{code}
 }
 \begin{code}[hide]
-  F : (g : PR n)                -- fold over nat
-    → (h : PR (suc n))
-    → PR (suc n)
+  F : (g : PR n)                -- fold over nat, can be simulated with P
+    → (h : PR (1 + n))
+    → PR (1 + n)
 
-para : (Vec ℕ n → ℕ) → (Vec ℕ (suc (suc n)) → ℕ) → (Vec ℕ (suc n) → ℕ)
+para : (Vec ℕ n → ℕ) → (Vec ℕ (2 + n) → ℕ) → (Vec ℕ (1 + n) → ℕ)
 para g h (zero ∷ v*) = g v*
 para g h (suc x ∷ v*) = h (para g h (x ∷ v*) ∷ x ∷ v*)
 \end{code}

@@ -198,7 +198,7 @@ reader has some familiarity with the language.
 Here is a typical textbook definition~\cite{martin2019logik,wiki:Primitive_recursive_function}:
 
 
-The set of primitive recursive functions is the smallest family PR of functions
+The set PR-NAT of primitive recursive functions is the smallest family of functions
 from ${ℕ}^n$  to ${ℕ}$, for $n\in {ℕ}$, that contains the following
 basic functions:
 \begin{itemize}
@@ -219,7 +219,7 @@ basic functions:
 	\pi^{n}_{i}  (x_0,\dots,x_i,\dots,x_{n-1})  &= x_i
 \end{align*}
 \end{itemize}
-PR is closed under the operations \emph{composition} and \emph{primitive recursion}.
+Moreover, the set PR-NAT is closed under the operations \emph{composition} and \emph{primitive recursion}.
 \begin{description}
 \item[Composition] 
 If $f$ is a primitive recursive function with arity $m \in {ℕ}$ and
@@ -241,15 +241,16 @@ $n+2$ then $f := P (g,h)$ is a primitive recursive function of arity $n+1$ that 
 
 \end{description}
 
-Clearly, PR is inductively defined, but unfortunately the boundary
+Clearly, PR-NAT is inductively defined, but unfortunately the boundary
 between syntax and semantics is blurred.
 
 
-In programming languages terminology, primitive
-recursive functions are given by a domain-specific language where a
+Applying standard techniques from the
+theory of programming languages helps sharpen this definition.
+We present PR-NAT as a domain-specific language where a
 sentence of the language specifies a total function of type ${ℕ}^n \to {ℕ}$
 in a pointfree style. The syntax of the language is inductively
-defined and consequently its semantics is defined by induction on the
+defined and its semantics is defined compositionallly by induction on the
 syntax, thus cleanly separating syntax and semantics.
 
 The following Agda definition formalizes syntax and semantics of pr
@@ -273,17 +274,20 @@ checker does not accept this definition.
 
 
 It is a good exercise to remind ourselves that the standard arithmetic
-functions are pr defineable and correspond to their definitions in
+functions are primitive recursive and correspond to their definitions in
 Agda. Here is the easy case for addition; the online supplement
-considers further operations. 
+considers further operations up to bijective pairing and unpairing. 
 \input{latex/PR-Nat-Example.tex}
 \PRNatExampleAdd
 The function \AgdaFunction{addP} is defined by primitive recursion, which
 decomposes the first argument. The $g$-function is just the identity;
-the $h$-function composes the successor with inductive result.
-The equivalence proof is a
-straightforward induction because the structure of the definitions
-matches.
+the $h$-function composes the successor with the inductive result.
+The signature of function \AgdaFunction{addP$=+$} states
+the equivalence proof. The expression \AgdaFunction{eval addP} yields
+a function that takes a vector of natural numbers of length two, here
+$[m, n]$. The right side of the equality calculates the sum $m+n$.
+The proof is a straightforward induction because the structure of the definition of
+\AgdaFunction{addP} matches the predefined addition \AgdaFunction{$+$}.
 
 There are alternative definitions of primitive recursion where the
 zero function takes any number of arguments or where there are
@@ -296,18 +300,19 @@ the definition that we adopt here.
 
 This section introduces PR-FO, the first order language with inductive
 types. The modeling of inductive
-types is inspired Harper's textbook \cite{DBLP:books/cu/Ha2016}, but
-with two changes. First, Harper's definition is set in the
+types is inspired by Harper's textbook \cite{DBLP:books/cu/Ha2016}, but
+with several changes. First, Harper's definition is set in the
 conventional syntax of simply-typed lambda calculus with a
 fold-operator for inductive types,
 whereas ours comes in pointfree style. Second, his definition builds
 on polynomial type operators, which we generalize to polynomial
-inductive type operators.
+inductive type operators. Third, Harper gives a small-step operational
+semantics, whereas we give a denotational semantics.
 
 \subsection{Types}
 \label{sec:types}
 
-We start with defining the type language.
+We start with defining the type language of PR-FO.
 \ccDataTy
 Types are indexed by a number $n \in \ANat$ denoting the number of free
 type variables in the type. A type is either the empty type, the unit type, a product, a
@@ -318,6 +323,16 @@ type. We assume that recursive occurrences are guarded, that is, there
 is a sum, product, or inductive type between the binding and the use
 of a type variable. Types with free variables are sometimes called
 \emph{pretypes}. We use $\ATY$ for closed types.
+
+For direct comparison we paraphrase Harper's definition, which is both
+more restrictive and more verbose. The type
+{\APolyOp} defines polynomial type operators and the type {\ATyy}
+defines inductive types based on polynomial type operators.
+\ccHarper
+Type operators $O : \APolyOp$ can denote single argument (named by $𝕏$)
+polynomial functors. In consequence, inductive types cannot be nested,
+that is, an inductive type cannot contain another inductive type. 
+
 
 \subsection{Syntax}
 \label{sec:syntax}
@@ -331,7 +346,7 @@ The second compartment provides arrows from any type into the
 terminal object (to introduce the unit type) as well as arrows from the
 initial object to any type (to eliminate the empty type). 
 The third compartment has arrows to introduce and eliminate product types.
-The fourth compartment has arrows to introduce and eliminate sum types, which are very obviously dual to
+The fourth compartment has arrows to introduce and eliminate sum types, which are dual to
 the respective arrows involving products.
 The fifth compartment specifies a distributive law of sum types over product types.
 The final compartment
