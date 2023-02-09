@@ -335,22 +335,23 @@ variable
 \newcommand\ccDataPR{%
 \begin{code}
 data _→ᴾ_ : TY → TY → Set where
+  -- category
   id : T →ᴾ T
   C  : (f : U →ᴾ V) → (g : T →ᴾ U) → (T →ᴾ V)
-  --
+  -- initial, terminal
   `⊤ : T →ᴾ `𝟙
   `⊥ : `𝟘 →ᴾ T
-  --
+  -- product, introduction and elimination
   `# : (f : T →ᴾ U) → (g : T →ᴾ V) → (T →ᴾ U `× V)
   π₁ : U `× V →ᴾ U
   π₂ : U `× V →ᴾ V
-  --
+  -- sum, introduction and elimination
   ι₁ : U →ᴾ U `+ V
   ι₂ : V →ᴾ U `+ V
   `case : (f : U →ᴾ T) → (g : V →ᴾ T) → U `+ V →ᴾ T
-  --
+  -- distributivity
   dist-+-x : (U `+ V) `× T →ᴾ (U `× T) `+ (V `× T)
-  --
+  -- inductive, introduction and elimination
   fold : (G ⇐ ind G) →ᴾ ind G
   P : (h : (G ⇐ (T `× ind G)) `× U →ᴾ T) → (ind G `× U →ᴾ T)
 \end{code}
@@ -463,6 +464,7 @@ fmap : ∀ {S T : TY} (G : Ty 1)
 \end{code}}
 \newcommand\ccFunFmap{%
 \begin{code}
+fmap `𝟘       f ()
 fmap `𝟙       f tt       = tt
 fmap (G `× H) f (x , y)  = fmap G f x , fmap H f y
 fmap (G `+ H) f (inj₁ x) = inj₁ (fmap G f x)
@@ -486,6 +488,7 @@ fmap {S}{T} (ind H) f (fold x)
 \newcommand\ccFunEval{%
 \begin{code}
 eval : (T →ᴾ U) → ⟦ T ⟧ᵀ → ⟦ U ⟧ᵀ
+eval `⊥        = λ()
 eval `⊤        = const tt
 eval id        = λ v → v
 eval (C f g)   = eval f ∘ eval g
@@ -563,6 +566,20 @@ unit-right-+ = `case id `⊥
 
 𝟘→𝟙₂ : `𝟘 →ᴾ `𝟙
 𝟘→𝟙₂ = `⊥
+
+-- mp : T →ᴾ U → G ⇐ T →ᴾ G ⇐ U
+-- mp {G = `𝟘} h = id
+-- mp {G = `𝟙} h = id
+-- mp {G = G₁ `× G₂} h = `# (C (mp {G = G₁} h) π₁) (C (mp {G = G₂} h) π₂)
+-- mp {G = G₁ `+ G₂} h = `case (C ι₁ (mp {G = G₁} h)) (C ι₂ (mp {G = G₂} h))
+-- mp {G = ` zero} h = h
+-- mp {G = ind G} h = C fold (C (F {!!}) (`# id `⊤))
+
+-- f : (h : (G ⇐ T) `× U →ᴾ T) → (ind G `× U →ᴾ T)
+-- f h = P {!!}
+
+-- p : (h : (G ⇐ (T `× ind G)) `× U →ᴾ T) → (ind G `× U →ᴾ T)
+-- p {G = G} h = C π₁ (F (`# h (C fold (C (mp {G = G} π₂) π₁))))
 
 module FromNats where
 \end{code}

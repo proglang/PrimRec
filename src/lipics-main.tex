@@ -349,20 +349,31 @@ The third compartment has arrows to introduce and eliminate product types.
 The fourth compartment has arrows to introduce and eliminate sum types, which are dual to
 the respective arrows involving products.
 The fifth compartment specifies a distributive law of sum types over product types.
+
 The final compartment
-defines arrows to introduce {\Afold} and eliminate inductive types
-{\AP}, where the latter relies on primitive recursion. This treatment
-is fully first order, without higher-order functions.
+defines arrows to introduce and eliminate inductive types. We call the
+constructor of inductive types  {\Afold} (often called
+\AgdaInductiveConstructor{roll} in work on recursive types;
+confusingly, a standard eliminator of inductive types is also called
+fold or catamorphism) and the primitive recursive eliminator {\AP}.
+In the definition of {\Afold} and {\AP}, we find that $G :$~\ATy1, a type with a
+single type variable. It will be convenient to view $G$ as a functor
+that acts on types $T:$~{\ATY} by substitution, i.e., $T \mapsto (G
+\Leftarrow T)$ which substitutes the single type variable in $G$ by
+the type $T$.
+This treatment is fully first order, without higher-order functions.
 
 Looking at these postulated arrows, we realize that any interpretation
 of this syntax must take place in a distributive category
-\cite{cockett_1993}, which is  cartesian (part~2 and~3), cocartesian
+\cite{cockett_1993}, which is a category (part~1) that is cartesian (part~2 and~3), cocartesian
 (part~2 and~4), and obeys the distributive law. Subsequent examples show
-that each of these requirements (including distributivity) is
+that these requirements (including distributivity) are
 necessary to simulate standard definitions of primitive recursion. 
-Distributive categories are not uncommon. In fact, every cartesian
-closed category with coproducts is also distributive (folklore
-according to \cite{https://doi.org/10.48550/arxiv.1406.0961}).
+Examples of distributive categories are plenty, the most obvious ones
+being Set and the theory of boolean algebras \cite{cockett_1993}.
+% In fact, every cartesian
+% closed category with coproducts is also distributive (folklore
+% according to \cite{https://doi.org/10.48550/arxiv.1406.0961}).
 
 While the syntax is inspired by category theory, it cannot fully
 implement it. For example, in a cartesian category, there is a unique
@@ -370,12 +381,6 @@ arrow from any object to the terminal object. In the syntax, this arrow
 can have many names, which are all equated by the semantics. In
 particular, we can write $`\bot$ as well as $`\top$ for the unique arrow
 of type {\ccZeroOne}.
-
-Considering the arrows dealing with inductive types, 
-in the definition of {\Afold} and {\AP}, we find that $G :$~\ATy1, a type with a
-single type variable. It will be convenient to view $G$ as a functor
-that acts on types $T:$~{\ATY} by substitution, i.e., $T \mapsto (G
-\Leftarrow T)$. 
 
 Elimination of inductive types is by primitive recursion /
 paramorphism. The arrow constructed by {\AP} maps a pair of an element
@@ -390,9 +395,14 @@ unfolded and applied to a pair of $T$, the result of the inductive
 evaluation, and \Aind~$G$, the inductive subterm.
 
 Alternatively, we can equip inductive types with the standard
-catamorphism (aka fold operator) at this type:
+catamorphism (aka the fold elimination operator) at this type:
 \ccDataPRF
-We omit the details.
+The fold operator invokes $h$ on the result of type $T$ of its
+recursive invocation, whereas primitive recursion also passes the
+``subterm'' of type \Aind~$G$. The type of the constructed arrow is
+the same in both cases.
+
+In PR-FO, we can easily show that {\AP} and {\AF} are interdefinable.
 
 \subsection{Semantics}
 \label{sec:semantics}
@@ -469,7 +479,7 @@ express the commutative monoidal structure of sum and product types.
 \label{sec:closer-look-at}
 
 A second look at the definition of the {\Afmap} function reveals that
-two cases are missing. The first one, for type {\ATZ} can be omitted
+two cases are missing. The first one, for type {\ATZ} is absurd
 because its domain is empty. The second case, however, deals with
 nested inductive types, where functor $G$ has the form $\Aind~H$, defined as follows:
 \ccFunFmapSignature
@@ -528,19 +538,25 @@ exponential objects in categories: {\Aapply} is evaluation and {\Alam}
 is the unique arrow that gives rise to the commutative diagram
 \cccExpComm
 
-Notably, the distributivity axiom can be omitted as distributivity is
-definable in a bicartesian closed category:
+We remark that the definition of the semantics is
+unremarkable as all cases carry over without change. We only show the
+new cases. 
+\cccEvalExponential
+We also have to extend {\Afmap} in the obvious way.
+
+
+
+The attentive reader may have noticed that we omitted the
+distributivity axiom.
+Indeed, distributivity is definable in a bicartesian closed category
+following Benini's construction
+\cite{https://doi.org/10.48550/arxiv.1406.0961} for proving this
+folklore theorem. 
 \cccThetaDist
 It is straightforward to prove its equivalence with the semantics of
 distributivity from Section~\ref{sec:semantics}, which allows us to conclude
-the folklore theorem \cite{https://doi.org/10.48550/arxiv.1406.0961}
-for the category of Agda types. 
+the theorem for the category of Agda types. 
 \cccEvalDistEqual
-
-For completeness, we remark that the definition of the semantics is
-unremarkable. We only show the new cases.
-\cccEvalExponential
-We also have to extend {\Afmap} in the obvious way.
 
 \section{Conclusion}
 \label{sec:conclusion}

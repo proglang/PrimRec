@@ -440,6 +440,7 @@ comm-⨟-σ₀ σ T (suc x) =
 fmap : ∀ {S T : TY} (G : Ty 1)
   → (f : ⟦ S ⟧ᵀ → ⟦ T ⟧ᵀ)
   → ⟦ G ⇐ S ⟧ᵀ → ⟦ G ⇐ T ⟧ᵀ
+fmap `𝟘       f ()
 fmap `𝟙       f tt       = tt
 fmap (G `× H) f (x , y)  = fmap G f x , fmap H f y
 fmap (G `+ H) f (inj₁ x) = inj₁ (fmap G f x)
@@ -506,6 +507,7 @@ _➙_ = _→ᴾ_
 \newcommand\cccFunEval{%
 \begin{code}
 eval : (T ➙ U) → ⟦ T ⟧ᵀ → ⟦ U ⟧ᵀ
+eval `⊥       = λ()
 eval `⊤       = const tt
 eval id       = λ v → v
 eval (C f g)  = eval f ∘ eval g
@@ -515,9 +517,6 @@ eval π₂       = proj₂
 eval ι₁       = inj₁
 eval ι₂       = inj₂
 eval (`case f g) = λ{ (inj₁ x) → eval f x ; (inj₂ y) → eval g y}
-eval (lam f)  = λ x y → eval f (x , y)
-eval apply    = λ{ (f , x) → f x }
--- eval dist-+-x = λ{ (inj₁ x , z) → inj₁ (x , z) ; (inj₂ y , z) → inj₂ (y , z)}
 eval fold     = fold
 eval (P {G = G} h) = λ{ (fold x , u) → eval h ((fmap G (λ v → (eval (P h) (v , u)) , v) x) , u)}
 \end{code}
@@ -572,7 +571,7 @@ theta g = C apply (map-× g id)
 dist-+-x : (U `+ V) `× T ➙ (U `× T) `+ (V `× T)
 dist-+-x = theta (`case (lam ι₁) (lam ι₂))
 \end{code}}
-\begin{code}
+\begin{code}[hide]
 -- the exponential transpose is just lambda
 tr : ∀ {A B C} → (A `× B) ➙ C → A ➙ B `⇒ C
 tr r = lam r
@@ -669,6 +668,7 @@ module FromNats where
   ⟦ Nats.π i ⟧    = lookup i
   ⟦ Nats.C f g* ⟧ = C ⟦ f ⟧ ⟦ g* ⟧*
   ⟦ Nats.P g h ⟧  = P (C (`case (C ⟦ g ⟧ π₂) (C ⟦ h ⟧ assoc-×)) dist-+-x)
+  ⟦ Nats.F g h ⟧  = F (C (`case (C ⟦ g ⟧ π₂) ⟦ h ⟧) dist-+-x)
 
   ⟦ [] ⟧*         = `⊤
   ⟦ p ∷ p* ⟧*     = `# ⟦ p ⟧ ⟦ p* ⟧*
