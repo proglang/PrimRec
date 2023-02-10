@@ -474,23 +474,24 @@ fmap {S}{T} (ind G) f (fold x) =
 \newcommand\cccPRIND{%
 \begin{code}
 data _→ᴾ_ : TY → TY → Set where
+  -- category
   id : T →ᴾ T
   C  : (f : U →ᴾ V) → (g : T →ᴾ U) → (T →ᴾ V)
-  --
+  -- initial, terminal
   `⊤ : T →ᴾ `𝟙
   `⊥ : `𝟘 →ᴾ T
-  --
+  -- product, introduction and elimination
   `# : (f : T →ᴾ U) → (g : T →ᴾ V) → (T →ᴾ U `× V)
   π₁ : U `× V →ᴾ U
   π₂ : U `× V →ᴾ V
-  --
+  -- sum, introduction and elimination
   ι₁ : U →ᴾ U `+ V
   ι₂ : V →ᴾ U `+ V
   `case : (f : U →ᴾ T) → (g : V →ᴾ T) → U `+ V →ᴾ T
-  --
+  -- exponential, introduction and elimination
   lam   : (U `× V) →ᴾ T → U →ᴾ V `⇒ T
   apply : T `⇒ U `× T →ᴾ U
-  --
+  -- inductive, introduction and elimination
   fold : (G ⇐ ind G) →ᴾ ind G
   P : (h : (G ⇐ (T `× ind G)) `× U →ᴾ T) → (ind G `× U →ᴾ T)
 \end{code}}
@@ -550,11 +551,19 @@ unassoc-× = `# (`# π₁ (C π₁ π₂)) (C π₂ π₂)
 
 comm-× : U `× V ➙ V `× U
 comm-× = `# π₂ π₁
-
-map-× : U ➙ T → V ➙ W → U `× V ➙ T `× W
-map-× f g = `# (C f π₁) (C g π₂)
 \end{code}
 }
+\newcommand\cccThetaDist{%
+\begin{code}
+map-× : U ➙ T → V ➙ W → U `× V ➙ T `× W
+map-× f g = `# (C f π₁) (C g π₂)
+
+theta : U ➙ V `⇒ T → U `× V ➙ T
+theta g = C apply (map-× g id)
+
+dist-+-x : (U `+ V) `× T ➙ (U `× T) `+ (V `× T)
+dist-+-x = theta (`case (lam ι₁) (lam ι₂))
+\end{code}}
 \begin{code}[hide]
 -- laws about exponentials
 exp-1 : ((U `× V) `⇒ T) `× (U `× V) ➙ T
@@ -563,14 +572,6 @@ exp-1 = apply
 exp-2 : (V `⇒ (U `⇒ T)) `× (U `× V) ➙ T
 exp-2 = C apply (C (C (map-× apply id) unassoc-×) (map-× id comm-×))
 \end{code}
-\newcommand\cccThetaDist{%
-\begin{code}
-theta : U ➙ V `⇒ T → U `× V ➙ T
-theta g = C apply (map-× g id)
-
-dist-+-x : (U `+ V) `× T ➙ (U `× T) `+ (V `× T)
-dist-+-x = theta (`case (lam ι₁) (lam ι₂))
-\end{code}}
 \begin{code}[hide]
 -- the exponential transpose is just lambda
 tr : ∀ {A B C} → (A `× B) ➙ C → A ➙ B `⇒ C
@@ -597,10 +598,12 @@ exp-×-2 = lam (C (C (C apply (map-× apply id)) unassoc-×) (map-× id comm-×)
 
 exp-×-id : eval (C (exp-×-1{U}{V}{T}) exp-×-2) ≡ eval id
 exp-×-id = refl
-
+\end{code}
+\newcommand\cccUndist{%
+\begin{code}
 undist-+-× : (U `× T) `+ (V `× T) ➙ (U `+ V) `× T
 undist-+-× = `case (`# (C ι₁ π₁) π₂) (`# (C ι₂ π₁) π₂)
-\end{code}
+\end{code}}
 \newcommand\cccEvalDistEqual{%
 \begin{code}
 eval-dist-+-× : ⟦ (U `+ V) `× T ⟧ᵀ → ⟦ (U `× T) `+ (V `× T) ⟧ᵀ
@@ -610,15 +613,19 @@ dist-dist′ : ∀ {U V T} → ∀ x → eval (dist-+-x{U}{V}{T}) x ≡ eval-dis
 dist-dist′ (inj₁ x , z) = refl
 dist-dist′ (inj₂ y , z) = refl
 \end{code}}
-\begin{code}[hide]
+\newcommand\cccDistUndist{%
+\begin{code}
 dist-undist : ∀ {U V T} → ∀ x → eval (C (dist-+-x{U}{V}{T}) undist-+-×) x ≡ eval id x
+undist-dist : ∀ {U V T} → ∀ x → eval (C undist-+-× (dist-+-x{U}{V}{T})) x ≡ eval id x
+\end{code}}
+\begin{code}[hide]
 dist-undist (inj₁ x) = refl
 dist-undist (inj₂ y) = refl
 
-undist-dist : ∀ {U V T} → ∀ x → eval (C undist-+-× (dist-+-x{U}{V}{T})) x ≡ eval id x
 undist-dist (inj₁ x , z) = refl
 undist-dist (inj₂ y , z) = refl
-
+\end{code}
+\begin{code}[hide]
 comm-+ : U `+ V ➙ V `+ U
 comm-+ = `case ι₂ ι₁
 

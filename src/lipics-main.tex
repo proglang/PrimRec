@@ -526,7 +526,7 @@ The interpretation of types is defined just like in
 Section~\ref{sec:semantics}, with a single extra case for the function type:
 \cccDataAlgArrow
 Adding this case makes the type definition of the inductive type
-${\AAlg{G}}$ (apparently) not strictly positive. However, the
+${\AAlg{~G}}$ (apparently) not strictly positive. However, the
 inductive definition of the type is properly stratified as there are
 no recursive references in the argument part of the function type (as
 it is closed).
@@ -535,28 +535,46 @@ We modify the syntax of PR-FO to PR-HO as follows:
 \cccPRIND
 We add the families of arrows {\Alam} and {\Aapply} that characterize
 exponential objects in categories: {\Aapply} is evaluation and {\Alam}
-is the unique arrow that gives rise to the commutative diagram
+is the unique arrow that completes the commutative diagram
+corresponding to the equality
 \cccExpComm
 
 We remark that the definition of the semantics is
 unremarkable as all cases carry over without change. We only show the
 new cases. 
 \cccEvalExponential
-We also have to extend {\Afmap} in the obvious way.
+We also have to extend {\Afmap} to exponentials in the obvious way.
+
+\section{Distributivity}
+\label{sec:distributivity}
 
 
-
-The attentive reader may have noticed that we omitted the
-distributivity axiom.
+The attentive reader may have noticed that there is no
+distributivity axiom in PR-HO.
 Indeed, distributivity is definable in a bicartesian closed category
 following Benini's construction
 \cite{https://doi.org/10.48550/arxiv.1406.0961} for proving this
-folklore theorem. 
+folklore theorem. We write ${\Amapx}~f ~g $ to lift two arrows to the
+components of a product (the bifunctorial action) and ${\Atheta}~g$ for
+the exponential transpose of $g$.
 \cccThetaDist
-It is straightforward to prove its equivalence with the semantics of
+So far, we only constructed a term {\Adist} of a suitable type that expresses
+distributivity. It remains to prove its equivalence with the semantics of
 distributivity from Section~\ref{sec:semantics}, which allows us to conclude
 the theorem for the category of Agda types. 
 \cccEvalDistEqual
+
+We complete this proof with the observation that the reverse direction
+of {\Adist} is already definable in PR-FO and that they form an
+isomorphism (with trivial proofs).
+\cccUndist
+\vspace{-2\baselineskip}
+\cccDistUndist
+
+Beware that Benini's proof
+\cite{https://doi.org/10.48550/arxiv.1406.0961} is significantly more
+involved as it establishes the construction and the isomorphism for
+any bicartesian closed category, not just for the Agda category.
 
 \section{Conclusion}
 \label{sec:conclusion}
