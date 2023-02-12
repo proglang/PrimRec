@@ -35,9 +35,9 @@ data PR : ℕ → Set where
     → (h : PR (1 + n))
     → PR (1 + n)
 
-para : (Vec ℕ n → ℕ) → (Vec ℕ (2 + n) → ℕ) → (Vec ℕ (1 + n) → ℕ)
-para g h (zero ∷ v*) = g v*
-para g h (suc x ∷ v*) = h (para g h (x ∷ v*) ∷ x ∷ v*)
+para′ : (Vec ℕ n → ℕ) → (Vec ℕ (2 + n) → ℕ) → (Vec ℕ (1 + n) → ℕ)
+para′ g h (zero ∷ v*) = g v*
+para′ g h (suc x ∷ v*) = h (para′ g h (x ∷ v*) ∷ x ∷ v*)
 \end{code}
 \newcommand\PRNatEval{
 \begin{code}
