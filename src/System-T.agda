@@ -1,10 +1,10 @@
 {-# OPTIONS --rewriting  #-}
 
-open import Data.Fin using (Fin; suc; zero; opposite)
+open import Data.Fin using (Fin; suc; zero; opposite; fromℕ; _↑ˡ_)
 open import Data.Nat using (ℕ; suc; zero; _∸_; _+_)
 open import Data.Vec using (Vec; []; _∷_; lookup; foldr;_++_)
 import Relation.Binary.PropositionalEquality as Eq
-open Eq using (_≡_; refl; cong; sym; cong₂)
+open Eq using (_≡_; refl; cong; sym; trans; cong₂)
 open Eq.≡-Reasoning using (begin_; step-≡-∣; step-≡-⟩; _∎)
 open import Agda.Builtin.Equality.Rewrite
 
@@ -12,6 +12,7 @@ open import Utils
 open import HVec
 open import EvalPConstructor using (para)
 open import VecProperties
+open import FinProperties using (inject+0)
 
 
 data Ty : Set where
@@ -126,17 +127,42 @@ evalMkConstZero xs xs'  rewrite ++identityRᴴ xs' = prepLambdasEvalClose xs CZe
 ------------------------------------------------------------------------------
 -- projection
 ------------------------------------------------------------------------------
-{-# REWRITE  lookupOpRev #-}
+{-# REWRITE inject+0 lkupfromN' lkupfromN lookupOP lookupOpRev #-}
+
+hlookupFromN' : ∀ {S : Set} {F : S → Set} {m n o : ℕ}
+  {xs : Vec S m} {ys : Vec S (suc n + o)}
+  (xs' : HVec F xs) (ys' : HVec F ys) →
+  hlookup (xs' ++rᴴ ys') (fromℕ (m + n) ↑ˡ o) ≡
+    hlookup ys' (fromℕ n ↑ˡ o)
+hlookupFromN' []ᴴ (y ∷ᴴ ys') = refl
+hlookupFromN' {m = suc m} {n} {o} (x ∷ᴴ xs') (y ∷ᴴ ys') =
+  hlookupFromN' {m = m} {n = suc n} {o} xs' (x ∷ᴴ (y ∷ᴴ ys'))
+
+hlookupFromN : ∀ {S : Set} {F : S → Set} {m n : ℕ}
+  {xs : Vec S m} {ys : Vec S n} {y : S}
+  (xs' : HVec F xs) (y' : F y) (ys' : HVec F ys) →
+  hlookup (xs' ++rᴴ (y' ∷ᴴ ys')) (fromℕ m ↑ˡ n) ≡ y'
+hlookupFromN xs' y' ys' = hlookupFromN' xs' (y' ∷ᴴ ys')
+
+hlookupOP : ∀ {S : Set} {F : S → Set} {m n : ℕ}
+  {xs : Vec S n} {ys : Vec S m} (f : Fin n)
+  (xs' : HVec F xs) (ys' : HVec F ys) →
+  hlookup (xs' ++rᴴ ys') (opposite f ↑ˡ m) ≡ hlookup xs' f
+hlookupOP zero (x ∷ᴴ xs') ys' = hlookupFromN xs' x ys'
+hlookupOP (suc f) (x ∷ᴴ xs') ys' = hlookupOP f xs' (x ∷ᴴ ys')
+
+hlookupOpRev : ∀ {S : Set} {F : S → Set} {n : ℕ}
+  {xs : Vec S n} (f : Fin n) (xs' : HVec F xs) →
+  hlookup (xs' ++rᴴ []ᴴ) (opposite f) ≡ hlookup xs' f
+hlookupOpRev f xs' = hlookupOP f xs' []ᴴ
 
 mkProj : ∀ {n  : ℕ}  (xs : Vec Ty n ) → (f : Fin n)  →  Exp [] (prepArgs (xs) (lookup (xs) ( f))) 
 mkProj xs f = prepLambdas [] ( xs)  (Var (opposite f))
 
-postulate
-  evalMkProj-proof : ∀ {n : ℕ} {xs : Vec Ty n} (f : Fin n)
-    (xs' : HVec evalTy xs) (args : HVec evalTy (getArgs (lookup xs f)))
-    → eval' (mkProj xs f) []ᴴ (xs' ++ᴴ args) ≡ uncurryH (hlookup xs' f) args
-
 evalMkProj : ∀ {n : ℕ} {xs : Vec Ty n} (f : Fin n)
   (xs' : HVec evalTy xs) (args : HVec evalTy (getArgs (lookup xs f)))
   → eval' (mkProj xs f) []ᴴ (xs' ++ᴴ args) ≡ uncurryH (hlookup xs' f) args
-evalMkProj = evalMkProj-proof
+evalMkProj {xs = xs} f xs' args =
+  trans
+    (prepLambdasEvalClose xs (Var (opposite f)) xs' args)
+    (cong (λ x → uncurryH x args) (hlookupOpRev f xs'))
