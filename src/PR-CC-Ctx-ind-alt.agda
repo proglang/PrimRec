@@ -3,7 +3,7 @@
 module PR-CC-Ctx-ind-alt where
 
 
-open import Data.Fin using (Fin; zero; suc; inject+; raise)
+open import Data.Fin using (Fin; zero; suc; _↑ʳ_)
 open import Data.Vec.Properties using (lookup-++ʳ; lookup-++ˡ)
 open import Data.Empty using (⊥)
 open import Data.Unit using (⊤; tt)
@@ -17,7 +17,7 @@ open import Function using (_∘_; const) renaming (id to identity)
 import Relation.Binary.PropositionalEquality as Eq
 open Eq
   using (_≡_; _≢_; refl; sym; trans; cong; cong₂; subst;cong-app)
-open Eq.≡-Reasoning using (begin_; _≡⟨⟩_; step-≡˘; step-≡; _∎)
+open Eq.≡-Reasoning using (begin_; step-≡-∣; step-≡-⟩; _∎)
 open import Utils
 open import HVec
 open import Agda.Builtin.Equality.Rewrite
@@ -81,7 +81,7 @@ eval (π₁ exp) ctx = proj₁ (eval exp ctx)
 eval (π₂ exp) ctx = proj₂ (eval exp ctx)
 eval (ι₁ exp) ctx = inj₁ ((eval exp ctx))
 eval (ι₂ exp) ctx = inj₂ ((eval exp ctx))
-eval (`case exp l r) ctx with eval exp ctx 
+eval (`case exp l r) ctx with eval exp ctx
 ... | inj₁ res = eval l (res ∷ᴴ ctx)
 ... | inj₂ res = eval r (res ∷ᴴ ctx)
 eval (fold exp) ctx = fold (eval exp ctx)
@@ -100,18 +100,18 @@ postulate
 
 
 weakenGenVar : ∀ (n) (m) (o)→ Fin (n + o) → Fin (n + (m + o))
-weakenGenVar zero m o f = raise m f
+weakenGenVar zero m o f = m ↑ʳ f
 weakenGenVar (suc n) m o zero = zero
 weakenGenVar (suc n) m o (suc f) = suc (weakenGenVar n m o f)
 
-weakenGenVAr-lookup : ∀ {A : Set} {n m o}  (ctxA : Vec A n)(ctxB : Vec A m)(ctxC : Vec A o) (f : Fin (n + o)) → lookup (ctxA ++ ctxB ++ ctxC) (weakenGenVar   n m o f) ≡ lookup (ctxA ++ ctxC) f  
+weakenGenVAr-lookup : ∀ {A : Set} {n m o}  (ctxA : Vec A n)(ctxB : Vec A m)(ctxC : Vec A o) (f : Fin (n + o)) → lookup (ctxA ++ ctxB ++ ctxC) (weakenGenVar   n m o f) ≡ lookup (ctxA ++ ctxC) f
 weakenGenVAr-lookup [] ctxB ctxC f = lookup-++ʳ ctxB ctxC f
 weakenGenVAr-lookup (x ∷ ctxA) ctxB ctxC zero = refl
 weakenGenVAr-lookup (x ∷ ctxA) ctxB ctxC (suc f) = weakenGenVAr-lookup ctxA ctxB ctxC f
 
 {-# REWRITE lookup-++ʳ #-}
 
-lookup-++ʳᴴ : ∀ {A : Set}{F : A → Set} {n m} {xs : Vec A n} {ys : Vec A m} (hxs : HVec F xs)  (hys : HVec F ys)(f : Fin m )   → hlookup (hxs ++ᴴ hys) (raise n f) ≡ hlookup hys f 
+lookup-++ʳᴴ : ∀ {A : Set}{F : A → Set} {n m} {xs : Vec A n} {ys : Vec A m} (hxs : HVec F xs)  (hys : HVec F ys)(f : Fin m )   → hlookup (hxs ++ᴴ hys) (n ↑ʳ f) ≡ hlookup hys f
 lookup-++ʳᴴ []ᴴ (x ∷ᴴ hys) zero = refl
 lookup-++ʳᴴ []ᴴ (x ∷ᴴ hys) (suc f) = refl
 lookup-++ʳᴴ (x ∷ᴴ hxs) hys f = lookup-++ʳᴴ hxs hys f
@@ -143,7 +143,7 @@ weakenGen ctxA ctxB ctxC (P exp) = P (weakenGen ctxA ctxB ctxC exp)
 
 
 
-weakenGenEq : ∀ {n m o : ℕ} {ctxA : Ctx n} {ctxB : Ctx m}{ctxC : Ctx o}  {tyA } (valsA : HVec (λ x → ⟦ x ⟧ᵀ) ctxA ) (valsB : HVec (λ x → ⟦ x ⟧ᵀ) ctxB )(valsC : HVec (λ x → ⟦ x ⟧ᵀ) ctxC ) (exp : Exp (ctxA ++ ctxC) tyA) → 
+weakenGenEq : ∀ {n m o : ℕ} {ctxA : Ctx n} {ctxB : Ctx m}{ctxC : Ctx o}  {tyA } (valsA : HVec (λ x → ⟦ x ⟧ᵀ) ctxA ) (valsB : HVec (λ x → ⟦ x ⟧ᵀ) ctxB )(valsC : HVec (λ x → ⟦ x ⟧ᵀ) ctxC ) (exp : Exp (ctxA ++ ctxC) tyA) →
       eval (weakenGen ctxA ctxB ctxC exp) (valsA ++ᴴ valsB ++ᴴ valsC ) ≡ eval exp (valsA ++ᴴ valsC)
 weakenGenEq valsA valsB valsC `0 = refl
 weakenGenEq valsA valsB valsC (App f x) rewrite weakenGenEq valsA valsB valsC f | weakenGenEq valsA valsB valsC x = refl
@@ -154,7 +154,7 @@ weakenGenEq valsA valsB valsC (π₁ exp) = cong proj₁ (weakenGenEq valsA vals
 weakenGenEq valsA valsB valsC (π₂ exp) = cong proj₂ (weakenGenEq valsA valsB valsC exp)
 weakenGenEq valsA valsB valsC (ι₁ exp) = cong inj₁ (weakenGenEq valsA valsB valsC exp)
 weakenGenEq valsA valsB valsC (ι₂ exp) = cong inj₂ (weakenGenEq valsA valsB valsC exp)
-weakenGenEq {n}{m}{o} {ctxA}{ctxB} {ctxC} valsA valsB valsC  (`case {tyA = tyA} {tyB = tyB} c l r) 
+weakenGenEq {n}{m}{o} {ctxA}{ctxB} {ctxC} valsA valsB valsC  (`case {tyA = tyA} {tyB = tyB} c l r)
   rewrite sym (weakenGenEq  valsA valsB valsC c)
   with eval (weakenGen ctxA ctxB ctxC c) (valsA ++ᴴ valsB ++ᴴ valsC )
 ... | inj₁ x  = weakenGenEq (x ∷ᴴ valsA) valsB valsC l
@@ -168,56 +168,63 @@ weaken {ctx = ctx} ctx' exp = weakenGen ctx ctx' [] exp
 
 
 weaken-Eq : ∀ {n m : ℕ} {ctx : Ctx n} {ctx' : Ctx m}  {tyA } (vals : HVec (λ x → ⟦ x ⟧ᵀ) ctx ) (vals' : HVec (λ x → ⟦ x ⟧ᵀ) ctx' ) (exp : Exp ctx tyA) → eval (weaken ctx' exp) (vals ++ᴴ vals') ≡ eval exp vals
-weaken-Eq vals vals'  = weakenGenEq vals vals' []ᴴ 
+weaken-Eq vals vals'  = weakenGenEq vals vals' []ᴴ
 
 
 weaken' : ∀ {m o} (ctxB : Ctx m){ctxC : Ctx o}{tyA} → Exp ( ctxC) tyA → Exp ( ctxB ++ ctxC) tyA
-weaken' ctxB {ctxC} = weakenGen [] ctxB ctxC  
+weaken' ctxB {ctxC} = weakenGen [] ctxB ctxC
 
 
-weaken'-Eq : ∀ {m o : ℕ}  {ctxB : Ctx m}{ctxC : Ctx o}  {tyA } (valsB : HVec (λ x → ⟦ x ⟧ᵀ) ctxB )(valsC : HVec (λ x → ⟦ x ⟧ᵀ) ctxC ) (exp : Exp ( ctxC) tyA) → 
+weaken'-Eq : ∀ {m o : ℕ}  {ctxB : Ctx m}{ctxC : Ctx o}  {tyA } (valsB : HVec (λ x → ⟦ x ⟧ᵀ) ctxB )(valsC : HVec (λ x → ⟦ x ⟧ᵀ) ctxC ) (exp : Exp ( ctxC) tyA) →
       eval (weaken' ctxB {ctxC} exp) (valsB ++ᴴ valsC ) ≡ eval exp (valsC)
 weaken'-Eq valsB valsC  = weakenGenEq  []ᴴ  valsB valsC
+
+postulate
+  PF→NPF-hard : ∀ {tyA tyB : PF.TY} → tyA PF.→ᴾ tyB → Exp [] (tyA ⇒ tyB)
 
 PF→NPF : ∀ {tyA tyB : PF.TY} →  tyA PF.→ᴾ tyB → Exp [] ( tyA ⇒  tyB )
 PF→NPF PF.`0 = Lam `0
 PF→NPF PF.id = Lam (Var zero)
-PF→NPF {tyA} {tyB} (PF.C f g) = Lam ( App (weaken [  tyA ] (PF→NPF f)) (App (weaken [  tyA ]  (PF→NPF g)) (Var zero))) 
-PF→NPF {tyA} {tyB} (PF.`# l r) = Lam (`# 
-          (App (weaken [  tyA ] (PF→NPF l)) (Var zero)) 
-          (App (weaken [  tyA ] (PF→NPF r)) (Var zero))) 
+PF→NPF {tyA} {tyB} (PF.C f g) = Lam ( App (weaken [  tyA ] (PF→NPF f)) (App (weaken [  tyA ]  (PF→NPF g)) (Var zero)))
+PF→NPF {tyA} {tyB} (PF.`# l r) = Lam (`#
+          (App (weaken [  tyA ] (PF→NPF l)) (Var zero))
+          (App (weaken [  tyA ] (PF→NPF r)) (Var zero)))
 PF→NPF PF.π₁ = Lam (π₁ (Var zero))
 PF→NPF PF.π₂ = Lam (π₂ (Var zero))
 PF→NPF PF.ι₁ = Lam (ι₁ ((Var zero)))
 PF→NPF PF.ι₂ = Lam (ι₂ ((Var zero)))
-PF→NPF {(U PF.`+ V)}  (PF.`case f g) = Lam (`case (Var zero) 
-          (App (weaken (( U) ∷ ( U `+  V ) ∷ [])  (PF→NPF f)) (Var zero)) 
-          (App (weaken ( V ∷  U `+  V ∷ []) (PF→NPF g)) (Var zero))) 
+PF→NPF {(U PF.`+ V)}  (PF.`case f g) = Lam (`case (Var zero)
+          (App (weaken (( U) ∷ ( U `+  V ) ∷ [])  (PF→NPF f)) (Var zero))
+          (App (weaken ( V ∷  U `+  V ∷ []) (PF→NPF g)) (Var zero)))
 PF→NPF PF.fold = Lam (fold (Var zero))
-PF→NPF {(ind G `× U)} (PF.P {T} {U} {G} h) = Lam (App (P (Lam (App ((weaken (sub₀ T G ∷ ind G `× U ∷ []) (PF→NPF h))) (`# {! P  !} ((π₂ (Var (suc zero)))))))) (π₁ (Var zero))) 
-PF→NPF (PF.F {T} {U} {G} exp) = Lam (App (P (Lam (App (weaken (sub₀ T G ∷ ind G `× U ∷ []) (PF→NPF exp)) (`# (Var zero) (π₂ (Var (suc zero))))))) (π₁ (Var zero))) 
+PF→NPF (PF.P h) = PF→NPF-hard (PF.P h)
+PF→NPF (PF.F {T} {U} {G} exp) = Lam (App (P (Lam (App (weaken (sub₀ T G ∷ ind G `× U ∷ []) (PF→NPF exp)) (`# (Var zero) (π₂ (Var (suc zero))))))) (π₁ (Var zero)))
 
 
 PF→NPF-sound-Helper : ∀ {T} {U} {G} (f : sub₀ T G `× U PR-CC-ind-alt.→ᴾ T) (x : ⟦ sub₀ T G ⟧ᵀ ) (fst : Alg G) (snd : ⟦ U ⟧ᵀ) → eval (weaken  (sub₀ T G ∷ ind G `× U ∷ []) (PF→NPF f)) (x ∷ᴴ ((⟨ fst , snd ⟩) ∷ᴴ []ᴴ)) (⟨ x , snd ⟩) ≡ PR-CC-ind-alt.eval f (⟨ x , snd ⟩)
 
 
+postulate
+  PF→NPF-sound-hard : ∀ {tyA tyB : PF.TY} (f : tyA PF.→ᴾ tyB) (arg : PF.⟦ tyA ⟧ᵀ)
+    → eval (PF→NPF f) []ᴴ arg ≡ PF.eval f arg
+
 PF→NPF-sound : ∀ {tyA tyB : PF.TY} →  (f : tyA PF.→ᴾ tyB)  → (arg : PF.⟦ tyA ⟧ᵀ  ) → eval  (PF→NPF f) []ᴴ  arg   ≡ PF.eval f arg
 PF→NPF-sound PF.`0 args = refl
 PF→NPF-sound PF.id args = refl
-PF→NPF-sound (PF.C f g) arg rewrite  
-  weaken-Eq []ᴴ (arg ∷ᴴ []ᴴ)  (PF→NPF g) | 
+PF→NPF-sound (PF.C f g) arg rewrite
+  weaken-Eq []ᴴ (arg ∷ᴴ []ᴴ)  (PF→NPF g) |
   weaken-Eq []ᴴ (arg ∷ᴴ []ᴴ)  (PF→NPF f) |
   PF→NPF-sound g arg |
-  PF→NPF-sound f (PF.eval g arg) = refl 
-PF→NPF-sound {tyA} (PF.`# f g) arg rewrite weaken-Eq []ᴴ (arg ∷ᴴ []ᴴ)(PF→NPF f) | weaken-Eq []ᴴ (arg ∷ᴴ []ᴴ)(PF→NPF g) | PF→NPF-sound g arg | PF→NPF-sound f arg = refl 
+  PF→NPF-sound f (PF.eval g arg) = refl
+PF→NPF-sound {tyA} (PF.`# f g) arg rewrite weaken-Eq []ᴴ (arg ∷ᴴ []ᴴ)(PF→NPF f) | weaken-Eq []ᴴ (arg ∷ᴴ []ᴴ)(PF→NPF g) | PF→NPF-sound g arg | PF→NPF-sound f arg = refl
 PF→NPF-sound PF.π₁ args = refl
 PF→NPF-sound PF.π₂ args = refl
 PF→NPF-sound PF.ι₁ args = refl
 PF→NPF-sound PF.ι₂ args = refl
-PF→NPF-sound {U PF.`+ V} (PF.`case f g) (inj₁ x) rewrite weaken-Eq {ctx = []} {ctx' =  U ∷  U `+  V ∷ [] }  []ᴴ (x ∷ᴴ ((inj₁ x) ∷ᴴ []ᴴ))   (PF→NPF f)  = PF→NPF-sound f x 
+PF→NPF-sound {U PF.`+ V} (PF.`case f g) (inj₁ x) rewrite weaken-Eq {ctx = []} {ctx' =  U ∷  U `+  V ∷ [] }  []ᴴ (x ∷ᴴ ((inj₁ x) ∷ᴴ []ᴴ))   (PF→NPF f)  = PF→NPF-sound f x
 PF→NPF-sound {U PF.`+ V} (PF.`case f g) (inj₂ y) rewrite weaken-Eq {ctx = []} {ctx' =  V ∷  U `+  V ∷ [] }  []ᴴ (y ∷ᴴ (inj₂ y ∷ᴴ []ᴴ)) (PF→NPF g) = PF→NPF-sound g y
 PF→NPF-sound PF.fold args = refl
-PF→NPF-sound (PF.P f) arg = {!   !}
+PF→NPF-sound (PF.P f) arg = PF→NPF-sound-hard (PF.P f) arg
 PF→NPF-sound (PR-CC-ind-alt.F  {T} {U} {G} f) (⟨ fst , snd ⟩)   = cong₂ foldF {u = fst} {v = fst} (extensionality (λ x →  ( PF→NPF-sound-Helper f x fst snd))) refl
 
 PF→NPF-sound-Helper f x fst snd rewrite weaken-Eq []ᴴ (x ∷ᴴ ((⟨ fst , snd ⟩) ∷ᴴ []ᴴ))  (PF→NPF f) | PF→NPF-sound f (⟨ x , snd ⟩) = refl
@@ -228,14 +235,14 @@ embedd-ST-Ty ST.TyNat = Nat
 embedd-ST-Ty (tyA ST.⇒ tyB) = (embedd-ST-Ty tyA) ⇒ (embedd-ST-Ty tyB)
 
 
-lookupMap : ∀ {A B : Set}{n}  (vs : Vec A n) (f : Fin n) (g : A → B) → lookup (map g vs) f ≡ g (lookup vs f) 
+lookupMap : ∀ {A B : Set}{n}  (vs : Vec A n) (f : Fin n) (g : A → B) → lookup (map g vs) f ≡ g (lookup vs f)
 lookupMap (x ∷ vs) zero g = refl
 lookupMap (v ∷ vs) (suc f) g = lookupMap vs f g
 
 
 
 
-ℕ→Nat : ℕ → Alg G-Nat 
+ℕ→Nat : ℕ → Alg G-Nat
 ℕ→Nat zero = fold (inj₁ tt)
 ℕ→Nat (suc n) = fold (inj₂ (ℕ→Nat n))
 
@@ -255,43 +262,43 @@ Nat→ℕ∘ℕ→Nat≡id (suc x) = cong suc (Nat→ℕ∘ℕ→Nat≡id x)
 ℕ→ExpNat zero = fold (ι₁ `0)
 ℕ→ExpNat (suc n) = fold (ι₂ (ℕ→ExpNat n))
 
--- unCurry  : ∀ {n}  {ctx : Ctx n} {tyA tyB tyC : Ty} → Exp ctx (tyA ⇒ (tyB ⇒ tyC))  → Exp ctx ((tyA `× tyB) ⇒ tyC) 
+-- unCurry  : ∀ {n}  {ctx : Ctx n} {tyA tyB tyC : Ty} → Exp ctx (tyA ⇒ (tyB ⇒ tyC))  → Exp ctx ((tyA `× tyB) ⇒ tyC)
 -- unCurry {n} {ctx} {tyA}      {tyB} f = Lam (App (App (weaken' [ tyA `× tyB ] f) (π₁ (Var zero))) (π₂ (Var zero)))
 
 
-embedd-ST : ∀ {n}  {ctx : ST.Ctx n} {ty} → ST.Exp ctx ty → Exp (map embedd-ST-Ty ctx) (embedd-ST-Ty ty) 
+embedd-ST : ∀ {n}  {ctx : ST.Ctx n} {ty} → ST.Exp ctx ty → Exp (map embedd-ST-Ty ctx) (embedd-ST-Ty ty)
 
 {-# REWRITE   lookupMap #-}
 
 embedd-ST-P :  ∀ {n}  {ctx : ST.Ctx n} {ty} → (h  : ST.Exp ctx (ty ST.⇒ (ST.TyNat ST.⇒ ty))) → (acc : ST.Exp ctx ty) → (counter : ST.Exp ctx ST.TyNat) → Exp (map embedd-ST-Ty ctx) (embedd-ST-Ty ty)
-embedd-ST-P {n} {ctx} {ty} h acc counter = 
-          let h' =  (embedd-ST h) 
+embedd-ST-P {n} {ctx} {ty} h acc counter =
+          let h' =  (embedd-ST h)
               acc' = embedd-ST acc
-              counter' = embedd-ST counter 
-              h'' = Lam (`case (Var zero) 
-                  (`# ( weaken' (`𝟙 ∷ `𝟙 `+ (embedd-ST-Ty ty `× Nat) ∷ []) acc' ) (fold (ι₁ `0))) 
-                  
-                  (`# 
-                      (App (App (weaken' (embedd-ST-Ty ty `× Nat ∷ `𝟙 `+ (embedd-ST-Ty ty `× Nat) ∷ []) h') (π₁ (Var zero))) (π₂ (Var zero)))  
+              counter' = embedd-ST counter
+              h'' = Lam (`case (Var zero)
+                  (`# ( weaken' (`𝟙 ∷ `𝟙 `+ (embedd-ST-Ty ty `× Nat) ∷ []) acc' ) (fold (ι₁ `0)))
+
+                  (`#
+                      (App (App (weaken' (embedd-ST-Ty ty `× Nat ∷ `𝟙 `+ (embedd-ST-Ty ty `× Nat) ∷ []) h') (π₁ (Var zero))) (π₂ (Var zero)))
                       (fold (ι₂(π₂ (Var zero))))))
-              x = (P {n} {map embedd-ST-Ty ctx}  {G-Nat } {(embedd-ST-Ty ty) `×  Nat} h'') in 
+              x = (P {n} {map embedd-ST-Ty ctx}  {G-Nat } {(embedd-ST-Ty ty) `×  Nat} h'') in
          π₁(App x (  counter'  ))
 embedd-ST {n} {ctx} (ST.Var f)  = Var f
 embedd-ST (ST.Lam exp) = Lam (embedd-ST exp)
 embedd-ST ST.CZero = fold (ι₁ `0)
 embedd-ST ST.Suc = Lam (fold (ι₂ (Var zero)))
 embedd-ST (ST.App f x) = App (embedd-ST f) (embedd-ST x)
-embedd-ST {n} {ctx} {ty} (ST.PrecT h acc counter) = embedd-ST-P {n} {ctx} {ty} h acc counter 
+embedd-ST {n} {ctx} {ty} (ST.PrecT h acc counter) = embedd-ST-P {n} {ctx} {ty} h acc counter
 embedd-ST (ST.Nat n) = ℕ→ExpNat n
 
 
 
 embeddSTValsInv : ∀ {ty : ST.Ty} →    ⟦ (embedd-ST-Ty ty) ⟧ᵀ → ST.evalTy ty
-embeddSTVals : ∀ {ty : ST.Ty} →   ST.evalTy ty → ⟦ (embedd-ST-Ty ty) ⟧ᵀ 
+embeddSTVals : ∀ {ty : ST.Ty} →   ST.evalTy ty → ⟦ (embedd-ST-Ty ty) ⟧ᵀ
 
 
 embeddSTValsInv {ST.TyNat} v = Nat→ℕ v
-embeddSTValsInv {(tyA ST.⇒ tyB)} v = λ x → embeddSTValsInv {tyB} (v (embeddSTVals  {tyA} x)) 
+embeddSTValsInv {(tyA ST.⇒ tyB)} v = λ x → embeddSTValsInv {tyB} (v (embeddSTVals  {tyA} x))
 
 
 embeddSTVals {ST.TyNat} v = ℕ→Nat v
@@ -300,20 +307,20 @@ embeddSTVals {(tyA ST.⇒ tyB)} v = λ x → embeddSTVals {tyB} (v (embeddSTVals
 
 embeddSTVals∘embeddSTValsInv≡id : ∀ {ty : ST.Ty } (v : ⟦ (embedd-ST-Ty ty) ⟧ᵀ) → embeddSTVals (embeddSTValsInv {ty} v ) ≡ v
 embeddSTVals∘embeddSTValsInv≡id {ST.TyNat} v = ℕ→Nat∘Nat→ℕ≡id v
-embeddSTVals∘embeddSTValsInv≡id {tyA ST.⇒ tyB} v = extensionality (λ x → 
-    (embeddSTVals (embeddSTValsInv (v (embeddSTVals (embeddSTValsInv x))))) 
-        ≡⟨ cong ((λ x →  (embeddSTVals (embeddSTValsInv (v x))))) (embeddSTVals∘embeddSTValsInv≡id {tyA} x) ⟩ 
-    embeddSTVals (embeddSTValsInv (v x)) 
-        ≡⟨ embeddSTVals∘embeddSTValsInv≡id {tyB} (v x) ⟩ 
+embeddSTVals∘embeddSTValsInv≡id {tyA ST.⇒ tyB} v = extensionality (λ x →
+    (embeddSTVals (embeddSTValsInv (v (embeddSTVals (embeddSTValsInv x)))))
+        ≡⟨ cong ((λ x →  (embeddSTVals (embeddSTValsInv (v x))))) (embeddSTVals∘embeddSTValsInv≡id {tyA} x) ⟩
+    embeddSTVals (embeddSTValsInv (v x))
+        ≡⟨ embeddSTVals∘embeddSTValsInv≡id {tyB} (v x) ⟩
     ((v x) ∎ ))
 
 embeddSTValsInv∘embeddSTVals≡id : ∀ {ty : ST.Ty} (v : ST.evalTy ty) → embeddSTValsInv (embeddSTVals {ty} v ) ≡ v
 embeddSTValsInv∘embeddSTVals≡id {ST.TyNat} v = Nat→ℕ∘ℕ→Nat≡id v
-embeddSTValsInv∘embeddSTVals≡id {tyA ST.⇒ tyB} v = extensionality (λ x → 
-      embeddSTValsInv (embeddSTVals (v (embeddSTValsInv (embeddSTVals x)))) 
-          ≡⟨ cong (λ x → embeddSTValsInv (embeddSTVals (v x)))  (embeddSTValsInv∘embeddSTVals≡id {tyA} x)  ⟩ 
-      (embeddSTValsInv (embeddSTVals (v x)) 
-          ≡⟨ embeddSTValsInv∘embeddSTVals≡id {tyB} (v x) ⟩ 
+embeddSTValsInv∘embeddSTVals≡id {tyA ST.⇒ tyB} v = extensionality (λ x →
+      embeddSTValsInv (embeddSTVals (v (embeddSTValsInv (embeddSTVals x))))
+          ≡⟨ cong (λ x → embeddSTValsInv (embeddSTVals (v x)))  (embeddSTValsInv∘embeddSTVals≡id {tyA} x)  ⟩
+      (embeddSTValsInv (embeddSTVals (v x))
+          ≡⟨ embeddSTValsInv∘embeddSTVals≡id {tyB} (v x) ⟩
       (v x) ∎))
 
 
@@ -336,7 +343,7 @@ cong-app2 refl x y = refl
 
 helper1Gen : {F : PolyTyOp}{A : Set} →  (φ : ⟦ F ⟧ₚ A →  A) →  (c : Alg F) →
    (foldF φ c) ≡  PR-CC-ind-alt.mapFold `t F φ c
- 
+
 helper1Gen φ (fold x) = refl
 
 
@@ -362,11 +369,11 @@ helper2Gen ctx' (fold (inj₂ y)) = cong fold (cong inj₂ (helper2Gen ctx' y))
 
 
 
-embedd-ST-sound : ∀ {n}  {ctx : ST.Ctx n} {ty} → (ctx' : HVec ST.evalTy ctx) → (sTExp : ST.Exp ctx ty)  → embeddSTVals {ty} ((ST.evalExp sTExp ctx') ) ≡  ( eval (embedd-ST sTExp) (mapᴴ' (embeddSTVals) ctx') ) 
+embedd-ST-sound : ∀ {n}  {ctx : ST.Ctx n} {ty} → (ctx' : HVec ST.evalTy ctx) → (sTExp : ST.Exp ctx ty)  → embeddSTVals {ty} ((ST.eval sTExp ctx') ) ≡  ( eval (embedd-ST sTExp) (mapᴴ' (embeddSTVals) ctx') )
 
 
 helper3 : ∀ {n}  {ctx : ST.Ctx n} {ty} → (ctx' : HVec ST.evalTy ctx) → (h  : ST.Exp ctx (ty ST.⇒ (ST.TyNat ST.⇒ ty))) → (acc : ST.Exp ctx ty) → (c : ℕ ) → embeddSTVals
-      (para (ST.evalExp h ctx') (ST.evalExp acc ctx') c)
+      (para (ST.eval h ctx') (ST.eval acc ctx') c)
       ≡
       proj₁
       (foldF
@@ -412,8 +419,8 @@ helper3 {n} {ctx} {ty} ctx' h acc  (suc c) rewrite weaken'-Eq {ctxB = [ embedd-S
             (fold (ι₂(π₂ (Var zero))))))
           (x ∷ᴴ mapᴴ' embeddSTVals ctx')
           )
-       (ℕ→Nat c) ∷ᴴ 
-       
+       (ℕ→Nat c) ∷ᴴ
+
        (inj₂
         (PR-CC-ind-alt.mapFold `t (`𝟙 `+ `t)
          (λ x →
@@ -435,14 +442,14 @@ helper3 {n} {ctx} {ty} ctx' h acc  (suc c) rewrite weaken'-Eq {ctxB = [ embedd-S
               (fold (ι₂(π₂ (Var zero))))))
             (x ∷ᴴ mapᴴ' embeddSTVals ctx')
             )
-         (ℕ→Nat c)) ∷ᴴ []ᴴ) ) (mapᴴ' embeddSTVals ctx') ((embedd-ST h)) = 
-         
-          (embeddSTVals (ST.evalExp h ctx' (para (ST.evalExp h ctx') (ST.evalExp acc ctx') c) c)) 
-              ≡⟨ switchembeddSTValsApp  (ST.evalExp h ctx') ((para (ST.evalExp h ctx') (ST.evalExp acc ctx') c)) c  ⟩ 
-          ((embeddSTVals (ST.evalExp h ctx'))    (embeddSTVals ((para (ST.evalExp h ctx') (ST.evalExp acc ctx') c))) (embeddSTVals c) 
-              ≡⟨ cong-app2 (embedd-ST-sound ctx' h) (embeddSTVals ((para (ST.evalExp h ctx') (ST.evalExp acc ctx') c))) (embeddSTVals c) ⟩ 
-          eval (embedd-ST h) (mapᴴ' embeddSTVals ctx')(embeddSTVals (para (ST.evalExp h ctx') (ST.evalExp acc ctx') c))(ℕ→Nat c) 
-              ≡⟨ cong₂ (eval (embedd-ST h) (mapᴴ' embeddSTVals ctx')) {u = (ℕ→Nat c)} {v = (ℕ→Nat c)}  (helper3 ctx' h acc c) refl  ⟩  
+         (ℕ→Nat c)) ∷ᴴ []ᴴ) ) (mapᴴ' embeddSTVals ctx') ((embedd-ST h)) =
+
+          (embeddSTVals (ST.eval h ctx' (para (ST.eval h ctx') (ST.eval acc ctx') c) c))
+              ≡⟨ switchembeddSTValsApp  (ST.eval h ctx') ((para (ST.eval h ctx') (ST.eval acc ctx') c)) c  ⟩
+          ((embeddSTVals (ST.eval h ctx'))    (embeddSTVals ((para (ST.eval h ctx') (ST.eval acc ctx') c))) (embeddSTVals c)
+              ≡⟨ cong-app2 (embedd-ST-sound ctx' h) (embeddSTVals ((para (ST.eval h ctx') (ST.eval acc ctx') c))) (embeddSTVals c) ⟩
+          eval (embedd-ST h) (mapᴴ' embeddSTVals ctx')(embeddSTVals (para (ST.eval h ctx') (ST.eval acc ctx') c))(ℕ→Nat c)
+              ≡⟨ cong₂ (eval (embedd-ST h) (mapᴴ' embeddSTVals ctx')) {u = (ℕ→Nat c)} {v = (ℕ→Nat c)}  (helper3 ctx' h acc c) refl  ⟩
           eval (embedd-ST h) (mapᴴ' embeddSTVals ctx')
       (proj₁
        (foldF
@@ -466,7 +473,7 @@ helper3 {n} {ctx} {ty} ctx' h acc  (suc c) rewrite weaken'-Eq {ctxB = [ embedd-S
            (x ∷ᴴ mapᴴ' embeddSTVals ctx')
            )
         (ℕ→Nat c)))
-      (ℕ→Nat c) 
+      (ℕ→Nat c)
                   ≡⟨ cong₂ (eval (embedd-ST h) (mapᴴ' embeddSTVals ctx')) (cong proj₁( helper1Gen {G-Nat} (λ x → eval
       (`case (Var zero)
       (`#
@@ -483,8 +490,8 @@ helper3 {n} {ctx} {ty} ctx' h acc  (suc c) rewrite weaken'-Eq {ctxB = [ embedd-S
           (π₁ (Var zero)))
         (π₂ (Var zero)))
         (fold (ι₂ (π₂ (Var zero))))))
-      (x ∷ᴴ mapᴴ' embeddSTVals ctx')) ((ℕ→Nat c)) )) ((helper2Gen ctx' ((ℕ→Nat c))))  ⟩ 
-                  
+      (x ∷ᴴ mapᴴ' embeddSTVals ctx')) ((ℕ→Nat c)) )) ((helper2Gen ctx' ((ℕ→Nat c))))  ⟩
+
       (eval (embedd-ST h) (mapᴴ' embeddSTVals ctx')
       (proj₁
        (PR-CC-ind-alt.mapFold `t (`𝟙 `+ `t)
@@ -534,12 +541,11 @@ helper3 {n} {ctx} {ty} ctx' h acc  (suc c) rewrite weaken'-Eq {ctxB = [ embedd-S
 {-# REWRITE   embeddSTVals∘embeddSTValsInv≡id #-}
 
 
-embedd-ST-sound  ( ctx') (ST.Var ( f)) = lookupMapᴴ f embeddSTVals ctx' 
+embedd-ST-sound  ( ctx') (ST.Var ( f)) = lookupMapᴴ f embeddSTVals ctx'
 embedd-ST-sound ctx' (ST.Lam exp) = extensionality (λ x → embedd-ST-sound (embeddSTValsInv x ∷ᴴ ctx') exp)
 embedd-ST-sound ctx' ST.CZero = refl
 embedd-ST-sound ctx' ST.Suc = extensionality (λ x → cong fold (cong inj₂ (ℕ→Nat∘Nat→ℕ≡id x) ))
-embedd-ST-sound {ty = ty} ctx' (ST.App f x) rewrite sym (embedd-ST-sound ctx' f) |  sym (embedd-ST-sound ctx' x) | embeddSTValsInv∘embeddSTVals≡id (ST.evalExp x ctx') = refl 
+embedd-ST-sound {ty = ty} ctx' (ST.App f x) rewrite sym (embedd-ST-sound ctx' f) |  sym (embedd-ST-sound ctx' x) | embeddSTValsInv∘embeddSTVals≡id (ST.eval x ctx') = refl
 embedd-ST-sound ctx' (ST.Nat x) = ℕ→Nat≡eval∘ℕ→ExpNat x ((mapᴴ' (embeddSTVals) ctx'))
-embedd-ST-sound {n} {ctx} {ty} ctx' (ST.PrecT h acc counter) rewrite sym (embedd-ST-sound ctx' counter)  with ST.evalExp counter ctx'
+embedd-ST-sound {n} {ctx} {ty} ctx' (ST.PrecT h acc counter) rewrite sym (embedd-ST-sound ctx' counter)  with ST.eval counter ctx'
 ... | c  =  helper3 ctx' h acc c
-  

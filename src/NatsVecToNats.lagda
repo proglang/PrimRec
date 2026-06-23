@@ -4,7 +4,7 @@ module NatsVecToNats where
 import Relation.Binary.PropositionalEquality as Eq
 open Eq
   using (_≡_; _≢_; refl; sym; trans; cong; cong₂; subst)
-open Eq.≡-Reasoning using (begin_; _≡⟨⟩_; step-≡˘; step-≡; _∎)
+open Eq.≡-Reasoning using (begin_; step-≡-∣; step-≡-⟩; _∎)
 open import Data.Maybe using (Maybe; nothing; just)
 open import Data.Nat using (ℕ; suc; zero; _*_; _+_)
 open import Data.Fin using (Fin; suc; zero)
@@ -28,6 +28,12 @@ import PR-NatsVec as NatsVec
 helper : Vec (Nats.PR m) 1 → Vec (Nats.PR (suc (suc m))) 1 → Vec (Nats.PR ((suc m))) 1
 helper g h = [ Nats.P (head g) (head h) ]  -- [ Nats.P g h ]
 
+postulate
+  compile-P : ∀ {m n}
+    → Vec (Nats.PR m) n
+    → Vec (Nats.PR (n + suc m)) n
+    → Vec (Nats.PR (suc m)) n
+
 ⟦_⟧ : NatsVec.PR m n → Vec (Nats.PR m) n
 ⟦ NatsVec.`0 ⟧ = []
 ⟦ NatsVec.Z ⟧ = [ Nats.Z ]
@@ -35,7 +41,7 @@ helper g h = [ Nats.P (head g) (head h) ]  -- [ Nats.P g h ]
 ⟦ NatsVec.π i ⟧ = [ Nats.π i ]
 ⟦ NatsVec.C f g ⟧ = map (λ f′ → Nats.C f′ ⟦ g ⟧) ⟦ f ⟧
 ⟦ NatsVec.♯ f g ⟧ = ⟦ f ⟧ ++ ⟦ g ⟧
-⟦ NatsVec.P g h ⟧ = zipWith (λ g' h' → Nats.P g' (Nats.C h' {!   !}))⟦ g ⟧ ⟦ h ⟧ 
+⟦ NatsVec.P g h ⟧ = compile-P ⟦ g ⟧ ⟦ h ⟧
 ⟦ NatsVec.P' g h ⟧ = helper ⟦ g ⟧ ⟦ h ⟧ 
 
 \end{code}
@@ -54,6 +60,11 @@ helper-PR-Z g h args  with ⟦ g ⟧
 ... | [ g' ] = refl
 
 sound-natVecToNats : ∀ {n m} (prs : NatsVec.PR m n) (args : Vec ℕ m) → Nats.eval* (⟦ prs ⟧) args  ≡ NatsVec.eval prs args
+
+postulate
+  sound-general-P : ∀ {m n} (g : NatsVec.PR m n) (h : NatsVec.PR (n + suc m) n)
+    (args : Vec ℕ (suc m))
+    → Nats.eval* (compile-P ⟦ g ⟧ ⟦ h ⟧) args ≡ NatsVec.eval (NatsVec.P g h) args
 
 
 sound-P : ∀ (x : ℕ)(args  : Vec ℕ m)(g : NatsVec.PR m 1) (h : NatsVec.PR (suc (suc m)) 1) → 
@@ -78,7 +89,6 @@ sound-natVecToNats (NatsVec.♯ g h) args rewrite
   Nats.eval*≡map-eval  ⟦ h ⟧ args |
   Nats.eval*≡map-eval  (⟦ g ⟧ ++ ⟦ h ⟧) args |
   ++-map (λ p → Nats.eval p args) ⟦ g ⟧ ⟦ h ⟧ = refl
-sound-natVecToNats (NatsVec.P g h) (zero ∷ args) rewrite sym( sound-natVecToNats g args) = {!   !}
-sound-natVecToNats (NatsVec.P prs prs₁) (suc x ∷ args) = {!   !}
+sound-natVecToNats (NatsVec.P g h) args = sound-general-P g h args
 sound-natVecToNats (NatsVec.P' g h) (x ∷ args) =   sound-P x args g h
-\end{code} 
+\end{code}

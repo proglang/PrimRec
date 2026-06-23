@@ -8,7 +8,7 @@ open import Agda.Builtin.Equality.Rewrite
 import Relation.Binary.PropositionalEquality as Eq
 open Eq
   using (_≡_; _≢_; refl; sym; trans; cong; cong₂; subst)
-open Eq.≡-Reasoning using (begin_; _≡⟨⟩_; step-≡˘; step-≡; _∎)
+open Eq.≡-Reasoning using (begin_; step-≡-∣; step-≡-⟩; _∎)
 
 open import Data.Maybe using (Maybe; nothing; just)
 open import Data.Nat using (ℕ; suc; zero; _*_; _+_)

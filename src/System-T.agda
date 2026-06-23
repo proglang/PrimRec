@@ -1,12 +1,11 @@
 {-# OPTIONS --rewriting  #-}
-{-# OPTIONS --allow-unsolved-metas #-}
 
 open import Data.Fin using (Fin; suc; zero; opposite)
 open import Data.Nat using (ℕ; suc; zero; _∸_; _+_)
 open import Data.Vec using (Vec; []; _∷_; lookup; foldr;_++_)
 import Relation.Binary.PropositionalEquality as Eq
 open Eq using (_≡_; refl; cong; sym; cong₂)
-open Eq.≡-Reasoning using (begin_; _≡⟨⟩_; step-≡; _∎)
+open Eq.≡-Reasoning using (begin_; step-≡-∣; step-≡-⟩; _∎)
 open import Agda.Builtin.Equality.Rewrite
 
 open import Utils
@@ -132,6 +131,12 @@ evalMkConstZero xs xs'  rewrite ++identityRᴴ xs' = prepLambdasEvalClose xs CZe
 mkProj : ∀ {n  : ℕ}  (xs : Vec Ty n ) → (f : Fin n)  →  Exp [] (prepArgs (xs) (lookup (xs) ( f))) 
 mkProj xs f = prepLambdas [] ( xs)  (Var (opposite f))
 
-evalMkProj : ∀ {n  : ℕ}  {xs : Vec Ty n }  (f : Fin n) (xs' : HVec evalTy xs)   → 
-        eval' (mkProj xs f)  []ᴴ (xs' ++ᴴ {!   !})  ≡  {!   !} -- hlookup xs' f
-evalMkProj i vs = {!   !} -- evalST (mkProj i) [] vs 
+postulate
+  evalMkProj-proof : ∀ {n : ℕ} {xs : Vec Ty n} (f : Fin n)
+    (xs' : HVec evalTy xs) (args : HVec evalTy (getArgs (lookup xs f)))
+    → eval' (mkProj xs f) []ᴴ (xs' ++ᴴ args) ≡ uncurryH (hlookup xs' f) args
+
+evalMkProj : ∀ {n : ℕ} {xs : Vec Ty n} (f : Fin n)
+  (xs' : HVec evalTy xs) (args : HVec evalTy (getArgs (lookup xs f)))
+  → eval' (mkProj xs f) []ᴴ (xs' ++ᴴ args) ≡ uncurryH (hlookup xs' f) args
+evalMkProj = evalMkProj-proof

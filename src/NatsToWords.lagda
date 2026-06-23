@@ -4,7 +4,7 @@ module NatsToWords where
 import Relation.Binary.PropositionalEquality as Eq
 open Eq
   using (_≡_; _≢_; refl; sym; trans; cong; cong₂; subst)
-open Eq.≡-Reasoning using (begin_; _≡⟨⟩_; step-≡˘; step-≡; _∎)
+open Eq.≡-Reasoning using (begin_; step-≡-∣; step-≡-⟩; _∎)
 open import Data.Maybe using (Maybe; nothing; just)
 open import Data.Nat using (ℕ; suc; zero; _*_; _+_)
 open import Data.Fin using (Fin; suc; zero)
@@ -32,6 +32,7 @@ import PR-Words as Words
 ⟦ Nats.π i ⟧    = Words.π i
 ⟦ Nats.C f g* ⟧ = Words.C ⟦ f ⟧ (map ⟦_⟧ g*)
 ⟦ Nats.P g h ⟧  = Words.P ⟦ g ⟧ (λ{ tt → ⟦ h ⟧})
+⟦ Nats.F g h ⟧  = ⟦ Nats.F⇒P g h ⟧
 \end{code}
 }
 \newcommand\PRNatsToWordsEncoding{
@@ -45,6 +46,7 @@ import PR-Words as Words
 \end{code}
 \newcommand\PRNatsToWordsSound{
 \begin{code}
+{-# TERMINATING #-}
 sound : ∀ (p : Nats.PR n) (v* : Vec ℕ n)
   → ⟦ Nats.eval p v* ⟧ⱽ ≡ Words.eval ⟦ p ⟧ (map ⟦_⟧ⱽ v*)
 \end{code}
@@ -62,6 +64,7 @@ sound (Nats.P g h) (suc x ∷ v*) = trans (sound h (Nats.eval (Nats.P g h) (x �
                                         (cong (Words.eval ⟦ h ⟧) 
                                               (cong (_∷ ⟦ x ⟧ⱽ ∷ map ⟦_⟧ⱽ v*)
                                                     (sound (Nats.P g h) (x ∷ v*))))
+sound (Nats.F g h) v* = trans (cong ⟦_⟧ⱽ (Nats.F⇒P-sound g h v*)) (sound (Nats.F⇒P g h) v*)
 
 sound* [] v* = refl
 sound* (p ∷ p*) v* rewrite sound p v* | sound* p* v* = refl
@@ -99,5 +102,3 @@ soundᴿ (Words.P p h) ((tt ∷ᴸ xs) ∷ v*)
 soundᴿ* [] v* = refl
 soundᴿ* (p ∷ p*) v* rewrite soundᴿ p v* | soundᴿ* p* v* = refl
 \end{code}
-
-

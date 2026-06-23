@@ -1,5 +1,4 @@
 {-# OPTIONS --rewriting --prop -v rewriting:50 #-}
-{-# OPTIONS --allow-unsolved-metas #-}
 module PRHVec where
 
 open import Data.Fin using (Fin; suc; zero)
@@ -7,7 +6,7 @@ open import Data.Nat using (ℕ; suc; zero; _∸_; _+_)
 open import Data.Vec using (Vec; []; _∷_; lookup; map)
 import Relation.Binary.PropositionalEquality as Eq
 open Eq using (_≡_; refl; cong; sym; cong₂)
-open Eq.≡-Reasoning using (begin_; _≡⟨⟩_; step-≡; _∎)
+open Eq.≡-Reasoning using (begin_; step-≡-∣; step-≡-⟩; _∎)
 open import Agda.Builtin.Equality.Rewrite
 open import Function using (id)
 

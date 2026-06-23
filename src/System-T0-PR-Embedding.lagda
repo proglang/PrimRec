@@ -4,13 +4,13 @@ module System-T0-PR-Embedding where
 
 
 
-open import Data.Fin using (Fin; suc; zero; opposite; raise; inject+; fromℕ)
+open import Data.Fin using (Fin; suc; zero; opposite; _↑ˡ_; _↑ʳ_; fromℕ)
 open import Data.Nat using (ℕ; suc; zero; _+_)
 open import Data.Vec using (Vec; []; _∷_; _++_; lookup; map)
 open import Data.Vec.Properties using (lookup-++ˡ; lookup-++ʳ)
 import Relation.Binary.PropositionalEquality as Eq
 open Eq using (_≡_; refl; cong; sym)
-open Eq.≡-Reasoning using (begin_; _≡⟨⟩_; step-≡; _∎)
+open Eq.≡-Reasoning using (begin_; step-≡-∣; step-≡-⟩; _∎)
 open import Agda.Builtin.Equality.Rewrite
 
 open import FinProperties using (inject+0)
@@ -18,7 +18,7 @@ open import VecProperties using (_++r_; fastReverse; ++r=reverse++; reverse; rev
 open import System-T0 using (Exp; ext2; maplookupEq; evalClosed; cong3)
 import System-T0 as T0
 open System-T0.Exp
-open import PR-Nat
+open import PR-Nat hiding (para)
 open import Utils
 open import EvalPConstructor using (para; paraNatEq; paraNatPR; paraNat; evalP≡paraNat')
 
@@ -35,22 +35,22 @@ toN zero = []
 toN (suc n) = zero ∷ (map suc (toN n))
 
 mToM+N : ∀  (n : ℕ)  (m : ℕ) → Vec (Fin (m + n)) n
-mToM+N n m = map (raise m) (toN n)
+mToM+N n m = map (λ i → m ↑ʳ i) (toN n)
 
 
 zeroToM-Inject+N : ∀  (n : ℕ)  (m : ℕ) → Vec (Fin (m + n)) m
-zeroToM-Inject+N n m = map (inject+ n) (toN m)
+zeroToM-Inject+N n m = map (λ i → i ↑ˡ n) (toN m)
 
 
 helperLookupConsSuc : ∀ {A : Set} {n m  : ℕ} (x : A)(xs : Vec A m)(fins : Vec  (Fin m) n) → map (lookup (x ∷ xs)) (map (suc) fins) ≡ map  (lookup ( xs)) ( fins)
 helperLookupConsSuc xs x [] = refl
 helperLookupConsSuc xs x (f ∷ fins) rewrite helperLookupConsSuc xs x fins =  refl
 
-helperLookupMapRaise : ∀ {A : Set} {n m  o : ℕ} (xs : Vec A n) (ys : Vec A m) (fins : Vec  (Fin (m)) o) → map (lookup ( xs ++ ys )) (map (raise n) fins) ≡ map  (lookup ( ys)) ( fins)
+helperLookupMapRaise : ∀ {A : Set} {n m  o : ℕ} (xs : Vec A n) (ys : Vec A m) (fins : Vec  (Fin (m)) o) → map (lookup ( xs ++ ys )) (map (λ i → n ↑ʳ i) fins) ≡ map  (lookup ( ys)) ( fins)
 helperLookupMapRaise xs ys [] = refl
 helperLookupMapRaise xs ys (f ∷ fins) rewrite lookup-++ʳ xs ys f = cong ((lookup ys f) ∷_) (helperLookupMapRaise xs ys fins)
 
-helperLookupMapInject : ∀ {A : Set} {n m  o : ℕ} (xs : Vec A n) (ys : Vec A m) (fins : Vec  (Fin (n)) o) → map (lookup ( xs ++ ys )) (map (inject+ m) fins) ≡ map  (lookup ( xs)) ( fins)
+helperLookupMapInject : ∀ {A : Set} {n m  o : ℕ} (xs : Vec A n) (ys : Vec A m) (fins : Vec  (Fin (n)) o) → map (lookup ( xs ++ ys )) (map (λ i → i ↑ˡ m) fins) ≡ map  (lookup ( xs)) ( fins)
 helperLookupMapInject xs ys [] = refl
 helperLookupMapInject xs ys (f ∷ fins) rewrite lookup-++ˡ xs ys f = cong ((lookup xs f) ∷_) (helperLookupMapInject xs ys fins)
 
@@ -140,11 +140,11 @@ evalAppHelper :  ∀  {n m : ℕ} (args : Vec ℕ m) (ctx : Vec ℕ n) (x : PR n
 evalAppHelper {n} {m} args ctx x rewrite 
         eval*≡map-eval  (map π (zeroToM-Inject+N m n) ++ C x (map π (zeroToM-Inject+N m n)) ∷ map π (mToM+N m n))  (ctx ++r args) |
         sym(++-map (λ p → eval p (ctx ++r args)) (map π (zeroToM-Inject+N m n)) (C x (map π (zeroToM-Inject+N m n)) ∷ map π (mToM+N m n)))  | 
-        eval*≡map-eval (map π (map (inject+ m) (toN n))) (ctx ++r args)  |
-        evalProjVec=map-lookup (map (inject+ m) (toN n)) (ctx ++r args) |
+        eval*≡map-eval (map π (map (λ i → i ↑ˡ m) (toN n))) (ctx ++r args)  |
+        evalProjVec=map-lookup (map (λ i → i ↑ˡ m) (toN n)) (ctx ++r args) |
         ++r=reverse++ ctx args |
         mapToNInjectEq  (reverse ctx) args |
-        evalProjVec=map-lookup ((map (raise n) (toN m))) ((reverse ctx) ++ args) |
+        evalProjVec=map-lookup (map (λ i → n ↑ʳ i) (toN m)) (reverse ctx ++ args) |
         mapToNRaiseEq  (reverse ctx) args |
         sym (++r=reverse++ ctx (eval x (reverse ctx) ∷ args) ) |
         reverse=fastReverse ctx

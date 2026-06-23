@@ -1,4 +1,4 @@
-{-# OPTIONS --rewriting  #-}
+{-# OPTIONS --rewriting --large-indices #-}
 module HVec where
 
 open import Data.Fin using (Fin; suc; zero)
@@ -64,4 +64,3 @@ fastReverseᴴ xs = xs ++rᴴ []ᴴ
 ++identityRᴴ : ∀ {F : S → Set}{ n : ℕ}   {xs : Vec S n} → ( xs' :  HVec F xs)→ xs' ++ᴴ []ᴴ ≡ xs'
 ++identityRᴴ []ᴴ = refl
 ++identityRᴴ (x ∷ᴴ xs) = cong (λ v → x ∷ᴴ v) (++identityRᴴ xs)
-

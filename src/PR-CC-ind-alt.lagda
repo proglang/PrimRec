@@ -20,7 +20,7 @@ open import Data.Product using (Σ)
 import Relation.Binary.PropositionalEquality as Eq
 open Eq
   using (_≡_; _≢_; refl; sym; trans; cong; cong₂; subst)
-open Eq.≡-Reasoning using (begin_; _≡⟨⟩_; step-≡˘; step-≡; _∎)
+open Eq.≡-Reasoning using (begin_; step-≡-∣; step-≡-⟩; _∎)
 open import Utils
 open import Agda.Builtin.Equality.Rewrite
 
@@ -260,6 +260,7 @@ module FromNats where
   ⟦ Nats.π i ⟧    = lookup i
   ⟦ Nats.C f g* ⟧ = C ⟦ f ⟧ ⟦ g* ⟧*
   ⟦ Nats.P g h ⟧  = P (C (`case (C ⟦ g ⟧ π₂) (C ⟦ h ⟧ assoc-×)) dist-+-x)
+  ⟦ Nats.F g h ⟧  = F (C (`case (C ⟦ g ⟧ π₂) ⟦ h ⟧) dist-+-x)
 
   ⟦ [] ⟧*         = `0
   ⟦ p ∷ p* ⟧*     = `# ⟦ p ⟧ ⟦ p* ⟧*

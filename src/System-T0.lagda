@@ -2,14 +2,14 @@
 {-# OPTIONS --rewriting  #-}
 module System-T0 where
 
-open import Data.Fin using (Fin; suc; zero; fromℕ; opposite; raise; inject+)
+open import Data.Fin using (Fin; suc; zero; fromℕ; opposite; _↑ˡ_; _↑ʳ_)
 open import Data.Nat using (ℕ; suc; zero; _+_)
 open import Data.Vec using (Vec; []; _∷_; _++_; lookup; map)
 open import Data.Vec.Properties using (lookup-++ˡ; map-cong; lookup-++ʳ)
 open import Function.Base using (id; _∘_; flip)
 import Relation.Binary.PropositionalEquality as Eq
 open Eq using (_≡_; refl; cong; sym; _≗_)
-open Eq.≡-Reasoning using (begin_; _≡⟨⟩_; step-≡; _∎)
+open Eq.≡-Reasoning using (begin_; step-≡-∣; step-≡-⟩; _∎)
 open import Agda.Builtin.Equality.Rewrite
 open import FinProperties using (inject+0)
 open import VecProperties using (_++r_; fastReverse; _ᴿ; lookupOpRev; lkupfromN)
@@ -62,7 +62,7 @@ evalClosed e = eval e []
 \begin{code}[hide]
 
 raiseExP : ∀ {m n} (o) → Exp m n → Exp (m + o) n
-raiseExP o (Var x) =  Var (inject+ o x)
+raiseExP o (Var x) =  Var (x ↑ˡ o)
 raiseExP o (Lam exp) = Lam (raiseExP o exp)
 raiseExP _ CZero = CZero
 raiseExP _ Suc = Suc
@@ -169,10 +169,10 @@ evalMkProj i vs = begin
 
 mkFinvec'' : ∀ (n : ℕ ) (m : ℕ ) → Vec (Fin (n + m)) n
 mkFinvec'' zero _ = []
-mkFinvec'' (suc n) m = inject+ m  (fromℕ n ) ∷ (mkFinvec'' n (suc m))
+mkFinvec'' (suc n) m = (fromℕ n ↑ˡ m) ∷ mkFinvec'' n (suc m)
 
 mkFinvec' : ∀ (n : ℕ ) (m : ℕ ) (o : ℕ) → Vec (Fin (o + n + m)) n
-mkFinvec' n m o = map (raise o) (mkFinvec'' n m)
+mkFinvec' n m o = map (λ i → o ↑ʳ i) (mkFinvec'' n m)
 
 mkFinvec : ∀ (n : ℕ ) (m : ℕ ) → Vec (Fin (n + m)) n
 mkFinvec n m = mkFinvec' n m zero
@@ -189,7 +189,7 @@ evalApply*=eval-map-apply {n} {suc m } exp (arg ∷ args) ctx rewrite evalApply*
 
 maplookupEq : ∀  {o n m  : ℕ}  (zs : Vec ℕ o) (xs : Vec ℕ n) (ys : Vec ℕ m) → (map (λ x → lookup (zs ++ xs ++r ys) x) (mkFinvec' n m o)) ≡ xs
 maplookupEq _ [] _  = refl
-maplookupEq {o} {suc n} {m}  zs (x ∷ xs) ys   rewrite lookup-++ʳ zs (xs ++r (x ∷ ys))  (inject+ m (fromℕ n)) | lkupfromN {v = x} xs ys  = cong (λ vec → x ∷ vec) (maplookupEq  zs xs (x ∷ ys) )
+maplookupEq {o} {suc n} {m}  zs (x ∷ xs) ys   rewrite lookup-++ʳ zs (xs ++r (x ∷ ys))  (fromℕ n ↑ˡ m) | lkupfromN {v = x} xs ys  = cong (λ vec → x ∷ vec) (maplookupEq  zs xs (x ∷ ys) )
 
 
 mapEvalVarsEq : ∀ {o n m : ℕ} (zs : Vec ℕ o) (xs : Vec ℕ n) (ys : Vec ℕ m) →  (map (λ arg → eval arg (zs ++ xs ++r ys) []) (map Var (mkFinvec' n m o))) ≡ xs 
@@ -245,7 +245,6 @@ myMapCong f g (x ∷ vs) eq rewrite eq x = cong (λ v → (g x) ∷ v) (myMapCon
 evalApplyToVarsMap : ∀ {n m : ℕ} (vs : Vec ℕ n) (gs : Vec (Exp zero n) m) → map (λ exp → eval ((applyToVars {n} {zero}) (raiseExP n exp)) (fastReverse vs) []) gs ≡ map (λ exp → eval exp [] vs) gs
 evalApplyToVarsMap vs [] = refl
 evalApplyToVarsMap vs (g ∷ gs) rewrite evalApplyToVars g vs | evalApplyToVarsMap vs gs  = refl
-evalApplyToVarsMap {n} vs gs = myMapCong ((λ exp → eval ((applyToVars {n} {zero}) (raiseExP n exp)) (fastReverse vs) [])) ((λ exp → eval exp [] vs)) gs λ x → evalApplyToVars x vs
 
 
 evalGeneralCompHelper : ∀ {n m : ℕ} (args : Vec ℕ m) (gs : Vec (Exp zero m) n) → (map (λ arg → eval arg (fastReverse args) [])(map (applyToVars {m} {zero}) (map (raiseExP m) gs))) ≡

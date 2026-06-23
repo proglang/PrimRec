@@ -3,12 +3,12 @@
 
 module VecProperties where
 
-open import Data.Fin using (Fin; suc; zero; fromℕ; opposite; raise; inject+)
+open import Data.Fin using (Fin; suc; zero; fromℕ; opposite; _↑ˡ_)
 open import Data.Nat using (ℕ; suc; zero; _+_)
 open import Data.Vec using (Vec; []; _∷_; _++_; lookup)
 import Relation.Binary.PropositionalEquality as Eq
 open Eq using (_≡_; refl; cong; sym)
-open Eq.≡-Reasoning using (begin_; _≡⟨⟩_; step-≡; _∎)
+open Eq.≡-Reasoning using (begin_; step-≡-∣; step-≡-⟩; _∎)
 open import Agda.Builtin.Equality.Rewrite
 open import FinProperties using (inject+0; inject+Eq)
 
@@ -36,7 +36,7 @@ _ᴿ = fastReverse
 {-# REWRITE inject+Eq #-}
 
 
-lkupfromN' : ∀  {A}{m n o :  ℕ}(xs : Vec A m) (ys : Vec A ((suc n) + (o))) → lookup ((xs ++r ys))   (inject+ {suc(m + n)} o (fromℕ ( m + n)))   ≡  lookup ys ( (inject+ o (fromℕ (n ))))
+lkupfromN' : ∀  {A}{m n o :  ℕ}(xs : Vec A m) (ys : Vec A ((suc n) + (o))) → lookup ((xs ++r ys))   (fromℕ (m + n) ↑ˡ o)   ≡  lookup ys (fromℕ n ↑ˡ o)
 lkupfromN' [] (x ∷ ys) = refl
 lkupfromN' {A} {suc m} {n} {o} (x ∷ xs) (y ∷ ys) = lkupfromN' {A} {m} {suc n} {o} xs (x ∷ (y ∷ ys))
 
@@ -45,14 +45,14 @@ lkupfromN' {A} {suc m} {n} {o} (x ∷ xs) (y ∷ ys) = lkupfromN' {A} {m} {suc n
 \newcommand{\lookupFromN}{%
 \begin{code}[]
 lkupfromN : ∀ {A} {n m v}(vs : Vec A n) (ys : Vec A m) → 
-    lookup (vs ++r (v ∷ ys)) (inject+ m (fromℕ n)) ≡ v
+    lookup (vs ++r (v ∷ ys)) (fromℕ n ↑ˡ m) ≡ v
 \end{code}}
 
 \begin{code}[hide]
 lkupfromN {A} {n} {m} {v} (xs) (ys) = lkupfromN' {A} {n} xs (v ∷ ys ) 
 
 
-lookupOP : ∀  {A} {n m : ℕ} (f : Fin ((n)) ) (vs : Vec A (n)) (ys : Vec A (m))  → lookup (vs ++r ys) (inject+ m (opposite f)) ≡ lookup vs f
+lookupOP : ∀  {A} {n m : ℕ} (f : Fin ((n)) ) (vs : Vec A (n)) (ys : Vec A (m))  → lookup (vs ++r ys) (opposite f ↑ˡ m) ≡ lookup vs f
 lookupOP zero (v ∷ vs) ys = lkupfromN vs ys
 lookupOP (suc f) (x ∷ vs) (ys) = lookupOP f (vs) ((x ∷ ys))
 \end{code}
@@ -98,4 +98,3 @@ reverse=fastReverse xs rewrite ++r=reverse++ xs [] = ++identityR (reverse xs)
 
 -- reverse[]≡[] : ∀ {A : Set} {n : ℕ}  →  reverse [] ≡ []
 \end{code}
-

@@ -8,15 +8,15 @@ module PR-SystemT0-Embedding where
 open import Data.Nat using (ℕ; suc; zero)
 open import Data.Vec using (Vec; []; _∷_; map) 
 import Relation.Binary.PropositionalEquality as Eq
-open Eq using (_≡_; refl; cong; sym)
-open Eq.≡-Reasoning using (begin_; _≡⟨⟩_; step-≡; _∎)
+open Eq using (_≡_; refl; cong; sym; trans)
+open Eq.≡-Reasoning using (begin_; step-≡-∣; step-≡-⟩; _∎)
 
 open import System-T0 using (Exp; mkConstZero; mkProj; raseExp0=id; raiseExP; evalClosed; evalMkConstZero; evalMkProj; generalComp; evalGeneralComp; paraT; evalParaT; cong3; extensionality)
 open System-T0.Exp
 open import EvalPConstructor using (para; paraNat'; evalP≡paraNat')
 
 
-open import PR-Nat
+open import PR-Nat hiding (para)
 open import Utils
 
 
@@ -25,6 +25,7 @@ open import Utils
 -- ------------------------------------------------------------------------------
 
 
+{-# TERMINATING #-}
 convComp : ∀  {n m : ℕ }→ PR n → Vec (PR m) n → Exp zero m
 
 convPR : ∀ {n} → PR n → PR (suc (suc n)) → Exp zero (suc n)
@@ -52,6 +53,7 @@ prToST′ (π i) = mkProj i
 \begin{code}[hide]
 prToST′ (C f gs) = convComp f gs 
 prToST′  (P g h) = convPR g h
+prToST′  (F {n = n} g h) = convPR g (C h (dropCounter n))
 
 prToST : (n : ℕ)  → PR m → Exp n m 
 prToST n pr = raiseExP n (prToST′ pr)
@@ -84,6 +86,7 @@ embeddPR-ST-Sound {suc n} (π i) vs = evalMkProj i vs
 embeddPR-ST-Sound  σ [ x ] = refl
 embeddPR-ST-Sound  (C f gs) vs =  convCompSound f gs vs
 embeddPR-ST-Sound  (P g h) vs = convParaSound g h vs            
+embeddPR-ST-Sound  (F g h) vs = trans (convParaSound g (C h (dropCounter _)) vs) (sym (F⇒P-sound g h vs))
 
 
 -- -- ------------------------------------------------------------------------------
@@ -101,7 +104,7 @@ convComp f gs = generalComp (prToST′ f) (prToSt*  gs)
 
 eval*≡evalPrToST* : ∀ {n m}  (vs : Vec ℕ m) (gs : Vec (PR m) n) → (map (λ g → evalClosed g vs) (prToSt* gs)) ≡ (eval* gs vs)
 eval*≡evalPrToST* vs [] = refl
-eval*≡evalPrToST* vs (g ∷ gs) rewrite embeddPR-ST-Sound  g vs | eval*≡evalPrToST* vs gs | raseExp0=id (prToST′ g) = refl
+eval*≡evalPrToST* vs (g ∷ gs) rewrite embeddPR-ST-Sound g vs | eval*≡evalPrToST* vs gs = refl
 
 convCompSoundHelper : ∀ {n m} (f : PR n) (vs : Vec ℕ m) (gs : Vec (PR m) n) → evalClosed (prToST′ f) (map (λ g → evalClosed g vs) (prToSt* gs))≡ eval f (eval* gs vs)
 convCompSoundHelper f vs gs rewrite eval*≡evalPrToST* vs gs | embeddPR-ST-Sound f (eval* gs vs) = refl

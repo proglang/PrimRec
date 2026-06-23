@@ -4,7 +4,7 @@ module PR-Nat-Example where
 import Relation.Binary.PropositionalEquality as Eq
 open Eq
   using (_≡_; _≢_; refl; sym; trans; cong; cong₂; subst)
-open Eq.≡-Reasoning using (begin_; _≡⟨⟩_; step-≡˘; step-≡; _∎)
+open Eq.≡-Reasoning using (begin_; step-≡-∣; step-≡-⟨; step-≡-⟩; _∎)
 open import Data.Empty using (⊥; ⊥-elim)
 open import Data.Bool using (Bool; true; false)
 open import Data.Fin using (Fin; suc; zero)
@@ -447,7 +447,7 @@ untriangle-triangle (suc m) (suc y) (s≤s y≤m) =
     -- lemma-0′ a b c ba≡ca = lemma-0 a b c (trans (+-comm a b) (trans ba≡ca (+-comm c a)))
 
     lemma : ∀ m y → suc m + triangle m ≡ y + triangle m → suc m ≡ y
-    lemma m y = +-cancelʳ-≡ (suc m) y
+    lemma m y = +-cancelʳ-≡ (triangle m) (suc m) y
 
     lemma-contra : ∀ m y → suc m ≢ y → suc m + triangle m ≢ y + triangle m
     lemma-contra m y sm≢y smt≡yt = sm≢y (lemma m y smt≡yt)
@@ -497,7 +497,7 @@ pair-unpair-identity p =
     triangle (untriangle p ∸ (p ∸ triangle (untriangle p)) + (p ∸ triangle (untriangle p))) + (p ∸ triangle (untriangle p))
   ≡⟨ cong (λ m → triangle m + (p ∸ triangle (untriangle p))) (m∸n+n≡m (triangle-untriangle p)) ⟩
     triangle (untriangle p) + (p ∸ triangle (untriangle p))
-  ≡˘⟨ +-∸-assoc (triangle (untriangle p)) (lemma2 p) ⟩
+  ≡⟨ +-∸-assoc (triangle (untriangle p)) (lemma2 p) ⟨
     (triangle (untriangle p) + p) ∸ triangle (untriangle p)
   ≡⟨ m+n∸m≡n (triangle (untriangle p)) p ⟩
     p

@@ -3,7 +3,7 @@ module HTreesVec where
 import Relation.Binary.PropositionalEquality as Eq
 open Eq
   using (_≡_; _≢_; refl; sym; trans; cong; cong₂; subst; inspect; [_])
-open Eq.≡-Reasoning using (begin_; _≡⟨⟩_; step-≡˘; step-≡; _∎)
+open Eq.≡-Reasoning using (begin_; step-≡-∣; step-≡-⟩; _∎)
 open import Data.Maybe using (Maybe; nothing; just)
 open import Data.Nat using (ℕ; suc; zero; _*_; _+_)
 open import Data.Fin using (Fin; suc; zero)
@@ -46,8 +46,8 @@ data PR {r} (hr : HRank S A r) : {m n : ℕ} → Vec S m × Vec S n → Set wher
 
   P  : ∀ {s₀}{ssm : Vec S m}
     → (res : S → Vec S n)
-    → (h : (a : A) → head (proj₂ (hr a)) ≡ s₀
-                   → PR hr ⟨ (concat (map res (proj₁ (hr a))) ++ proj₁ (hr a)) ++ ssm , res s₀ ⟩)
+    → (h : (s : S) (a : A) → head (proj₂ (hr a)) ≡ s
+                   → PR hr ⟨ (concat (map res (proj₁ (hr a))) ++ proj₁ (hr a)) ++ ssm , res s ⟩)
     → PR hr ⟨ s₀ ∷ ssm , res s₀ ⟩
 
 data Alg  {A}{S}{r : Rank A} (hr : HRank S A r) : S → Set
@@ -76,6 +76,14 @@ mapᴬ : ∀ {n}{r} {hr : HRank S A r} {ss : Vec S n} {res : S → S}
 mapᴬ f []* = []*
 mapᴬ f (x ∷* v*) = (f Fin.zero x) ∷* (mapᴬ (f ∘ Fin.suc) v*)
 
+concatMapᴬ : ∀ {n}{r} {hr : HRank S A r} {ss : Vec S n} {res : S → Vec S m}
+  → ((i : Fin n) → Alg hr (lookup ss i) → Alg* hr (res (lookup ss i)))
+  → Alg* hr ss
+  → Alg* hr (concat (map res ss))
+concatMapᴬ f []* = []*
+concatMapᴬ f (x ∷* v*) = f Fin.zero x ++ᴬ concatMapᴬ (f ∘ Fin.suc) v*
+
+{-# TERMINATING #-}
 eval : ∀ {r : Rank A}{hr : HRank S A r}{ssm : Vec S m}{ssn : Vec S n}
   → PR hr ⟨ ssm , ssn ⟩
   → Alg* hr ssm
@@ -92,4 +100,4 @@ eval {hr = hr} (σ a) v* = subst (Alg* hr) eq v
     v = con a v* ∷* []*
 eval (π i) v* = alookup v* i ∷* []*
 eval (C f g) v* = eval f (eval g v*)
-eval (P res h) (con a x* ∷* v*) = eval (h a refl) (({!!} ++ᴬ x*) ++ᴬ v*)
+eval (P {s₀ = s₀} res h) (con a x* ∷* v*) = eval (h s₀ a refl) ((concatMapᴬ (λ _ x → eval (P res h) (x ∷* v*)) x* ++ᴬ x*) ++ᴬ v*)

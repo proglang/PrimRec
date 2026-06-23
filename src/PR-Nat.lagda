@@ -38,6 +38,16 @@ data PR : ℕ → Set where
 para : (Vec ℕ n → ℕ) → (Vec ℕ (2 + n) → ℕ) → (Vec ℕ (1 + n) → ℕ)
 para g h (zero ∷ v*) = g v*
 para g h (suc x ∷ v*) = h (para g h (x ∷ v*) ∷ x ∷ v*)
+
+allFin : (n : ℕ) → Vec (Fin n) n
+allFin zero = []
+allFin (suc n) = zero ∷ map suc (allFin n)
+
+dropCounter : (n : ℕ) → Vec (PR (2 + n)) (1 + n)
+dropCounter n = π zero ∷ map (λ i → π (suc (suc i))) (allFin n)
+
+F⇒P : PR n → PR (1 + n) → PR (1 + n)
+F⇒P {n} g h = P g (C h (dropCounter n))
 \end{code}
 \newcommand\PRNatEval{
 \begin{code}
@@ -58,6 +68,32 @@ eval (P g h)  (suc x ∷ v*) = eval h ((eval (P g h) (x ∷ v*)) ∷ (x ∷ v*))
 \begin{code}[hide]
 eval (F g h)  (zero ∷ v*)  = eval g v*
 eval (F g h)  (suc x ∷ v*) = eval h ((eval (F g h) (x ∷ v*)) ∷ v*)
+
+eval*-projections : ∀ (is : Vec (Fin n) m) (v* : Vec ℕ n)
+  → eval* (map π is) v* ≡ map (lookup v*) is
+eval*-projections [] v* = refl
+eval*-projections (i ∷ is) v* rewrite eval*-projections is v* = refl
+
+lookup-allFin : ∀ (v* : Vec ℕ n) → map (lookup v*) (allFin n) ≡ v*
+lookup-allFin [] = refl
+lookup-allFin (x ∷ v*)
+  rewrite ∘-map (lookup (x ∷ v*)) suc (allFin _)
+        | lookup-allFin v* = refl
+
+eval*-dropCounter : ∀ (v* : Vec ℕ n) acc counter
+  → eval* (dropCounter n) (acc ∷ counter ∷ v*) ≡ acc ∷ v*
+eval*-dropCounter {n} v* acc counter
+  rewrite sym (∘-map π (λ i → suc (suc i)) (allFin n))
+        | eval*-projections (map (λ i → suc (suc i)) (allFin n)) (acc ∷ counter ∷ v*)
+        | ∘-map (lookup (acc ∷ counter ∷ v*)) (λ i → suc (suc i)) (allFin n)
+        | lookup-allFin v* = refl
+
+F⇒P-sound : ∀ (g : PR n) (h : PR (1 + n)) (v* : Vec ℕ (1 + n))
+  → eval (F g h) v* ≡ eval (F⇒P g h) v*
+F⇒P-sound g h (zero ∷ v*) = refl
+F⇒P-sound {n} g h (suc x ∷ v*)
+  rewrite F⇒P-sound g h (x ∷ v*)
+        | eval*-dropCounter v* (eval (F⇒P g h) (x ∷ v*)) x = refl
 
 eval*≡map-eval : ∀ (p* : Vec (PR n) m) (v* : Vec ℕ n) → eval* p* v* ≡ map (λ p → eval p v*) p*
 eval*≡map-eval [] v* = refl
