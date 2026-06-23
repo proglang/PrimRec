@@ -39,6 +39,10 @@ para : (Vec ℕ n → ℕ) → (Vec ℕ (2 + n) → ℕ) → (Vec ℕ (1 + n) �
 para g h (zero ∷ v*) = g v*
 para g h (suc x ∷ v*) = h (para g h (x ∷ v*) ∷ x ∷ v*)
 
+para′ : (Vec ℕ n → ℕ) → (Vec ℕ (2 + n) → ℕ) → (Vec ℕ (1 + n) → ℕ)
+para′ g h (zero ∷ v*) = g v*
+para′ g h (suc x ∷ v*) = h (para′ g h (x ∷ v*) ∷ x ∷ v*)
+
 allFin : (n : ℕ) → Vec (Fin n) n
 allFin zero = []
 allFin (suc n) = zero ∷ map suc (allFin n)
