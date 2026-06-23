@@ -83,18 +83,13 @@ raseExp0=id ((PRecT h acc counter)) rewrite raseExp0=id h | raseExp0=id acc | ra
 cong3 : ∀ {A B C D : Set} {x y u v w z} (f : A → B → C → D)  → x ≡ y → u ≡ v → w ≡ z → f x u w ≡ f y v z
 cong3 f refl refl refl = refl
 
--- PLFA 
-postulate
-  extensionality : ∀ {A B : Set} {f g : A → B}
-    → (∀ (x : A) → f x ≡ g x)
-      -----------------------
-    → f ≡ g
-
-ext2 : ∀ {A B C : Set} {f g : A → B → C}
-        → (∀ (x : A) (y : B) → f x y ≡ g x y)
-      -----------------------
-        → f ≡ g
-ext2  = λ x → extensionality (λ y → extensionality (λ z → x y z))
+para-cong : ∀ {A : Set} (f g : A → ℕ → A)
+  → (∀ acc counter → f acc counter ≡ g acc counter)
+  → (z : A) (n : ℕ)
+  → para f z n ≡ para g z n
+para-cong f g pointwise z zero = refl
+para-cong f g pointwise z (suc n)
+  rewrite para-cong f g pointwise z n = pointwise (para g z n) n
 
 raiseExPSound : ∀ {m n o} (exp : Exp m n) (ctx : Vec ℕ m)(ctx2 : Vec ℕ o)(args : Vec ℕ n) → eval exp ctx args ≡ eval (raiseExP o exp) (ctx ++ ctx2) args
 raiseExPSound (Var x) (ctx) ctx2 _ = sym (lookup-++ˡ ctx ctx2 x)
@@ -103,7 +98,15 @@ raiseExPSound CZero _ _ _ = refl
 raiseExPSound Suc _ _ [ x ] = refl
 raiseExPSound {m}{n} {o} (App f x) ctx ctx2 args  rewrite raiseExPSound x ctx ctx2 []  | raiseExPSound f ctx ctx2  (eval (raiseExP o x) (ctx ++ ctx2) [] ∷ args) = refl
 raiseExPSound (Nat x) _ _ [] = refl
-raiseExPSound (PRecT h acc counter) ctx ctx2 []  rewrite raiseExPSound acc ctx ctx2 [] |  raiseExPSound counter ctx ctx2 [] | ext2 λ x y → raiseExPSound h ctx ctx2 [ x , y ]  = refl 
+raiseExPSound {o = o} (PRecT h acc counter) ctx ctx2 []
+  rewrite raiseExPSound acc ctx ctx2 []
+        | raiseExPSound counter ctx ctx2 []
+  = para-cong
+      (λ x y → eval h ctx [ x , y ])
+      (λ x y → eval (raiseExP o h) (ctx ++ ctx2) [ x , y ])
+      (λ x y → raiseExPSound h ctx ctx2 [ x , y ])
+      (eval (raiseExP o acc) (ctx ++ ctx2) [])
+      (eval (raiseExP o counter) (ctx ++ ctx2) [])
 
 
 ------------------------------------------------------------------------------
@@ -305,14 +308,16 @@ evalParaTHelper3 {n} x counter acc h args =     begin (eval (applyToVars' {2} {n
                                                 eval (raiseExP (suc (suc (suc n))) h) (counter ∷ acc ∷ (args ++r [ x ])) (acc ∷ counter ∷ args) 
                                                         ≡⟨ sym (raiseExPSound h [] (counter ∷ acc ∷ (args ++r [ x ]))  (acc ∷ counter ∷ args))  ⟩ (evalClosed h (acc ∷ counter ∷ args)) ∎ 
 
-evalParaTHelper4 : ∀  {n x : ℕ} (h : Exp zero (suc (suc n))) (args : Vec ℕ n) → (λ acc counter →
+evalParaTHelper4 : ∀  {n x : ℕ} (h : Exp zero (suc (suc n))) (args : Vec ℕ n)
+  (acc counter : ℕ) →
          eval
          (applyToVars' {2} {n} {1}
           (App (App (raiseExP (suc (suc (suc n))) h) (Var (suc zero)))
            (Var zero)))
-         (counter ∷ acc ∷ fastReverse (x ∷ args)) []) ≡ 
-         (λ acc counter  → evalClosed h (acc ∷ (counter ∷ args)))
-evalParaTHelper4 {n} {x} h args = ext2 (λ acc counter → evalParaTHelper3 x counter acc h args)
+         (counter ∷ acc ∷ fastReverse (x ∷ args)) [] ≡
+         evalClosed h (acc ∷ counter ∷ args)
+evalParaTHelper4 {n} {x} h args acc counter =
+  evalParaTHelper3 x counter acc h args
 
 
 evalParaTHelper5 : ∀  {n x : ℕ} (g : Exp zero ( ( n))) (h : Exp zero (suc (suc n))) (args : Vec ℕ n)
@@ -329,7 +334,19 @@ evalParaTHelper5 : ∀  {n x : ℕ} (g : Exp zero ( ( n))) (h : Exp zero (suc (s
       ≡
       para (λ acc counter → evalClosed h (acc ∷ counter ∷ args))
       (evalClosed g args) x
-evalParaTHelper5 {n} {x} g h args rewrite evalParaTHelper1 {n} {x} args | evalParaTHelper2  {n} {x} args g | evalParaTHelper4 {n} {x} h args = refl
+evalParaTHelper5 {n} {x} g h args
+  rewrite evalParaTHelper1 {n} {x} args
+        | evalParaTHelper2 {n} {x} args g
+  = para-cong
+      (λ acc counter →
+        eval
+          (applyToVars' {2} {n} {1}
+            (App (App (raiseExP (suc (suc (suc n))) h) (Var (suc zero)))
+              (Var zero)))
+          (counter ∷ acc ∷ fastReverse (x ∷ args)) [])
+      (λ acc counter → evalClosed h (acc ∷ counter ∷ args))
+      (evalParaTHelper4 h args)
+      (evalClosed g args) x
 
 
 evalParaT : ∀ {n x : ℕ} (g : Exp zero n) (h : Exp zero (suc (suc n))) (args : Vec ℕ n ) → evalClosed (paraT g h) (x ∷ args) ≡ para (λ acc counter  → evalClosed h (acc ∷ (counter ∷ args))) (evalClosed g args) x  

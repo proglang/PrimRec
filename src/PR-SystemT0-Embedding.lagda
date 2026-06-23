@@ -11,7 +11,7 @@ import Relation.Binary.PropositionalEquality as Eq
 open Eq using (_≡_; refl; cong; sym; trans)
 open Eq.≡-Reasoning using (begin_; step-≡-∣; step-≡-⟩; _∎)
 
-open import System-T0 using (Exp; mkConstZero; mkProj; raseExp0=id; raiseExP; evalClosed; evalMkConstZero; evalMkProj; generalComp; evalGeneralComp; paraT; evalParaT; cong3; extensionality)
+open import System-T0 using (Exp; mkConstZero; mkProj; raseExp0=id; raiseExP; evalClosed; evalMkConstZero; evalMkProj; generalComp; evalGeneralComp; paraT; evalParaT; cong3; para-cong)
 open System-T0.Exp
 open import EvalPConstructor using (para; paraNat'; evalP≡paraNat')
 
@@ -127,6 +127,23 @@ convCompSound f gs vs = begin
 
 convPR g h = paraT ((prToST′  g )) (prToST′  h)
 
+paraNat'-cong : ∀ {n}
+  (g g′ : Vec ℕ n → ℕ)
+  (h h′ : Vec ℕ (suc (suc n)) → ℕ)
+  → (∀ v → g v ≡ g′ v)
+  → (∀ v → h v ≡ h′ v)
+  → (v : Vec ℕ (suc n))
+  → paraNat' g h v ≡ paraNat' g′ h′ v
+paraNat'-cong g g′ h h′ g-pointwise h-pointwise (x ∷ args) =
+  trans
+    (para-cong
+      (λ acc counter → h (acc ∷ counter ∷ args))
+      (λ acc counter → h′ (acc ∷ counter ∷ args))
+      (λ acc counter → h-pointwise (acc ∷ counter ∷ args))
+      (g args) x)
+    (cong (λ z → para (λ acc counter → h′ (acc ∷ counter ∷ args)) z x)
+      (g-pointwise args))
+
 
 convParaSound g h (x ∷ args) = begin 
                         (evalClosed (prToST′ (P g h)) (x ∷ args))
@@ -136,7 +153,11 @@ convParaSound g h (x ∷ args) = begin
                         para (λ acc counter → evalClosed (prToST′ h) (acc ∷ counter ∷ args)) (evalClosed (prToST′ g) args) x 
                                 ≡⟨⟩ 
                         paraNat' (evalClosed (prToST′ g)) (evalClosed (prToST′ h)) ((x ∷ args)) 
-                                ≡⟨ cong3 { w = x ∷ args } paraNat'  ((extensionality (λ v →  embeddPR-ST-Sound g v))) (((extensionality (λ v →  (embeddPR-ST-Sound h v))))) refl  ⟩  
+                                ≡⟨ paraNat'-cong
+                                     (evalClosed (prToST′ g)) (eval g)
+                                     (evalClosed (prToST′ h)) (eval h)
+                                     (embeddPR-ST-Sound g) (embeddPR-ST-Sound h)
+                                     (x ∷ args) ⟩
                         (para (λ acc n → eval h (acc ∷ n ∷ args)) (eval g args) x) 
                                 ≡⟨ sym (evalP≡paraNat' g h (x ∷ args) ) ⟩ 
                         (eval (P g h) (x ∷ args)) ∎

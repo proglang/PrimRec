@@ -7,7 +7,7 @@ import Relation.Binary.PropositionalEquality as Eq
 open Eq using (_≡_; refl; cong; sym; cong₂)
 open Eq.≡-Reasoning using (begin_; step-≡-∣; step-≡-⟩; _∎)
 open import Agda.Builtin.Equality.Rewrite
-import System-T0 as T0 --using (Exp; eval; evalClosed; ext2)
+import System-T0 as T0
 
 -- open System-T0.Exp
 open import PR-Nat hiding (para)
@@ -82,4 +82,11 @@ sound-embedd T0.CZero ctx args = refl
 sound-embedd T0.Suc ctx [ n ] = refl 
 sound-embedd (T0.App f x) ctx args rewrite sound-embedd x ctx []  | sound-embedd f ctx (System-T.eval (embedd x) (toHVec' ctx) ∷ args) = refl
 sound-embedd (T0.Nat n) ctx [] = refl
-sound-embedd (T0.PRecT h acc n) ctx [] rewrite sound-embedd acc ctx [] | sound-embedd n ctx [] | T0.ext2 (λ x y → sound-embedd h ctx [ x , y ]) = refl
+sound-embedd (T0.PRecT h acc n) ctx []
+  rewrite sound-embedd acc ctx [] | sound-embedd n ctx []
+  = T0.para-cong
+      (λ x y → T0.eval h ctx [ x , y ])
+      (System-T.eval (embedd h) (toHVec' ctx))
+      (λ x y → sound-embedd h ctx [ x , y ])
+      (System-T.eval (embedd acc) (toHVec' ctx))
+      (System-T.eval (embedd n) (toHVec' ctx))

@@ -9,13 +9,13 @@ open import Data.Nat using (ℕ; suc; zero; _+_)
 open import Data.Vec using (Vec; []; _∷_; _++_; lookup; map)
 open import Data.Vec.Properties using (lookup-++ˡ; lookup-++ʳ)
 import Relation.Binary.PropositionalEquality as Eq
-open Eq using (_≡_; refl; cong; sym)
+open Eq using (_≡_; refl; cong; cong₂; sym)
 open Eq.≡-Reasoning using (begin_; step-≡-∣; step-≡-⟩; _∎)
 open import Agda.Builtin.Equality.Rewrite
 
 open import FinProperties using (inject+0)
 open import VecProperties using (_++r_; fastReverse; ++r=reverse++; reverse; reverse=fastReverse; lookupOpRev; lkupfromN)
-open import System-T0 using (Exp; ext2; maplookupEq; evalClosed; cong3)
+open import System-T0 using (Exp; maplookupEq; evalClosed; cong3; para-cong)
 import System-T0 as T0
 open System-T0.Exp
 open import PR-Nat hiding (para)
@@ -196,7 +196,19 @@ convPRSound {n} h acc counter ctx  =
         (eval (P (sTtoPR acc) (C (sTtoPR h) (swapArgs n))) (eval (sTtoPR counter) (fastReverse ctx) ∷ fastReverse ctx) 
                 ≡⟨ evalP≡paraNat' (sTtoPR acc) (C (sTtoPR h) (swapArgs n)) (eval (sTtoPR counter) (fastReverse ctx) ∷ fastReverse ctx) ⟩ 
         para (λ acc' n' → eval (sTtoPR h) (eval* (swapArgs n) (acc' ∷ n' ∷ fastReverse ctx)))(eval (sTtoPR acc) (fastReverse ctx))(eval (sTtoPR counter) (fastReverse ctx))
-                ≡⟨ cong3 para (ext2 (λ x y → convPRSoundHelper x y h ctx)) (embeddST-PR-Sound acc ctx []) (embeddST-PR-Sound counter ctx [])  ⟩ 
+                ≡⟨ para-cong
+                     (λ acc' n' → eval (sTtoPR h)
+                       (eval* (swapArgs n) (acc' ∷ n' ∷ fastReverse ctx)))
+                     (λ acc' counter' → T0.eval h ctx [ acc' , counter' ])
+                     (λ x y → convPRSoundHelper x y h ctx)
+                     (eval (sTtoPR acc) (fastReverse ctx))
+                     (eval (sTtoPR counter) (fastReverse ctx)) ⟩
+        para (λ acc' counter' → T0.eval h ctx [ acc' , counter' ])
+          (eval (sTtoPR acc) (fastReverse ctx))
+          (eval (sTtoPR counter) (fastReverse ctx))
+                ≡⟨ cong₂ (para (λ acc' counter' → T0.eval h ctx [ acc' , counter' ]))
+                     (embeddST-PR-Sound acc ctx [])
+                     (embeddST-PR-Sound counter ctx []) ⟩
         (para (λ acc' counter' → T0.eval h ctx [ acc' , counter' ])(T0.eval acc ctx []) (T0.eval counter ctx [])) ∎  )
 
 
