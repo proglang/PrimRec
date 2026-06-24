@@ -1,4 +1,5 @@
 \begin{code}[hide]
+{-# OPTIONS --safe #-}
 module PR-Nat where
 
 open import Data.Fin using (Fin; suc; zero)
