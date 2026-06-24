@@ -1,4 +1,5 @@
 \begin{code}
+{-# OPTIONS --safe #-}
 module Utils where
 
 import Relation.Binary.PropositionalEquality as Eq
