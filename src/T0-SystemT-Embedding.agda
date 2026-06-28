@@ -4,7 +4,7 @@ open import Data.Fin using (Fin; suc; zero)
 open import Data.Nat using (ℕ; suc; zero; _∸_)
 open import Data.Vec using (Vec; []; _∷_; lookup)
 import Relation.Binary.PropositionalEquality as Eq
-open Eq using (_≡_; refl; cong; sym; cong₂)
+open Eq using (_≡_; refl; cong; sym; trans; cong₂)
 open Eq.≡-Reasoning using (begin_; step-≡-∣; step-≡-⟩; _∎)
 open import Agda.Builtin.Equality.Rewrite
 import System-T0 as T0
@@ -12,7 +12,6 @@ import System-T0 as T0
 -- open System-T0.Exp
 open import PR-Nat hiding (para)
 open import Utils
-open import HVec
 open import EvalPConstructor using (para)
 open import System-T
 -- -- ------------------------------------------------------------------------------
@@ -75,18 +74,28 @@ convVarSound : ∀  {n : ℕ} (ctx : Vec ℕ n) (x : Fin n)  → lookup ctx x �
 convVarSound (x₁ ∷ ctx) zero = refl
 convVarSound (x₁ ∷ ctx) (suc x) = convVarSound ctx x
 
+para-agree : ∀ {A : Set} (f : A → ℕ → A) (z : A) (n : ℕ)
+  → EvalPConstructor.para f z n ≡ System-T.para f z n
+para-agree f z zero = refl
+para-agree f z (suc n) rewrite para-agree f z n = refl
+
 sound-embedd : ∀ {n m : ℕ} (exp : T0.Exp n m)  (ctx : Vec ℕ n) (args : Vec ℕ m) → (T0.eval exp ctx args)  ≡  eval' (embedd exp) (toHVec' ctx) (toHVec' args)
 sound-embedd {suc n} (T0.Var x) ctx []   = convVarSound ctx x 
 sound-embedd {n} {suc m} (T0.Lam exp) (ctx) (x ∷ args) rewrite sound-embedd exp (x ∷ ctx) args = refl
-sound-embedd T0.CZero ctx args = refl
+sound-embedd T0.CZero ctx [] = refl
 sound-embedd T0.Suc ctx [ n ] = refl 
 sound-embedd (T0.App f x) ctx args rewrite sound-embedd x ctx []  | sound-embedd f ctx (System-T.eval (embedd x) (toHVec' ctx) ∷ args) = refl
 sound-embedd (T0.Nat n) ctx [] = refl
 sound-embedd (T0.PRecT h acc n) ctx []
   rewrite sound-embedd acc ctx [] | sound-embedd n ctx []
-  = T0.para-cong
-      (λ x y → T0.eval h ctx [ x , y ])
-      (System-T.eval (embedd h) (toHVec' ctx))
-      (λ x y → sound-embedd h ctx [ x , y ])
-      (System-T.eval (embedd acc) (toHVec' ctx))
-      (System-T.eval (embedd n) (toHVec' ctx))
+  = trans
+      (T0.para-cong
+        (λ x y → T0.eval h ctx [ x , y ])
+        (System-T.eval (embedd h) (toHVec' ctx))
+        (λ x y → sound-embedd h ctx [ x , y ])
+        (System-T.eval (embedd acc) (toHVec' ctx))
+        (System-T.eval (embedd n) (toHVec' ctx)))
+      (para-agree
+        (System-T.eval (embedd h) (toHVec' ctx))
+        (System-T.eval (embedd acc) (toHVec' ctx))
+        (System-T.eval (embedd n) (toHVec' ctx)))

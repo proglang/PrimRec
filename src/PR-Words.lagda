@@ -1,4 +1,5 @@
 \begin{code}[hide]
+{-# OPTIONS --safe #-}
 module PR-Words where
 
 open import Data.Fin using (Fin; suc; zero)
