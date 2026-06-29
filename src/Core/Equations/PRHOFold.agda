@@ -1,107 +1,107 @@
 {-# OPTIONS --safe #-}
 
-module Core.Equations.PRHO where
+module Core.Equations.PRHOFold where
 
-open import Core.PRHO public
+open import Core.PRHOFold public
 
 infix 4 _≈_
 
 ----------------------------------------------------------------------
--- Equational theory for PR-HO
+-- Equational theory for higher-order PR with primitive catamorphism
 ----------------------------------------------------------------------
 
-data _≈_ : ∀ {T U : TY HO} → T →ᴾ U → T →ᴾ U → Set where
-  ≈-refl  : ∀ {A B : TY HO} {f : A →ᴾ B} → f ≈ f
-  ≈-sym   : ∀ {A B : TY HO} {f g : A →ᴾ B} → f ≈ g → g ≈ f
-  ≈-trans : ∀ {A B : TY HO} {f g h : A →ᴾ B}
+data _≈_ : ∀ {T U : TY HO} → T →ᶠ U → T →ᶠ U → Set where
+  ≈-refl  : ∀ {A B : TY HO} {f : A →ᶠ B} → f ≈ f
+  ≈-sym   : ∀ {A B : TY HO} {f g : A →ᶠ B} → f ≈ g → g ≈ f
+  ≈-trans : ∀ {A B : TY HO} {f g h : A →ᶠ B}
     → f ≈ g → g ≈ h → f ≈ h
 
   C-cong : ∀ {A B D : TY HO}
-    {f f′ : B →ᴾ D} {g g′ : A →ᴾ B}
+    {f f′ : B →ᶠ D} {g g′ : A →ᶠ B}
     → f ≈ f′ → g ≈ g′ → C f g ≈ C f′ g′
   `#-cong : ∀ {A B D : TY HO}
-    {f f′ : A →ᴾ B} {g g′ : A →ᴾ D}
+    {f f′ : A →ᶠ B} {g g′ : A →ᶠ D}
     → f ≈ f′ → g ≈ g′ → `# f g ≈ `# f′ g′
   `case-cong : ∀ {A B D : TY HO}
-    {f f′ : A →ᴾ D} {g g′ : B →ᴾ D}
+    {f f′ : A →ᶠ D} {g g′ : B →ᶠ D}
     → f ≈ f′ → g ≈ g′ → `case f g ≈ `case f′ g′
-  lam-cong : ∀ {A B D : TY HO} {f f′ : A `× B →ᴾ D}
+  lam-cong : ∀ {A B D : TY HO} {f f′ : A `× B →ᶠ D}
     → f ≈ f′ → lam f ≈ lam f′
   fmap-cong : ∀ {A B : TY HO} (H : Ty HO 1)
-    {f f′ : A →ᴾ B} → f ≈ f′ → fmap H f ≈ fmap H f′
-  P-cong : ∀ {A B : TY HO} {H : Ty HO 1}
-    {h h′ : (H ⇐ (A `× ind H)) `× B →ᴾ A}
+    {f f′ : A →ᶠ B} → f ≈ f′ → fmap H f ≈ fmap H f′
+  F-cong : ∀ {A B : TY HO} {H : Ty HO 1}
+    {h h′ : (H ⇐ A) `× B →ᶠ A}
     → h ≈ h′
-    → P {G = H} {T = A} {U = B} h ≈ P {G = H} {T = A} {U = B} h′
+    → F {G = H} {T = A} {U = B} h ≈ F {G = H} {T = A} {U = B} h′
 
-  C-idˡ : ∀ {A B : TY HO} {f : A →ᴾ B}
+  C-idˡ : ∀ {A B : TY HO} {f : A →ᶠ B}
     → C id f ≈ f
-  C-idʳ : ∀ {A B : TY HO} {f : A →ᴾ B}
+  C-idʳ : ∀ {A B : TY HO} {f : A →ᶠ B}
     → C f id ≈ f
   C-assoc : ∀ {A B D E : TY HO}
-    {f : D →ᴾ E} {g : B →ᴾ D} {h : A →ᴾ B}
+    {f : D →ᶠ E} {g : B →ᶠ D} {h : A →ᶠ B}
     → C f (C g h) ≈ C (C f g) h
 
   fmap-id : ∀ {A : TY HO} (H : Ty HO 1)
     → fmap H (id {T = A}) ≈ id
   fmap-C : ∀ {A B D : TY HO} (H : Ty HO 1)
-    {f : B →ᴾ D} {g : A →ᴾ B}
+    {f : B →ᶠ D} {g : A →ᶠ B}
     → fmap H (C f g) ≈ C (fmap H f) (fmap H g)
 
   strength-naturalˡ : ∀ {A B D : TY HO} (H : Ty HO 1)
-    {f : A →ᴾ B}
+    {f : A →ᶠ B}
     → C (fmap H (map-× f (id {T = D}))) (strength {T = A} {U = D} H)
       ≈ C (strength {T = B} {U = D} H) (map-× (fmap H f) id)
   strength-naturalʳ : ∀ {A B D : TY HO} (H : Ty HO 1)
-    {g : B →ᴾ D}
+    {g : B →ᶠ D}
     → C (fmap H (map-× (id {T = A}) g)) (strength {T = A} {U = B} H)
       ≈ C (strength {T = A} {U = D} H) (map-× id g)
   strength-π₁ : ∀ {A B : TY HO} (H : Ty HO 1)
     → C (fmap H (π₁ {U = A} {V = B})) (strength {T = A} {U = B} H)
       ≈ π₁
 
-  𝟙-unique : ∀ {A : TY HO} {f : A →ᴾ `𝟙}
+  𝟙-unique : ∀ {A : TY HO} {f : A →ᶠ `𝟙}
     → f ≈ `⊤
-  𝟘-unique : ∀ {A : TY HO} {f : `𝟘 →ᴾ A}
+  𝟘-unique : ∀ {A : TY HO} {f : `𝟘 →ᶠ A}
     → f ≈ `⊥
 
-  ×-β₁ : ∀ {A B D : TY HO} {f : A →ᴾ B} {g : A →ᴾ D}
+  ×-β₁ : ∀ {A B D : TY HO} {f : A →ᶠ B} {g : A →ᶠ D}
     → C π₁ (`# f g) ≈ f
-  ×-β₂ : ∀ {A B D : TY HO} {f : A →ᴾ B} {g : A →ᴾ D}
+  ×-β₂ : ∀ {A B D : TY HO} {f : A →ᶠ B} {g : A →ᶠ D}
     → C π₂ (`# f g) ≈ g
-  ×-η : ∀ {A B D : TY HO} {f : A →ᴾ B `× D}
+  ×-η : ∀ {A B D : TY HO} {f : A →ᶠ B `× D}
     → `# (C π₁ f) (C π₂ f) ≈ f
 
-  +-β₁ : ∀ {A B D : TY HO} {f : A →ᴾ D} {g : B →ᴾ D}
+  +-β₁ : ∀ {A B D : TY HO} {f : A →ᶠ D} {g : B →ᶠ D}
     → C (`case f g) ι₁ ≈ f
-  +-β₂ : ∀ {A B D : TY HO} {f : A →ᴾ D} {g : B →ᴾ D}
+  +-β₂ : ∀ {A B D : TY HO} {f : A →ᶠ D} {g : B →ᶠ D}
     → C (`case f g) ι₂ ≈ g
-  +-η : ∀ {A B D : TY HO} {f : A `+ B →ᴾ D}
+  +-η : ∀ {A B D : TY HO} {f : A `+ B →ᶠ D}
     → `case (C f ι₁) (C f ι₂) ≈ f
 
-  ⇒-β : ∀ {A B D : TY HO} {f : A `× B →ᴾ D}
+  ⇒-β : ∀ {A B D : TY HO} {f : A `× B →ᶠ D}
     → theta (lam f) ≈ f
-  ⇒-η : ∀ {A B D : TY HO} {f : A →ᴾ B `⇒ D}
+  ⇒-η : ∀ {A B D : TY HO} {f : A →ᶠ B `⇒ D}
     → lam (theta f) ≈ f
 
-  P-β : ∀ {A B : TY HO} {H : Ty HO 1}
-    {h : (H ⇐ (A `× ind H)) `× B →ᴾ A}
-    → C (P {G = H} {T = A} {U = B} h)
+  F-β : ∀ {A B : TY HO} {H : Ty HO 1}
+    {h : (H ⇐ A) `× B →ᶠ A}
+    → C (F {G = H} {T = A} {U = B} h)
           (map-× (fold {G = H}) (id {T = B}))
-      ≈ C h (paraArgs H (P {G = H} {T = A} {U = B} h))
+      ≈ C h (foldArgs H (F {G = H} {T = A} {U = B} h))
 
-  P-unique : ∀ {A B : TY HO} {H : Ty HO 1}
-    {h : (H ⇐ (A `× ind H)) `× B →ᴾ A}
-    {p : ind H `× B →ᴾ A}
-    → C p (map-× (fold {G = H}) (id {T = B})) ≈ C h (paraArgs H p)
-    → p ≈ P {G = H} {T = A} {U = B} h
+  F-unique : ∀ {A B : TY HO} {H : Ty HO 1}
+    {h : (H ⇐ A) `× B →ᶠ A}
+    {p : ind H `× B →ᶠ A}
+    → C p (map-× (fold {G = H}) (id {T = B})) ≈ C h (foldArgs H p)
+    → p ≈ F {G = H} {T = A} {U = B} h
 
 ----------------------------------------------------------------------
--- Derived categorical infrastructure
+-- Small derived categorical infrastructure used by translations
 ----------------------------------------------------------------------
 
 C-# : ∀ {A B D E : TY HO}
-  {f : B →ᴾ D} {g : B →ᴾ E} {h : A →ᴾ B} →
+  {f : B →ᶠ D} {g : B →ᶠ E} {h : A →ᶠ B} →
   C (`# f g) h ≈ `# (C f h) (C g h)
 C-# =
   ≈-trans (≈-sym ×-η)
@@ -109,8 +109,14 @@ C-# =
       (≈-trans C-assoc (C-cong ×-β₁ ≈-refl))
       (≈-trans C-assoc (C-cong ×-β₂ ≈-refl)))
 
+map-×-cong : ∀ {A B D E F : TY HO}
+  {f f′ : B →ᶠ E} {g g′ : D →ᶠ F} →
+  f ≈ f′ → g ≈ g′ → map-× f g ≈ map-× f′ g′
+map-×-cong f≈ g≈ =
+  `#-cong (C-cong f≈ ≈-refl) (C-cong g≈ ≈-refl)
+
 C-case : ∀ {A B D E : TY HO}
-  {f : A →ᴾ D} {g : B →ᴾ D} {h : D →ᴾ E} →
+  {f : A →ᶠ D} {g : B →ᶠ D} {h : D →ᶠ E} →
   C h (`case f g) ≈ `case (C h f) (C h g)
 C-case =
   ≈-trans (≈-sym +-η)
@@ -131,8 +137,8 @@ pair-id =
     ×-η
 
 map-×-# : ∀ {A B D E F : TY HO}
-  {f : B →ᴾ E} {g : D →ᴾ F}
-  {h : A →ᴾ B} {k : A →ᴾ D} →
+  {f : B →ᶠ E} {g : D →ᶠ F}
+  {h : A →ᶠ B} {k : A →ᶠ D} →
   C (map-× f g) (`# h k) ≈ `# (C f h) (C g k)
 map-×-# =
   ≈-trans C-#
@@ -140,33 +146,27 @@ map-×-# =
       (≈-trans (≈-sym C-assoc) (C-cong ≈-refl ×-β₁))
       (≈-trans (≈-sym C-assoc) (C-cong ≈-refl ×-β₂)))
 
-map-×-cong : ∀ {A B D E F : TY HO}
-  {f f′ : B →ᴾ E} {g g′ : D →ᴾ F} →
-  f ≈ f′ → g ≈ g′ → map-× f g ≈ map-× f′ g′
-map-×-cong f≈ g≈ =
-  `#-cong (C-cong f≈ ≈-refl) (C-cong g≈ ≈-refl)
-
 map-×-C : ∀ {A B D E F I : TY HO}
-  {f : B →ᴾ E} {g : D →ᴾ F}
-  {h : A →ᴾ B} {k : I →ᴾ D} →
+  {f : B →ᶠ E} {g : D →ᶠ F}
+  {h : A →ᶠ B} {k : I →ᶠ D} →
   C (map-× f g) (map-× h k) ≈ map-× (C f h) (C g k)
 map-×-C =
   ≈-trans map-×-#
     (`#-cong C-assoc C-assoc)
 
-theta-cong : ∀ {A B D : TY HO} {f g : A →ᴾ B `⇒ D} →
+theta-cong : ∀ {A B D : TY HO} {f g : A →ᶠ B `⇒ D} →
   f ≈ g → theta f ≈ theta g
 theta-cong f≈ =
   C-cong ≈-refl (`#-cong (C-cong f≈ ≈-refl) ≈-refl)
 
-theta-lam-ext : ∀ {A B D : TY HO} {f g : A `× B →ᴾ D} →
+theta-lam-ext : ∀ {A B D : TY HO} {f g : A `× B →ᶠ D} →
   lam f ≈ lam g → f ≈ g
 theta-lam-ext f≈ =
   ≈-trans (≈-sym ⇒-β)
     (≈-trans (theta-cong f≈) ⇒-β)
 
 map-×-precomp-left : ∀ {A B D E : TY HO}
-  {f : B →ᴾ D} {h : A →ᴾ B} →
+  {f : B →ᶠ D} {h : A →ᶠ B} →
   map-× (C f h) (id {T = E}) ≈
   C (map-× f id) (map-× h (id {T = E}))
 map-×-precomp-left {E = E} =
@@ -176,14 +176,14 @@ map-×-precomp-left {E = E} =
         (C-cong (C-idˡ {f = id {T = E}}) ≈-refl)))
 
 theta-precomp : ∀ {A B D E : TY HO}
-  {f : B `× D →ᴾ E} {h : A →ᴾ B} →
+  {f : B `× D →ᶠ E} {h : A →ᶠ B} →
   theta (C (lam f) h) ≈ C f (map-× h (id {T = D}))
 theta-precomp =
   ≈-trans (C-cong ≈-refl map-×-precomp-left)
     (≈-trans C-assoc (C-cong ⇒-β ≈-refl))
 
 lam-precomp : ∀ {A B D E : TY HO}
-  {f : B `× D →ᴾ E} {h : A →ᴾ B} →
+  {f : B `× D →ᶠ E} {h : A →ᶠ B} →
   C (lam f) h ≈ lam (C f (map-× h (id {T = D})))
 lam-precomp =
   ≈-trans (≈-sym ⇒-η) (lam-cong theta-precomp)

@@ -58,6 +58,9 @@ data _≈_ : ∀ {T U : TY FO} → T →ᴾ U → T →ᴾ U → Set where
     {g : B →ᴾ D}
     → C (fmap H (map-× (id {T = A}) g)) (strength {T = A} {U = B} H)
       ≈ C (strength {T = A} {U = D} H) (map-× id g)
+  strength-π₁ : ∀ {A B : TY FO} (H : Ty FO 1)
+    → C (fmap H (π₁ {U = A} {V = B})) (strength {T = A} {U = B} H)
+      ≈ π₁
 
   𝟙-unique : ∀ {A : TY FO} {f : A →ᴾ `𝟙}
     → f ≈ `⊤

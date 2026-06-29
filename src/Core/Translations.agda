@@ -2,11 +2,16 @@
 
 module Core.Translations where
 
--- Future translations between PR-NAT, PR-FO, PR-HO, and the
--- contextual presentation, together with preservation proofs.
+-- Translations between the point-free calculi and the contextual
+-- presentation, together with preservation proofs.
 
 import Core.Types
 import Core.Equations.PRFO
+import Core.Equations.PRFOFold
 import Core.Equations.PRHO
+import Core.Equations.PRHOFold
+import Core.Translations.PRFOParamorphismFold
+import Core.Translations.PRFOToPRHO
+import Core.Translations.PRHOParamorphismFold
 import Core.Translations.ContextualPRFO
 import Core.Translations.ContextualPRHO

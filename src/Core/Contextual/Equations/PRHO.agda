@@ -41,6 +41,9 @@ data _≈_ : ∀ {Γ A} → Γ ⊢ A → Γ ⊢ A → Set where
   strength-naturalʳ : ∀ {A B C} (G : Ty HO 1) {t : B ⊢ C}
     → cut (fmap G (map-× (var { Γ = A }) t)) (strength {A = A} {B = B} G)
       ≈ cut (strength {A = A} {B = C} G) (map-× var t)
+  strength-π₁ : ∀ {A B} (G : Ty HO 1)
+    → cut (fmap G (fst {A = A} {B = B})) (strength {A = A} {B = B} G)
+      ≈ fst
 
   𝟙-unique : ∀ {Γ} {t : Γ ⊢ `𝟙} → t ≈ unit
   𝟘-unique : ∀ {A} {t : `𝟘 ⊢ A} → t ≈ abort

@@ -106,6 +106,9 @@ record Model (ℓ : Level) : Set (suc ℓ) where
     strength-naturalʳᴹ : ∀ {A B D} (G : Ty FO 1) {g : B ⇒ᴹ D}
       → Cᴹ (fmapᴹ G (map-×ᴹ structure (idᴹ {T = A}) g)) (strengthᴹ {T = A} {U = B} G)
         ≈ᴹ Cᴹ (strengthᴹ {T = A} {U = D} G) (map-×ᴹ structure idᴹ g)
+    strength-π₁ᴹ : ∀ {A B} (G : Ty FO 1)
+      → Cᴹ (fmapᴹ G (π₁ᴹ {T = A} {U = B})) (strengthᴹ {T = A} {U = B} G)
+        ≈ᴹ π₁ᴹ
 
     𝟙-uniqueᴹ : ∀ {A} {f : A ⇒ᴹ `𝟙} → f ≈ᴹ ⊤ᴹ
     𝟘-uniqueᴹ : ∀ {A} {f : `𝟘 ⇒ᴹ A} → f ≈ᴹ ⊥ᴹ
@@ -173,6 +176,7 @@ module _ {ℓ} (M : Model ℓ) where
   sound (Eq.fmap-C G) = fmap-Cᴹ G
   sound (Eq.strength-naturalˡ G) = strength-naturalˡᴹ G
   sound (Eq.strength-naturalʳ G) = strength-naturalʳᴹ G
+  sound (Eq.strength-π₁ G) = strength-π₁ᴹ G
   sound Eq.𝟙-unique = 𝟙-uniqueᴹ
   sound Eq.𝟘-unique = 𝟘-uniqueᴹ
   sound Eq.×-β₁ = ×-β₁ᴹ

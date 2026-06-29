@@ -7,7 +7,9 @@ module Everything where
 import Core.Types
 import Core.Finite
 import Core.PRFO
+import Core.PRFOFold
 import Core.PRHO
+import Core.PRHOFold
 import Core.Equations
 import Core.Models
 import Core.Semantics
