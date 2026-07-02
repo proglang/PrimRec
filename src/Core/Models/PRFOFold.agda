@@ -32,12 +32,12 @@ record Structure (ℓ : Level) : Set (suc ℓ) where
 
     distᴹ : ∀ {T U V} → (T `+ U) `× V ⇒ᴹ (T `× V) `+ (U `× V)
 
-    fmapᴹ : ∀ {T U} (G : Ty FO 1) → (T ⇒ᴹ U) → (G ⇐ T ⇒ᴹ G ⇐ U)
-    strengthᴹ : ∀ {T U} (G : Ty FO 1) → (G ⇐ T) `× U ⇒ᴹ G ⇐ (T `× U)
+    fmapᴹ : ∀ {T U} (G : Ty FO 1) → (T ⇒ᴹ U) → (G [ T ] ⇒ᴹ G [ U ])
+    strengthᴹ : ∀ {T U} (G : Ty FO 1) → (G [ T ]) `× U ⇒ᴹ G [ T `× U ]
 
-    foldᴹ : ∀ {G : Ty FO 1} → G ⇐ ind G ⇒ᴹ ind G
+    rollᴹ : ∀ {G : Ty FO 1} → G [ ind G ] ⇒ᴹ ind G
     Fᴹ : ∀ {T U} {G : Ty FO 1}
-      → ((G ⇐ T) `× U ⇒ᴹ T)
+      → ((G [ T ]) `× U ⇒ᴹ T)
       → (ind G `× U ⇒ᴹ T)
 
 module _ {ℓ} (S : Structure ℓ) where
@@ -48,12 +48,12 @@ module _ {ℓ} (S : Structure ℓ) where
   map-×ᴹ f g = pairᴹ (Cᴹ f π₁ᴹ) (Cᴹ g π₂ᴹ)
 
   pmapᴹ : ∀ {T U V} (G : Ty FO 1)
-    → (T `× U ⇒ᴹ V) → ((G ⇐ T) `× U ⇒ᴹ G ⇐ V)
+    → (T `× U ⇒ᴹ V) → ((G [ T ]) `× U ⇒ᴹ G [ V ])
   pmapᴹ G f = Cᴹ (fmapᴹ G f) (strengthᴹ G)
 
   foldArgsᴹ : ∀ {T U} (G : Ty FO 1)
     → (ind G `× U ⇒ᴹ T)
-    → ((G ⇐ ind G) `× U ⇒ᴹ (G ⇐ T) `× U)
+    → ((G [ ind G ]) `× U ⇒ᴹ (G [ T ]) `× U)
   foldArgsᴹ G p = pairᴹ (pmapᴹ G p) π₂ᴹ
 
   undistᴹ : ∀ {T U V} → (T `× V) `+ (U `× V) ⇒ᴹ (T `+ U) `× V
@@ -87,7 +87,7 @@ record Model (ℓ : Level) : Set (suc ℓ) where
     fmap-congᴹ : ∀ {A B} (G : Ty FO 1) {f f′ : A ⇒ᴹ B}
       → f ≈ᴹ f′ → fmapᴹ G f ≈ᴹ fmapᴹ G f′
     F-congᴹ : ∀ {A B} {G : Ty FO 1}
-      {h h′ : (G ⇐ A) `× B ⇒ᴹ A}
+      {h h′ : (G [ A ]) `× B ⇒ᴹ A}
       → h ≈ᴹ h′
       → Fᴹ {T = A} {U = B} {G = G} h ≈ᴹ Fᴹ {T = A} {U = B} {G = G} h′
 
@@ -124,12 +124,12 @@ record Model (ℓ : Level) : Set (suc ℓ) where
     dist-undistᴹ : ∀ {A B D} → Cᴹ (distᴹ {T = A} {U = B} {V = D}) (undistᴹ structure) ≈ᴹ idᴹ
     undist-distᴹ : ∀ {A B D} → Cᴹ (undistᴹ structure) (distᴹ {T = A} {U = B} {V = D}) ≈ᴹ idᴹ
 
-    F-βᴹ : ∀ {A B} {G : Ty FO 1} {h : (G ⇐ A) `× B ⇒ᴹ A}
-      → Cᴹ (Fᴹ {T = A} {U = B} {G = G} h) (map-×ᴹ structure (foldᴹ {G = G}) (idᴹ {T = B}))
+    F-βᴹ : ∀ {A B} {G : Ty FO 1} {h : (G [ A ]) `× B ⇒ᴹ A}
+      → Cᴹ (Fᴹ {T = A} {U = B} {G = G} h) (map-×ᴹ structure (rollᴹ {G = G}) (idᴹ {T = B}))
         ≈ᴹ Cᴹ h (foldArgsᴹ structure G (Fᴹ {T = A} {U = B} {G = G} h))
-    F-uniqueᴹ : ∀ {A B} {G : Ty FO 1} {h : (G ⇐ A) `× B ⇒ᴹ A}
+    F-uniqueᴹ : ∀ {A B} {G : Ty FO 1} {h : (G [ A ]) `× B ⇒ᴹ A}
       {p : ind G `× B ⇒ᴹ A}
-      → Cᴹ p (map-×ᴹ structure (foldᴹ {G = G}) (idᴹ {T = B})) ≈ᴹ Cᴹ h (foldArgsᴹ structure G p)
+      → Cᴹ p (map-×ᴹ structure (rollᴹ {G = G}) (idᴹ {T = B})) ≈ᴹ Cᴹ h (foldArgsᴹ structure G p)
       → p ≈ᴹ Fᴹ {T = A} {U = B} {G = G} h
 
 ----------------------------------------------------------------------
@@ -153,7 +153,7 @@ module _ {ℓ} (S : Structure ℓ) where
   interpret Syn.dist-+-× = distᴹ
   interpret (Syn.fmap G f) = fmapᴹ G (interpret f)
   interpret (Syn.strength G) = strengthᴹ G
-  interpret Syn.fold = foldᴹ
+  interpret Syn.roll = rollᴹ
   interpret (Syn.F h) = Fᴹ (interpret h)
 
 module _ {ℓ} (M : Model ℓ) where

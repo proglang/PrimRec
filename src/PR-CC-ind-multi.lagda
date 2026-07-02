@@ -231,7 +231,7 @@ variable
 data _→ᴾ_ : TY → TY → Set where
   P : (h : `×× (sub₀ (`×× [ T , ind G ]) G ∷ U*) →ᴾ T)
     → (`×× (ind G ∷ U*) →ᴾ T)
-  fold : sub₀ (ind G) G →ᴾ ind G
+  roll : sub₀ (ind G) G →ᴾ ind G
   --
   C : (f : U →ᴾ V)
     → (g : T →ᴾ U)
@@ -254,7 +254,7 @@ data _→ᴾ_ : TY → TY → Set where
 ⟦_⟧ᵀ+ : Vec TY o → Set
 
 data Alg (G : Ty 1) : Set where
-  fold : ⟦ sub₀ (ind G) G ⟧ᵀ → Alg G 
+  roll : ⟦ sub₀ (ind G) G ⟧ᵀ → Alg G 
 
 ⟦ `×× U* ⟧ᵀ = ⟦ U* ⟧ᵀ×
 ⟦ `++ U* ⟧ᵀ = ⟦ U* ⟧ᵀ+
@@ -280,10 +280,10 @@ fmap+ : ∀ {S T : TY} (G* : Vec (Ty 1) n)
 fmap (`×× G*) f x = fmap× G* f x
 fmap (`++ G*) f x = fmap+ G* f x
 fmap (` zero) f x = f x
-fmap {S} {T} (ind H) f (fold x)
+fmap {S} {T} (ind H) f (roll x)
   rewrite sym (eq-unfold (σ₀ S) H)
   with fmap {S} {T} (sub (σ₀ (ind H)) H) f x
-... | ih rewrite eq-unfold (σ₀ T) H = fold ih
+... | ih rewrite eq-unfold (σ₀ T) H = roll ih
 
 fmap× [] f tt = tt
 fmap× (G ∷ G*) f ⟨ x , x* ⟩ = ⟨ fmap G f x , fmap× G* f x* ⟩
@@ -300,7 +300,7 @@ fmap+ (G ∷ G*) f (inj₂ x*) = inj₂ (fmap+ G* f x*)
 -- fmap f (G `+ H) (inj₁ x) = inj₁ (fmap f G x)
 -- fmap f (G `+ H) (inj₂ y) = inj₂ (fmap f H y)
 -- fmap f (` zero) v = f v
--- fmap f (ind G) (fold x) = fold {!!}
+-- fmap f (ind G) (roll x) = roll {!!}
 -- --- needs to be recursive over `ind G`
 
 -- fmap′ : ∀ {T} → {G₀ : Ty 1} (f : ⟦ ind G₀ ⟧ᵀ → ⟦ T ⟧ᵀ) (G : Ty 1) → ⟦ sub₀ (ind G₀) G ⟧ᵀ → ⟦ sub₀ (T `× ind G₀) G ⟧ᵀ
@@ -309,11 +309,11 @@ fmap+ (G ∷ G*) f (inj₂ x*) = inj₂ (fmap+ G* f x*)
 -- fmap′ f (G `+ H) (inj₁ x) = inj₁ (fmap′ f G x)
 -- fmap′ f (G `+ H) (inj₂ y) = inj₂ (fmap′ f H y)
 -- fmap′ f (` zero) v = f v , v
--- fmap′ {_}{G₀} f (ind G) (fold x) =
+-- fmap′ {_}{G₀} f (ind G) (roll x) =
 --   let G′ : Ty 1
 --       G′ = sub (λ{ zero → ind G ; (suc zero) → ` zero}) G
 --       r′ = fmap′ f G′ {!x!}
---   in fold {!!}
+--   in roll {!!}
 -- --- needs to be recursive over `ind G`
 
 project : {T* : Vec TY n} → (i : Fin n) → ⟦ T* ⟧ᵀ× → ⟦ lookup T* i ⟧ᵀ
@@ -332,7 +332,7 @@ product : ∀ {U* : Vec TY m} → foldr (const Set) (λ U → _×_ (T →ᴾ U))
 sum     : ∀ {U* : Vec TY m} → foldr (const Set) (λ U → _×_ (U →ᴾ T)) ⊤ U* → ⟦ U* ⟧ᵀ+ → ⟦ T ⟧ᵀ
 
 eval : (T →ᴾ U) → ⟦ T ⟧ᵀ → ⟦ U ⟧ᵀ
-eval-P-hard {T = T} {G = G} {U* = U*} p ⟨ fold x , u* ⟩ =
+eval-P-hard {T = T} {G = G} {U* = U*} p ⟨ roll x , u* ⟩ =
   eval p
     ⟨ fmap G
         (λ v → ⟨ eval-P-hard p ⟨ v , u* ⟩ , ⟨ v , tt ⟩ ⟩)
@@ -341,7 +341,7 @@ eval-P-hard {T = T} {G = G} {U* = U*} p ⟨ fold x , u* ⟩ =
 
 eval (P p) = eval-P-hard p
 
-eval fold = fold
+eval roll = roll
 eval (C f g) = eval f ∘ eval g
 eval (π i) = project i
 eval (`prod g*) = product g*
@@ -362,10 +362,10 @@ sum {U* = U ∷ U*} ⟨ g , g* ⟩ (inj₂ y) = sum g* y
 
 -- {-# TERMINATING #-}
 -- eval : (T →ᴾ U) → ⟦ T ⟧ᵀ → ⟦ U ⟧ᵀ
--- eval (F {G = G} p) = λ{ (fold x , u) → eval p ((fmap (λ v → eval (F p) (v , u)) G x) , (x , u))}
--- eval (P {G = G} p) = λ{ (fold x , u) → eval p ((fmap′ (λ v → eval (P p) (v , u)) G x) , u)}
+-- eval (F {G = G} p) = λ{ (roll x , u) → eval p ((fmap (λ v → eval (F p) (v , u)) G x) , (x , u))}
+-- eval (P {G = G} p) = λ{ (roll x , u) → eval p ((fmap′ (λ v → eval (P p) (v , u)) G x) , u)}
 -- eval (C f g)  = eval f ∘ eval g
--- eval fold     = fold
+-- eval roll     = roll
 -- eval `0       = const tt
 -- eval id       = λ v → v
 -- eval (`# f g) = < eval f , eval g >
@@ -423,8 +423,8 @@ module FromNats where
   ⟦_⟧  : Nats.PR n → mkvec Nat n →ᴾ Nat
   ⟦_⟧* : Vec (Nats.PR n) m → mkvec Nat n →ᴾ mkvec Nat m
 
-  ⟦ Nats.Z ⟧      = C fold (ι zero)
-  ⟦ Nats.σ ⟧      = C fold (C (ι (suc zero)) (π zero))
+  ⟦ Nats.Z ⟧      = C roll (ι zero)
+  ⟦ Nats.σ ⟧      = C roll (C (ι (suc zero)) (π zero))
   ⟦ Nats.π i ⟧    = lookupᴾ i
   ⟦ Nats.C f g* ⟧ = C ⟦ f ⟧ ⟦ g* ⟧*
   ⟦ Nats.P g h ⟧  = P (C
@@ -458,8 +458,8 @@ module FromWords where
   ⟦_⟧* : Vec (Words.PR ⟦ Alpha ⟧ᵀ n) m
     → mkvec Alpha* n →ᴾ mkvec Alpha* m
 
-  ⟦ Words.Z ⟧ = C fold (ι zero)
-  ⟦ Words.σ a ⟧ = C fold (C (ι (suc zero)) (`prod
+  ⟦ Words.Z ⟧ = C roll (ι zero)
+  ⟦ Words.σ a ⟧ = C roll (C (ι (suc zero)) (`prod
     ⟨ C ⟦ a ⟧ᴬ tail , ⟨ π zero , tt ⟩ ⟩))
   ⟦ Words.π i ⟧ = lookupᴾ i
   ⟦ Words.C f g* ⟧ = C ⟦ f ⟧ ⟦ g* ⟧*
@@ -576,9 +576,9 @@ module FromTrees where
   ⟦_⟧  : Trees.PR R-Btree n → mkvec Btree n →ᴾ Btree
   ⟦_⟧* : Vec (Trees.PR R-Btree n) m → mkvec Btree n →ᴾ mkvec Btree m
 
-  ⟦ Trees.σ (inj₁ tt) ⟧ = C fold (ι zero)
+  ⟦ Trees.σ (inj₁ tt) ⟧ = C roll (ι zero)
   ⟦ Trees.σ (inj₂ (inj₁ ⟨ tt , ⟨ tt , tt ⟩ ⟩)) ⟧ =
-    C fold (ι (suc zero))
+    C roll (ι (suc zero))
   ⟦ Trees.σ (inj₂ (inj₂ ())) ⟧
   ⟦ Trees.π i ⟧ = lookupᴾ i
   ⟦ Trees.C f g* ⟧ = C ⟦ f ⟧ ⟦ g* ⟧*

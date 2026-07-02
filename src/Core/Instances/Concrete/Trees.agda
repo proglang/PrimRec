@@ -94,13 +94,13 @@ para-con : ∀ {k n} (rs : Vec ℕ k)
         children , parameters))
 para-con {k = k} {n = n} rs steps ss i children parameters =
   trans
-    (para-foldFlat-β {G = Branches rs} {T = Tree rs}
+    (para-rollFlat-β {G = Branches rs} {T = Tree rs}
       {U = vec (Tree rs) n} (flatBranches rs)
       handlerSem
       (eval (supported-injectBranch {T = Tree rs} rs i) children) parameters)
     (trans
       (cong handlerSem
-        (cong (λ (layer : Sem (Branches rs ⇐ (Tree rs `× Tree rs))) →
+        (cong (λ (layer : Sem (Branches rs [ Tree rs `× Tree rs ])) →
                 layer , parameters)
           (trans
             (paraStep-as-fmap {G = Branches rs} {T = Tree rs}
@@ -124,7 +124,7 @@ para-con {k = k} {n = n} rs steps ss i children parameters =
   supported-handlers j = s-C (ss j) (supported-preparePara (lookup rs j) n)
 
   handlerSem :
-    Sem ((Branches rs ⇐ (Tree rs `× Tree rs)) `× vec (Tree rs) n) →
+    Sem ((Branches rs [ Tree rs `× Tree rs ]) `× vec (Tree rs) n) →
     Sem (Tree rs)
   handlerSem = eval (supported-paraHandler rs ss)
 

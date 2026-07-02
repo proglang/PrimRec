@@ -37,23 +37,25 @@ data _→ᶠ_ : TY FO → TY FO → Set where
   dist-+-× : (U `+ V) `× T →ᶠ (U `× T) `+ (V `× T)
 
   -- functorial action and its right strength
-  fmap : (G : Ty FO 1) → (T →ᶠ U) → (G ⇐ T →ᶠ G ⇐ U)
-  strength : (G : Ty FO 1) → (G ⇐ T) `× U →ᶠ G ⇐ (T `× U)
+  fmap : (G : Ty FO 1) → (T →ᶠ U) → (G [ T ] →ᶠ G [ U ])
+  strength : (G : Ty FO 1) → (G [ T ]) `× U →ᶠ G [ T `× U ]
 
+  --! CorePRFOFoldPrimitive {
   -- inductive types and catamorphism
-  fold : G ⇐ ind G →ᶠ ind G
-  F : (G ⇐ T) `× U →ᶠ T
+  roll      : G [ ind G ] →ᶠ ind G
+  F         : (G [ T ]) `× U →ᶠ T
     → ind G `× U →ᶠ T
+  --! }
 
 map-× : U →ᶠ T → V →ᶠ W → U `× V →ᶠ T `× W
 map-× f g = `# (C f π₁) (C g π₂)
 
 pmap : (G : Ty FO 1) → (T `× U →ᶠ V)
-  → ((G ⇐ T) `× U →ᶠ G ⇐ V)
+  → ((G [ T ]) `× U →ᶠ G [ V ])
 pmap G f = C (fmap G f) (strength G)
 
 foldArgs : (G : Ty FO 1) → (ind G `× U →ᶠ T)
-  → ((G ⇐ ind G) `× U →ᶠ (G ⇐ T) `× U)
+  → ((G [ ind G ]) `× U →ᶠ (G [ T ]) `× U)
 foldArgs G f = `# (pmap G f) π₂
 
 undist-+-× : (U `× T) `+ (V `× T) →ᶠ (U `+ V) `× T

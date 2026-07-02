@@ -79,7 +79,7 @@ sub-vec zero    T σ = refl
 sub-vec (suc r) T σ = cong₂ _`×_ refl (sub-vec r T σ)
 
 branches-sub : ∀ {k} (rs : Vec ℕ k) (T : TY FO) →
-               Branches rs ⇐ T ≡ BranchesAt rs T
+               Branches rs [ T ] ≡ BranchesAt rs T
 branches-sub []       T = refl
 branches-sub (r ∷ rs) T =
   cong₂ _`+_ (sub-vec r (` Fin.zero) (σ₀ T)) (branches-sub rs T)
@@ -130,12 +130,12 @@ injectAt (r ∷ rs) Fin.zero    = ι₁
 injectAt (r ∷ rs) (Fin.suc i) = C ι₂ (injectAt rs i)
 
 injectBranch : ∀ {k T} (rs : Vec ℕ k) (i : Fin k) →
-               vec T (lookup rs i) →ᴾ Branches rs ⇐ T
+               vec T (lookup rs i) →ᴾ Branches rs [ T ]
 injectBranch {T = T} rs i rewrite branches-sub rs T = injectAt rs i
 
 conᴾ : ∀ {k} (rs : Vec ℕ k) (i : Fin k) →
        vec (Tree rs) (lookup rs i) →ᴾ Tree rs
-conᴾ rs i = C fold (injectBranch rs i)
+conᴾ rs i = C roll (injectBranch rs i)
 
 caseAt : ∀ {k T U V} (rs : Vec ℕ k) →
   ((i : Fin k) → vec T (lookup rs i) `× U →ᴾ V) →
@@ -147,11 +147,11 @@ caseAt (r ∷ rs) handlers =
 
 caseBranches : ∀ {k T U V} (rs : Vec ℕ k) →
   ((i : Fin k) → vec T (lookup rs i) `× U →ᴾ V) →
-  (Branches rs ⇐ T) `× U →ᴾ V
+  (Branches rs [ T ]) `× U →ᴾ V
 caseBranches {T = T} rs handlers rewrite branches-sub rs T = caseAt rs handlers
 
 paraHandler : ∀ {k n} (rs : Vec ℕ k) →
   ((i : Fin k) → vec (Tree rs) ((lookup rs i + lookup rs i) + n) →ᴾ Tree rs) →
-  (Branches rs ⇐ (Tree rs `× Tree rs)) `× vec (Tree rs) n →ᴾ Tree rs
+  (Branches rs [ Tree rs `× Tree rs ]) `× vec (Tree rs) n →ᴾ Tree rs
 paraHandler {n = n} rs steps =
   caseBranches rs λ i → C (steps i) (preparePara (lookup rs i) n)

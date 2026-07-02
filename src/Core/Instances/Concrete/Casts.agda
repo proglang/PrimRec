@@ -47,7 +47,7 @@ cast-+-sym₂ : ∀ {A A′ B B′ : TY FO}
 cast-+-sym₂ refl refl y = refl
 
 toSubVec : ∀ (n : ℕ) (T : TY FO) →
-  Sem (vec T n) → Sem (vec (` zero) n ⇐ T)
+  Sem (vec T n) → Sem (vec (` zero) n [ T ])
 toSubVec n T = castSem (sym (sub-vec n (` zero) (σ₀ T)))
 
 toSubVec-zero : ∀ (T : TY FO) → toSubVec zero T tt ≡ tt
@@ -58,11 +58,11 @@ toSubVec-suc : ∀ (n : ℕ) (T : TY FO)
   toSubVec (suc n) T (x , xs) ≡ (x , toSubVec n T xs)
 toSubVec-suc n T x xs =
   cast-×-sym {A = T} {A′ = T}
-    {B = vec (` zero) n ⇐ T} {B′ = vec T n}
+    {B = vec (` zero) n [ T ]} {B′ = vec T n}
     refl (sub-vec n (` zero) (σ₀ T)) x xs
 
 toBranches : ∀ {k} (rs : Vec ℕ k) (T : TY FO) →
-  Sem (BranchesAt rs T) → Sem (Branches rs ⇐ T)
+  Sem (BranchesAt rs T) → Sem (Branches rs [ T ])
 toBranches rs T = castSem (sym (branches-sub rs T))
 
 toBranches-inj₁ : ∀ {k} (r : ℕ) (rs : Vec ℕ k) (T : TY FO)

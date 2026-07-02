@@ -16,7 +16,7 @@ treated as an optional extension rather than baked into the argument.
 
 1. Define a small record for the shared syntax surface:
    category operations, terminal/initial objects, products, sums, functorial
-   action, strength, `fold`, and either primitive `P` or primitive `F`.
+   action, strength, `roll`, and either primitive `P` or primitive `F`.
 2. Define a corresponding record of equations:
    congruence, category/product/sum laws, functoriality, strength naturality,
    `strength-π₁`, and the primitive recursion or fold computation/uniqueness
@@ -33,6 +33,17 @@ treated as an optional extension rather than baked into the argument.
    facts or leave them in the HO/FO-specific equation modules.
 7. After the refactor, delete or shrink the duplicated proof bodies in the FO
    and HO translation modules to thin instantiation wrappers.
+
+## Open design questions
+
+- Investigate whether the current restriction
+  ``_`⇒_ : Ty HO 0 → Ty HO n → Ty HO n`` can be relaxed by treating
+  higher-order type codes as bifunctors, with one index for contravariant
+  positions and one for covariant positions.  This could allow function
+  domains to mention type variables while preserving a principled functorial
+  action, but it would likely require replacing the present unary `fmap` and
+  `strength` interface with a bifunctorial action and rechecking the P/F
+  equivalence proofs against that more general structure.
 
 ## Guardrails
 

@@ -22,7 +22,7 @@ data _≈_ : ∀ {Γ A} → Γ ⊢ A → Γ ⊢ A → Set where
   fmap-cong : ∀ {A B} (G : Ty HO 1) {t t′ : A ⊢ B}
     → t ≈ t′ → fmap G t ≈ fmap G t′
   prec-cong : ∀ {A B} {G : Ty HO 1}
-    {h h′ : (G ⇐ (A `× ind G)) `× B ⊢ A}
+    {h h′ : (G [ A `× ind G ]) `× B ⊢ A}
     → h ≈ h′
     → prec {G = G} {A = A} {B = B} h ≈ prec {G = G} {A = A} {B = B} h′
 
@@ -60,12 +60,12 @@ data _≈_ : ∀ {Γ A} → Γ ⊢ A → Γ ⊢ A → Set where
   ⇒-η : ∀ {A B C} {t : A ⊢ B `⇒ C} → curry (uncurry t) ≈ t
 
   prec-β : ∀ {A B} {G : Ty HO 1}
-    {h : (G ⇐ (A `× ind G)) `× B ⊢ A}
-    → cut (prec {G = G} {A = A} {B = B} h) (map-× fold var)
+    {h : (G [ A `× ind G ]) `× B ⊢ A}
+    → cut (prec {G = G} {A = A} {B = B} h) (map-× roll var)
       ≈ cut h (paraArgs G (prec {G = G} {A = A} {B = B} h))
 
   prec-unique : ∀ {A B} {G : Ty HO 1}
-    {h : (G ⇐ (A `× ind G)) `× B ⊢ A}
+    {h : (G [ A `× ind G ]) `× B ⊢ A}
     {p : ind G `× B ⊢ A}
-    → cut p (map-× fold var) ≈ cut h (paraArgs G p)
+    → cut p (map-× roll var) ≈ cut h (paraArgs G p)
     → p ≈ prec {G = G} {A = A} {B = B} h

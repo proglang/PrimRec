@@ -30,13 +30,13 @@ module For {ℓ : Level} (M : CModel.Model ℓ) where
 
   caseBranchesᴹ : ∀ {k T U V} (rs : Vec ℕ k) →
     ((i : Fin k) → vec T (lookup rs i) `× U ⇒ᴹ V) →
-    (Branches rs ⇐ T) `× U ⇒ᴹ V
+    (Branches rs [ T ]) `× U ⇒ᴹ V
   caseBranchesᴹ {T = T} rs handlers rewrite branches-sub rs T =
     caseAtᴹ rs handlers
 
   paraHandlerᴹ : ∀ {k n} (rs : Vec ℕ k) →
     ((i : Fin k) → vec (Tree rs) ((lookup rs i + lookup rs i) + n) ⇒ᴹ Tree rs) →
-    (Branches rs ⇐ (Tree rs `× Tree rs)) `× vec (Tree rs) n ⇒ᴹ Tree rs
+    (Branches rs [ Tree rs `× Tree rs ]) `× vec (Tree rs) n ⇒ᴹ Tree rs
   paraHandlerᴹ {n = n} rs steps =
     caseBranchesᴹ rs λ i → Cᴹ (steps i) (prepareParaᴹ (lookup rs i) n)
 

@@ -26,22 +26,22 @@ data _⊢_ : TY FO → TY FO → Set where
   cases : (A ⊢ C) → (B ⊢ C) → (A `+ B ⊢ C)
   dist-+-× : (A `+ B) `× C ⊢ (A `× C) `+ (B `× C)
 
-  fmap : (G : Ty FO 1) → (A ⊢ B) → (G ⇐ A ⊢ G ⇐ B)
-  strength : (G : Ty FO 1) → (G ⇐ A) `× B ⊢ G ⇐ (A `× B)
+  fmap : (G : Ty FO 1) → (A ⊢ B) → (G [ A ] ⊢ G [ B ])
+  strength : (G : Ty FO 1) → (G [ A ]) `× B ⊢ G [ A `× B ]
 
-  fold : G ⇐ ind G ⊢ ind G
-  prec : ((G ⇐ (A `× ind G)) `× B ⊢ A)
+  roll : G [ ind G ] ⊢ ind G
+  prec : ((G [ A `× ind G ]) `× B ⊢ A)
     → (ind G `× B ⊢ A)
 
 map-× : (A ⊢ C) → (B ⊢ D) → (A `× B ⊢ C `× D)
 map-× f g = pair (cut f fst) (cut g snd)
 
 pmap : (G : Ty FO 1) → (A `× B ⊢ C)
-  → ((G ⇐ A) `× B ⊢ G ⇐ C)
+  → ((G [ A ]) `× B ⊢ G [ C ])
 pmap G f = cut (fmap G f) (strength G)
 
 paraArgs : (G : Ty FO 1) → (ind G `× B ⊢ A)
-  → ((G ⇐ ind G) `× B ⊢ (G ⇐ (A `× ind G)) `× B)
+  → ((G [ ind G ]) `× B ⊢ (G [ A `× ind G ]) `× B)
 paraArgs G p = pair (pmap G (pair p fst)) snd
 
 undist-+-× : (A `× C) `+ (B `× C) ⊢ (A `+ B) `× C

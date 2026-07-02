@@ -29,7 +29,7 @@ compile (Ctx.curry t) = PF.lam (compile t)
 compile Ctx.eval = PF.apply
 compile (Ctx.fmap G t) = PF.fmap G (compile t)
 compile (Ctx.strength G) = PF.strength G
-compile Ctx.fold = PF.fold
+compile Ctx.roll = PF.roll
 compile (Ctx.prec h) = PF.P (compile h)
 
 reify : ∀ {Γ A} → Γ PF.→ᴾ A → Γ Ctx.⊢ A
@@ -47,7 +47,7 @@ reify (PF.lam f) = Ctx.curry (reify f)
 reify PF.apply = Ctx.eval
 reify (PF.fmap G f) = Ctx.fmap G (reify f)
 reify (PF.strength G) = Ctx.strength G
-reify PF.fold = Ctx.fold
+reify PF.roll = Ctx.roll
 reify (PF.P h) = Ctx.prec (reify h)
 
 ----------------------------------------------------------------------
@@ -69,7 +69,7 @@ compile-reify (PF.lam f) = cong PF.lam (compile-reify f)
 compile-reify PF.apply = refl
 compile-reify (PF.fmap G f) = cong (PF.fmap G) (compile-reify f)
 compile-reify (PF.strength G) = refl
-compile-reify PF.fold = refl
+compile-reify PF.roll = refl
 compile-reify (PF.P h) = cong PF.P (compile-reify h)
 
 reify-compile : ∀ {Γ A} (t : Γ Ctx.⊢ A) → reify (compile t) ≡ t
@@ -87,7 +87,7 @@ reify-compile (Ctx.curry t) = cong Ctx.curry (reify-compile t)
 reify-compile Ctx.eval = refl
 reify-compile (Ctx.fmap G t) = cong (Ctx.fmap G) (reify-compile t)
 reify-compile (Ctx.strength G) = refl
-reify-compile Ctx.fold = refl
+reify-compile Ctx.roll = refl
 reify-compile (Ctx.prec h) = cong Ctx.prec (reify-compile h)
 
 compile-reify≈ : ∀ {Γ A} (f : Γ PF.→ᴾ A) → compile (reify f) PFEq.≈ f

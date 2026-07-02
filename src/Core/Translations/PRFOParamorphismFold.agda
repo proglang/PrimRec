@@ -19,30 +19,30 @@ variable
 -- Catamorphism in the paramorphism-primitive presentation: drop the
 -- remembered original subterm from the paramorphism layer.
 dropSubtermᴾ : ∀ {T U} (G : Ty FO 1) →
-  (G P.⇐ T) P.`× U P.→ᴾ T →
-  (G P.⇐ (T P.`× P.ind G)) P.`× U P.→ᴾ T
+  (G [ T ]) P.`× U P.→ᴾ T →
+  (G [ T P.`× P.ind G ]) P.`× U P.→ᴾ T
 dropSubtermᴾ G h =
   P.C h (P.`# (P.C (P.fmap G P.π₁) P.π₁) P.π₂)
 
 Fᴾ : ∀ {T U} {G : Ty FO 1} →
-  (G P.⇐ T) P.`× U P.→ᴾ T →
+  (G [ T ]) P.`× U P.→ᴾ T →
   P.ind G P.`× U P.→ᴾ T
 Fᴾ {G = G} h = P.P (dropSubtermᴾ G h)
 
--- Paramorphism in the catamorphism-primitive presentation: fold to pairs
+-- Paramorphism in the catamorphism-primitive presentation: roll to pairs
 -- consisting of the recursive result and the original reconstructed subterm.
 rebuildᶠ : ∀ {T U} (G : Ty FO 1) →
-  (G F.⇐ (T F.`× F.ind G)) F.`× U F.→ᶠ F.ind G
+  (G [ T F.`× F.ind G ]) F.`× U F.→ᶠ F.ind G
 rebuildᶠ G =
-  F.C F.fold (F.C (F.fmap G F.π₂) F.π₁)
+  F.C F.roll (F.C (F.fmap G F.π₂) F.π₁)
 
 rememberᶠ : ∀ {T U} (G : Ty FO 1) →
-  (G F.⇐ (T F.`× F.ind G)) F.`× U F.→ᶠ T →
-  (G F.⇐ (T F.`× F.ind G)) F.`× U F.→ᶠ T F.`× F.ind G
+  (G [ T F.`× F.ind G ]) F.`× U F.→ᶠ T →
+  (G [ T F.`× F.ind G ]) F.`× U F.→ᶠ T F.`× F.ind G
 rememberᶠ G h = F.`# h (rebuildᶠ G)
 
 Pᶠ : ∀ {T U} {G : Ty FO 1} →
-  (G F.⇐ (T F.`× F.ind G)) F.`× U F.→ᶠ T →
+  (G [ T F.`× F.ind G ]) F.`× U F.→ᶠ T →
   F.ind G F.`× U F.→ᶠ T
 Pᶠ {G = G} h = F.C F.π₁ (F.F (rememberᶠ G h))
 
@@ -64,7 +64,7 @@ toP (F.`case f g) = P.`case (toP f) (toP g)
 toP F.dist-+-× = P.dist-+-×
 toP (F.fmap G f) = P.fmap G (toP f)
 toP (F.strength G) = P.strength G
-toP F.fold = P.fold
+toP F.roll = P.roll
 toP (F.F {G = G} h) = Fᴾ (toP h)
 
 toF : ∀ {T U} → T P.→ᴾ U → T F.→ᶠ U
@@ -81,7 +81,7 @@ toF (P.`case f g) = F.`case (toF f) (toF g)
 toF P.dist-+-× = F.dist-+-×
 toF (P.fmap G f) = F.fmap G (toF f)
 toF (P.strength G) = F.strength G
-toF P.fold = F.fold
+toF P.roll = F.roll
 toF {T = ind G `× U} {U = T} (P.P h) = Pᶠ (toF h)
 
 ----------------------------------------------------------------------
@@ -89,11 +89,11 @@ toF {T = ind G `× U} {U = T} (P.P h) = Pᶠ (toF h)
 ----------------------------------------------------------------------
 
 foldArgsᴾ : (G : Ty FO 1) → (P.ind G P.`× U P.→ᴾ T)
-  → (G P.⇐ P.ind G) P.`× U P.→ᴾ (G P.⇐ T) P.`× U
+  → (G [ P.ind G ]) P.`× U P.→ᴾ (G [ T ]) P.`× U
 foldArgsᴾ G p = P.`# (P.pmap G p) P.π₂
 
 dropLayerᴾ : ∀ {T} (G : Ty FO 1) {U : TY FO} →
-  (G P.⇐ (T P.`× P.ind G)) P.`× U P.→ᴾ (G P.⇐ T) P.`× U
+  (G [ T P.`× P.ind G ]) P.`× U P.→ᴾ (G [ T ]) P.`× U
 dropLayerᴾ G = P.`# (P.C (P.fmap G P.π₁) P.π₁) P.π₂
 
 C-#ᴾ : ∀ {A B D E : TY FO}
@@ -134,7 +134,7 @@ dropLayer-paraArgsᴾ G p =
     (PEq.`#-cong (drop-first-paraArgsᴾ G p) PEq.×-β₂)
 
 dropSubterm-paraArgsᴾ : ∀ {T U} (G : Ty FO 1)
-  (h : (G P.⇐ T) P.`× U P.→ᴾ T)
+  (h : (G [ T ]) P.`× U P.→ᴾ T)
   (p : P.ind G P.`× U P.→ᴾ T) →
   P.C (dropSubtermᴾ G h) (P.paraArgs G p)
   PEq.≈ P.C h (foldArgsᴾ G p)
@@ -143,8 +143,8 @@ dropSubterm-paraArgsᴾ G h p =
     (PEq.C-cong PEq.≈-refl (dropLayer-paraArgsᴾ G p))
 
 Fᴾ-β : ∀ {T U} {G : Ty FO 1}
-  {h : (G P.⇐ T) P.`× U P.→ᴾ T} →
-  P.C (Fᴾ {G = G} h) (P.map-× (P.fold {G = G}) (P.id {T = U}))
+  {h : (G [ T ]) P.`× U P.→ᴾ T} →
+  P.C (Fᴾ {G = G} h) (P.map-× (P.roll {G = G}) (P.id {T = U}))
   PEq.≈
   P.C h (foldArgsᴾ G (Fᴾ {G = G} h))
 Fᴾ-β {G = G} {h = h} =
@@ -152,9 +152,9 @@ Fᴾ-β {G = G} {h = h} =
     (dropSubterm-paraArgsᴾ G h (Fᴾ h))
 
 Fᴾ-unique : ∀ {T U} {G : Ty FO 1}
-  {h : (G P.⇐ T) P.`× U P.→ᴾ T}
+  {h : (G [ T ]) P.`× U P.→ᴾ T}
   {p : P.ind G P.`× U P.→ᴾ T} →
-  P.C p (P.map-× (P.fold {G = G}) (P.id {T = U}))
+  P.C p (P.map-× (P.roll {G = G}) (P.id {T = U}))
   PEq.≈ P.C h (foldArgsᴾ G p) →
   p PEq.≈ Fᴾ {G = G} h
 Fᴾ-unique {G = G} {h = h} premise =
@@ -206,12 +206,12 @@ toP-preserves (FEq.F-unique p) =
 ----------------------------------------------------------------------
 
 paraArgsᶠ : (G : Ty FO 1) → (F.ind G F.`× U F.→ᶠ T)
-  → (G F.⇐ F.ind G) F.`× U F.→ᶠ (G F.⇐ (T F.`× F.ind G)) F.`× U
+  → (G [ F.ind G ]) F.`× U F.→ᶠ (G [ T F.`× F.ind G ]) F.`× U
 paraArgsᶠ G p = F.`# (F.pmap G (F.`# p F.π₁)) F.π₂
 
 rebuild₀ᶠ : ∀ {U} (G : Ty FO 1) →
-  (G F.⇐ F.ind G) F.`× U F.→ᶠ F.ind G
-rebuild₀ᶠ G = F.C F.fold F.π₁
+  (G [ F.ind G ]) F.`× U F.→ᶠ F.ind G
+rebuild₀ᶠ G = F.C F.roll F.π₁
 
 C-#ᶠ : ∀ {A B D E : TY FO}
   {f : B F.→ᶠ D} {g : B F.→ᶠ E} {h : A F.→ᶠ B} →
@@ -241,14 +241,14 @@ pmap-Cᶠ G =
   FEq.≈-trans FEq.C-assoc
     (FEq.C-cong (FEq.≈-sym (FEq.fmap-C G)) FEq.≈-refl)
 
-π₁-fold-mapᶠ : ∀ {U} {G : Ty FO 1} →
-  F.C F.π₁ (F.map-× (F.fold {G = G}) (F.id {T = U}))
-  FEq.≈ F.C F.fold F.π₁
-π₁-fold-mapᶠ = FEq.×-β₁
+π₁-roll-mapᶠ : ∀ {U} {G : Ty FO 1} →
+  F.C F.π₁ (F.map-× (F.roll {G = G}) (F.id {T = U}))
+  FEq.≈ F.C F.roll F.π₁
+π₁-roll-mapᶠ = FEq.×-β₁
 
 rebuild₀-foldArgs-π₁ᶠ : ∀ {U} (G : Ty FO 1) →
   F.C (rebuild₀ᶠ {U = U} G) (F.foldArgs G F.π₁)
-  FEq.≈ F.C F.fold F.π₁
+  FEq.≈ F.C F.roll F.π₁
 rebuild₀-foldArgs-π₁ᶠ G =
   FEq.≈-trans (FEq.≈-sym FEq.C-assoc)
     (FEq.≈-trans
@@ -259,7 +259,7 @@ rebuild₀-foldArgs-π₁ᶠ G =
   F.π₁ FEq.≈ F.F {G = G} {T = F.ind G} {U = U} (rebuild₀ᶠ G)
 π₁-is-F-rebuild₀ᶠ {U = U} G =
   FEq.F-unique
-    (FEq.≈-trans π₁-fold-mapᶠ
+    (FEq.≈-trans π₁-roll-mapᶠ
       (FEq.≈-sym (rebuild₀-foldArgs-π₁ᶠ {U = U} G)))
 
 rebuild-foldArgsᶠ : ∀ {T U} (G : Ty FO 1)
@@ -281,7 +281,7 @@ rebuild-foldArgsᶠ G r =
             FEq.C-assoc))))
 
 second-is-F-rebuild₀ᶠ : ∀ {T U} {G : Ty FO 1}
-  (h : (G F.⇐ (T F.`× F.ind G)) F.`× U F.→ᶠ T) →
+  (h : (G [ T F.`× F.ind G ]) F.`× U F.→ᶠ T) →
   F.C F.π₂ (F.F (rememberᶠ G h))
   FEq.≈ F.F {G = G} {T = F.ind G} {U = U} (rebuild₀ᶠ G)
 second-is-F-rebuild₀ᶠ {G = G} h =
@@ -295,28 +295,28 @@ second-is-F-rebuild₀ᶠ {G = G} h =
             (rebuild-foldArgsᶠ G (F.F (rememberᶠ G h)))))))
 
 remember-secondᶠ : ∀ {T U} {G : Ty FO 1}
-  (h : (G F.⇐ (T F.`× F.ind G)) F.`× U F.→ᶠ T) →
+  (h : (G [ T F.`× F.ind G ]) F.`× U F.→ᶠ T) →
   F.C F.π₂ (F.F (rememberᶠ G h)) FEq.≈ F.π₁
 remember-secondᶠ {G = G} h =
   FEq.≈-trans (second-is-F-rebuild₀ᶠ h)
     (FEq.≈-sym (π₁-is-F-rebuild₀ᶠ G))
 
 remember-ηᶠ : ∀ {T U} {G : Ty FO 1}
-  (h : (G F.⇐ (T F.`× F.ind G)) F.`× U F.→ᶠ T) →
+  (h : (G [ T F.`× F.ind G ]) F.`× U F.→ᶠ T) →
   F.F (rememberᶠ G h) FEq.≈ F.`# (Pᶠ h) F.π₁
 remember-ηᶠ h =
   FEq.≈-trans (FEq.≈-sym FEq.×-η)
     (FEq.`#-cong FEq.≈-refl (remember-secondᶠ h))
 
 foldArgs-rememberᶠ : ∀ {T U} {G : Ty FO 1}
-  (h : (G F.⇐ (T F.`× F.ind G)) F.`× U F.→ᶠ T) →
+  (h : (G [ T F.`× F.ind G ]) F.`× U F.→ᶠ T) →
   F.foldArgs G (F.F (rememberᶠ G h)) FEq.≈ paraArgsᶠ G (Pᶠ h)
 foldArgs-rememberᶠ {G = G} h =
   foldArgs-congᶠ G (remember-ηᶠ h)
 
 Pᶠ-β : ∀ {T U} {G : Ty FO 1}
-  {h : (G F.⇐ (T F.`× F.ind G)) F.`× U F.→ᶠ T} →
-  F.C (Pᶠ {G = G} h) (F.map-× (F.fold {G = G}) (F.id {T = U}))
+  {h : (G [ T F.`× F.ind G ]) F.`× U F.→ᶠ T} →
+  F.C (Pᶠ {G = G} h) (F.map-× (F.roll {G = G}) (F.id {T = U}))
   FEq.≈
   F.C h (paraArgsᶠ G (Pᶠ {G = G} h))
 Pᶠ-β {G = G} {h = h} =
@@ -330,7 +330,7 @@ Pᶠ-β {G = G} {h = h} =
 
 rebuild-paraArgsᶠ : ∀ {T U} (G : Ty FO 1)
   (p : F.ind G F.`× U F.→ᶠ T) →
-  F.C (rebuildᶠ G) (paraArgsᶠ G p) FEq.≈ F.C F.fold F.π₁
+  F.C (rebuildᶠ G) (paraArgsᶠ G p) FEq.≈ F.C F.roll F.π₁
 rebuild-paraArgsᶠ G p =
   FEq.≈-trans (rebuild-foldArgsᶠ G (F.`# p F.π₁))
     (FEq.≈-trans
@@ -339,9 +339,9 @@ rebuild-paraArgsᶠ G p =
       (rebuild₀-foldArgs-π₁ᶠ G))
 
 Pᶠ-unique : ∀ {T U} {G : Ty FO 1}
-  {h : (G F.⇐ (T F.`× F.ind G)) F.`× U F.→ᶠ T}
+  {h : (G [ T F.`× F.ind G ]) F.`× U F.→ᶠ T}
   {p : F.ind G F.`× U F.→ᶠ T} →
-  F.C p (F.map-× (F.fold {G = G}) (F.id {T = U}))
+  F.C p (F.map-× (F.roll {G = G}) (F.id {T = U}))
   FEq.≈ F.C h (paraArgsᶠ G p) →
   p FEq.≈ Pᶠ {G = G} h
 Pᶠ-unique {G = G} {h = h} {p = p} premise =
@@ -351,7 +351,7 @@ Pᶠ-unique {G = G} {h = h} {p = p} premise =
         (FEq.≈-trans C-#ᶠ
           (FEq.≈-trans
             (FEq.`#-cong premise
-              (FEq.≈-trans π₁-fold-mapᶠ
+              (FEq.≈-trans π₁-roll-mapᶠ
                 (FEq.≈-sym (rebuild-paraArgsᶠ G p))))
             (FEq.≈-sym C-#ᶠ)))))
 
@@ -369,7 +369,7 @@ toF-preserves (PEq.`case-cong p q) =
   FEq.`case-cong (toF-preserves p) (toF-preserves q)
 toF-preserves (PEq.fmap-cong G p) =
   FEq.fmap-cong G (toF-preserves p)
-toF-preserves (PEq.P-cong {H = H} p) =
+toF-preserves (PEq.P-cong {G = H} p) =
   FEq.C-cong FEq.≈-refl
     (FEq.F-cong (FEq.`#-cong (toF-preserves p) FEq.≈-refl))
 toF-preserves PEq.C-idˡ = FEq.C-idˡ
@@ -390,7 +390,7 @@ toF-preserves PEq.+-β₂ = FEq.+-β₂
 toF-preserves PEq.+-η = FEq.+-η
 toF-preserves PEq.dist-undist = FEq.dist-undist
 toF-preserves PEq.undist-dist = FEq.undist-dist
-toF-preserves (PEq.P-β {H = H} {h = h}) =
+toF-preserves (PEq.P-β {G = H} {h = h}) =
   Pᶠ-β {G = H} {h = toF h}
 toF-preserves (PEq.P-unique p) =
   Pᶠ-unique (toF-preserves p)
@@ -413,7 +413,7 @@ toP-toF (P.`case f g) = PEq.`case-cong (toP-toF f) (toP-toF g)
 toP-toF P.dist-+-× = PEq.≈-refl
 toP-toF (P.fmap G f) = PEq.fmap-cong G (toP-toF f)
 toP-toF (P.strength G) = PEq.≈-refl
-toP-toF P.fold = PEq.≈-refl
+toP-toF P.roll = PEq.≈-refl
 toP-toF {T = ind G `× U} {U = T} (P.P h) =
   PEq.P-unique
     (PEq.≈-trans
@@ -434,7 +434,7 @@ toF-toP (F.`case f g) = FEq.`case-cong (toF-toP f) (toF-toP g)
 toF-toP F.dist-+-× = FEq.≈-refl
 toF-toP (F.fmap G f) = FEq.fmap-cong G (toF-toP f)
 toF-toP (F.strength G) = FEq.≈-refl
-toF-toP F.fold = FEq.≈-refl
+toF-toP F.roll = FEq.≈-refl
 toF-toP (F.F {G = G} h) =
   FEq.F-unique
     (FEq.≈-trans

@@ -33,12 +33,12 @@ record Structure (ℓ : Level) : Set (suc ℓ) where
     lamᴹ : ∀ {T U V} → (T `× U ⇒ᴹ V) → (T ⇒ᴹ U `⇒ V)
     applyᴹ : ∀ {T U} → (T `⇒ U) `× T ⇒ᴹ U
 
-    fmapᴹ : ∀ {T U} (G : Ty HO 1) → (T ⇒ᴹ U) → (G ⇐ T ⇒ᴹ G ⇐ U)
-    strengthᴹ : ∀ {T U} (G : Ty HO 1) → (G ⇐ T) `× U ⇒ᴹ G ⇐ (T `× U)
+    fmapᴹ : ∀ {T U} (G : Ty HO 1) → (T ⇒ᴹ U) → (G [ T ] ⇒ᴹ G [ U ])
+    strengthᴹ : ∀ {T U} (G : Ty HO 1) → (G [ T ]) `× U ⇒ᴹ G [ T `× U ]
 
-    foldᴹ : ∀ {G : Ty HO 1} → G ⇐ ind G ⇒ᴹ ind G
+    rollᴹ : ∀ {G : Ty HO 1} → G [ ind G ] ⇒ᴹ ind G
     Pᴹ : ∀ {T U} {G : Ty HO 1}
-      → ((G ⇐ (T `× ind G)) `× U ⇒ᴹ T)
+      → ((G [ T `× ind G ]) `× U ⇒ᴹ T)
       → (ind G `× U ⇒ᴹ T)
 
 module _ {ℓ} (S : Structure ℓ) where
@@ -49,12 +49,12 @@ module _ {ℓ} (S : Structure ℓ) where
   map-×ᴹ f g = pairᴹ (Cᴹ f π₁ᴹ) (Cᴹ g π₂ᴹ)
 
   pmapᴹ : ∀ {T U V} (G : Ty HO 1)
-    → (T `× U ⇒ᴹ V) → ((G ⇐ T) `× U ⇒ᴹ G ⇐ V)
+    → (T `× U ⇒ᴹ V) → ((G [ T ]) `× U ⇒ᴹ G [ V ])
   pmapᴹ G f = Cᴹ (fmapᴹ G f) (strengthᴹ G)
 
   paraArgsᴹ : ∀ {T U} (G : Ty HO 1)
     → (ind G `× U ⇒ᴹ T)
-    → ((G ⇐ ind G) `× U ⇒ᴹ (G ⇐ (T `× ind G)) `× U)
+    → ((G [ ind G ]) `× U ⇒ᴹ (G [ T `× ind G ]) `× U)
   paraArgsᴹ G p = pairᴹ (pmapᴹ G (pairᴹ p π₁ᴹ)) π₂ᴹ
 
   thetaᴹ : ∀ {T U V} → (T ⇒ᴹ U `⇒ V) → (T `× U ⇒ᴹ V)
@@ -95,7 +95,7 @@ record Model (ℓ : Level) : Set (suc ℓ) where
     fmap-congᴹ : ∀ {A B} (G : Ty HO 1) {f f′ : A ⇒ᴹ B}
       → f ≈ᴹ f′ → fmapᴹ G f ≈ᴹ fmapᴹ G f′
     P-congᴹ : ∀ {A B} {G : Ty HO 1}
-      {h h′ : (G ⇐ (A `× ind G)) `× B ⇒ᴹ A}
+      {h h′ : (G [ A `× ind G ]) `× B ⇒ᴹ A}
       → h ≈ᴹ h′
       → Pᴹ {T = A} {U = B} {G = G} h ≈ᴹ Pᴹ {T = A} {U = B} {G = G} h′
 
@@ -132,12 +132,12 @@ record Model (ℓ : Level) : Set (suc ℓ) where
     ⇒-βᴹ : ∀ {A B D} {f : A `× B ⇒ᴹ D} → thetaᴹ structure (lamᴹ f) ≈ᴹ f
     ⇒-ηᴹ : ∀ {A B D} {f : A ⇒ᴹ B `⇒ D} → lamᴹ (thetaᴹ structure f) ≈ᴹ f
 
-    P-βᴹ : ∀ {A B} {G : Ty HO 1} {h : (G ⇐ (A `× ind G)) `× B ⇒ᴹ A}
-      → Cᴹ (Pᴹ {T = A} {U = B} {G = G} h) (map-×ᴹ structure (foldᴹ {G = G}) (idᴹ {T = B}))
+    P-βᴹ : ∀ {A B} {G : Ty HO 1} {h : (G [ A `× ind G ]) `× B ⇒ᴹ A}
+      → Cᴹ (Pᴹ {T = A} {U = B} {G = G} h) (map-×ᴹ structure (rollᴹ {G = G}) (idᴹ {T = B}))
         ≈ᴹ Cᴹ h (paraArgsᴹ structure G (Pᴹ {T = A} {U = B} {G = G} h))
-    P-uniqueᴹ : ∀ {A B} {G : Ty HO 1} {h : (G ⇐ (A `× ind G)) `× B ⇒ᴹ A}
+    P-uniqueᴹ : ∀ {A B} {G : Ty HO 1} {h : (G [ A `× ind G ]) `× B ⇒ᴹ A}
       {p : ind G `× B ⇒ᴹ A}
-      → Cᴹ p (map-×ᴹ structure (foldᴹ {G = G}) (idᴹ {T = B})) ≈ᴹ Cᴹ h (paraArgsᴹ structure G p)
+      → Cᴹ p (map-×ᴹ structure (rollᴹ {G = G}) (idᴹ {T = B})) ≈ᴹ Cᴹ h (paraArgsᴹ structure G p)
       → p ≈ᴹ Pᴹ {T = A} {U = B} {G = G} h
 
 ----------------------------------------------------------------------
@@ -162,7 +162,7 @@ module _ {ℓ} (S : Structure ℓ) where
   interpret Syn.apply = applyᴹ
   interpret (Syn.fmap G f) = fmapᴹ G (interpret f)
   interpret (Syn.strength G) = strengthᴹ G
-  interpret Syn.fold = foldᴹ
+  interpret Syn.roll = rollᴹ
   interpret (Syn.P h) = Pᴹ (interpret h)
 
 module _ {ℓ} (M : Model ℓ) where

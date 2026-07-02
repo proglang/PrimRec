@@ -31,7 +31,7 @@ Sem = ⟦_⟧₀
 -- Convert between syntactic substitution and a container extension.  These
 -- functions are total because Flat excludes nested ind and exponentials.
 pack : ∀ {G} → Flat G → (T : TY FO) →
-       Sem (G ⇐ T) → Value (code G) (λ _ → Sem T)
+       Sem (G [ T ]) → Value (code G) (λ _ → Sem T)
 pack flat-𝟘 T ()
 pack flat-𝟙 T tt = tt , λ _ ()
 pack flat-` T x = tt , λ { zero refl → x }
@@ -47,7 +47,7 @@ pack (flat-+ p q) T (inj₂ y) with pack q T y
 ... | sy , vy = inj₂ sy , vy
 
 unpack : ∀ {G} → Flat G → (T : TY FO) →
-         Value (code G) (λ _ → Sem T) → Sem (G ⇐ T)
+         Value (code G) (λ _ → Sem T) → Sem (G [ T ])
 unpack flat-𝟘 T (() , values)
 unpack flat-𝟙 T (tt , values) = tt
 unpack flat-` T (tt , values) = values zero refl
@@ -75,23 +75,23 @@ unpack-cong (flat-+ p q) T {s = inj₂ sy} pointwise =
   cong inj₂ (unpack-cong q T pointwise)
 
 fmapFlat : ∀ {G T U} → Flat G → (Sem T → Sem U) →
-           Sem (G ⇐ T) → Sem (G ⇐ U)
+           Sem (G [ T ]) → Sem (G [ U ])
 fmapFlat {T = T} {U = U} p f x = unpack p U (mapC (λ _ → f) (pack p T x))
 
 strengthFlat : ∀ {G T U} → Flat G →
-               Sem ((G ⇐ T) `× U) → Sem (G ⇐ (T `× U))
+               Sem ((G [ T ]) `× U) → Sem (G [ T `× U ])
 strengthFlat {T = T} {U = U} p (x , u) =
   unpack p (T `× U) (mapC (λ _ t → t , u) (pack p T x))
 
-foldFlat : ∀ {G} → Flat G → Sem (G ⇐ ind G) → Sem (ind G)
-foldFlat {G} p layer with pack p (ind G) layer
+rollFlat : ∀ {G} → Flat G → Sem (G [ ind G ]) → Sem (ind G)
+rollFlat {G} p layer with pack p (ind G) layer
 ... | s , values =
   proj₁
     (rollC {D = code G} {ρ = λ ()}
       (s , λ { zero position → values zero position , λ () }))
 
 paraAlgebra : ∀ {G T U} → Flat G →
-  (Sem ((G ⇐ (T `× ind G)) `× U) → Sem T) → Sem U →
+  (Sem ((G [ T `× ind G ]) `× U) → Sem T) → Sem U →
   Value (code G) (extend (Sem T × Mu (code G) (λ ())) (λ ())) → Sem T
 paraAlgebra {G} {T} p h u layer =
   h (unpack p (T `× ind G) (mapC strip layer) , u)
@@ -101,14 +101,14 @@ paraAlgebra {G} {T} p h u layer =
   strip zero (result , child) = result , proj₁ child
 
 paraFlat : ∀ {G T U} → Flat G →
-  (Sem ((G ⇐ (T `× ind G)) `× U) → Sem T) →
+  (Sem ((G [ T `× ind G ]) `× U) → Sem T) →
   Sem (ind G `× U) → Sem T
 paraFlat {G} {T} {U} p h (tree , u) =
   paraGo (paraAlgebra {G = G} {T = T} {U = U} p h u) tree (λ ())
 
 paraStepFlat : ∀ {G T U} → Flat G →
-  (Sem ((G ⇐ (T `× ind G)) `× U) → Sem T) → Sem U →
-  Sem (G ⇐ ind G) → Sem (G ⇐ (T `× ind G))
+  (Sem ((G [ T `× ind G ]) `× U) → Sem T) → Sem U →
+  Sem (G [ ind G ]) → Sem (G [ T `× ind G ])
 paraStepFlat {G} {T} {U} p h u layer =
   unpack p (T `× ind G) (mapC step (pack p (ind G) layer))
   where
@@ -116,8 +116,8 @@ paraStepFlat {G} {T} {U} p h u layer =
   step zero child = paraFlat {G = G} {T = T} {U = U} p h (child , u) , child
 
 paraStep-as-fmap : ∀ {G T U} (p : Flat G)
-  (h : Sem ((G ⇐ (T `× ind G)) `× U) → Sem T)
-  (u : Sem U) (layer : Sem (G ⇐ ind G)) →
+  (h : Sem ((G [ T `× ind G ]) `× U) → Sem T)
+  (u : Sem U) (layer : Sem (G [ ind G ])) →
   paraStepFlat {G = G} {T = T} {U = U} p h u layer ≡
   fmapFlat {G = G} {T = ind G} {U = T `× ind G} p
     (λ child → paraFlat {G = G} {T = T} {U = U} p h (child , u) , child)
@@ -125,12 +125,12 @@ paraStep-as-fmap : ∀ {G T U} (p : Flat G)
 paraStep-as-fmap {G = G} {T = T} p h u layer =
   unpack-cong p (T `× ind G) λ { zero position → refl }
 
-para-foldFlat-β : ∀ {G T U} (p : Flat G)
-  (h : Sem ((G ⇐ (T `× ind G)) `× U) → Sem T)
-  (layer : Sem (G ⇐ ind G)) (u : Sem U) →
-  paraFlat {G = G} {T = T} {U = U} p h (foldFlat p layer , u) ≡
+para-rollFlat-β : ∀ {G T U} (p : Flat G)
+  (h : Sem ((G [ T `× ind G ]) `× U) → Sem T)
+  (layer : Sem (G [ ind G ])) (u : Sem U) →
+  paraFlat {G = G} {T = T} {U = U} p h (rollFlat p layer , u) ≡
   h (paraStepFlat {G = G} {T = T} {U = U} p h u layer , u)
-para-foldFlat-β {G = G} {T = T} p h layer u
+para-rollFlat-β {G = G} {T = T} p h layer u
   with pack p (ind G) layer
 ... | s , values =
   cong h (cong₂ _,_
@@ -159,9 +159,9 @@ data Supported : ∀ {T U} → T →ᴾ U → Set where
   s-fmap : ∀ {G T U} {f : T →ᴾ U} →
            Flat G → Supported f → Supported (fmap G f)
   s-strength : ∀ {G T U} → Flat G → Supported (strength {T = T} {U = U} G)
-  s-fold : ∀ {G} → (p : Flat G) → Supported (fold {G = G})
+  s-roll : ∀ {G} → (p : Flat G) → Supported (roll {G = G})
   s-P : ∀ {T U} (G : Ty FO 1)
-        {h : (G ⇐ (T `× ind G)) `× U →ᴾ T} →
+        {h : (G [ T `× ind G ]) `× U →ᴾ T} →
         (p : Flat G) → Supported h →
         Supported (P {G = G} {T = T} {U = U} h)
 
@@ -181,6 +181,6 @@ eval s-dist (inj₁ x , z) = inj₁ (x , z)
 eval s-dist (inj₂ y , z) = inj₂ (y , z)
 eval (s-fmap p sf) x = fmapFlat p (eval sf) x
 eval (s-strength p) x = strengthFlat p x
-eval (s-fold p) x = foldFlat p x
+eval (s-roll p) x = rollFlat p x
 eval (s-P {T = T} {U = U} G p sh) x =
   paraFlat {G = G} {T = T} {U = U} p (eval sh) x

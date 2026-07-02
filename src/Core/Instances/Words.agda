@@ -77,23 +77,23 @@ letterSymbol : ∀ {k} → Fin k → Fin (suc k)
 letterSymbol = suc
 
 emptyCon : ∀ {k} → vec (Word k) 0 →ᴾ Word k
-emptyCon = C fold ι₁
+emptyCon = C roll ι₁
 
 injectLetterAt : ∀ {k T} (a : Fin k) →
-  vec T 1 →ᴾ LetterF k ⇐ T
+  vec T 1 →ᴾ LetterF k [ T ]
 injectLetterAt {suc k} zero = ι₁
 injectLetterAt {suc k} (suc a) = C ι₂ (injectLetterAt a)
 
 injectLetter : ∀ {k T} (a : Fin k) →
-  vec T 1 →ᴾ WordF k ⇐ T
+  vec T 1 →ᴾ WordF k [ T ]
 injectLetter a = C ι₂ (injectLetterAt a)
 
 letterCon : ∀ {k} (a : Fin k) → vec (Word k) 1 →ᴾ Word k
-letterCon {k} a = C fold (injectLetter a)
+letterCon {k} a = C roll (injectLetter a)
 
 caseLettersAt : ∀ {k T U V} →
   ((a : Fin k) → vec T 1 `× U →ᴾ V) →
-  (LetterF k ⇐ T) `× U →ᴾ V
+  (LetterF k [ T ]) `× U →ᴾ V
 caseLettersAt {zero} handlers = C `⊥ π₁
 caseLettersAt {suc k} handlers =
   C (`case (handlers zero) (caseLettersAt (λ a → handlers (suc a))))
@@ -102,7 +102,7 @@ caseLettersAt {suc k} handlers =
 wordParaHandlerᴾ : ∀ {k n} →
   (vec (Word k) n →ᴾ Word k) →
   (Fin k → vec (Word k) (2 + n) →ᴾ Word k) →
-  (WordF k ⇐ (Word k `× Word k)) `× vec (Word k) n →ᴾ Word k
+  (WordF k [ Word k `× Word k ]) `× vec (Word k) n →ᴾ Word k
 wordParaHandlerᴾ {k} {n} g h =
   C (`case (C g π₂)
            (caseLettersAt λ a → C (h a) (preparePara 1 n)))
@@ -113,7 +113,7 @@ compile* : ∀ {k m n} → Vec (Source.PR (Fin k) n) m →
            vec (Word k) n →ᴾ vec (Word k) m
 wordParaHandler : ∀ {k n} → Source.PR (Fin k) n →
   (Fin k → Source.PR (Fin k) (2 + n)) →
-  (WordF k ⇐ (Word k `× Word k)) `× vec (Word k) n →ᴾ
+  (WordF k [ Word k `× Word k ]) `× vec (Word k) n →ᴾ
   Word k
 
 compile Source.Z = emptyCon
@@ -148,7 +148,7 @@ module For {A : Set} (finiteA : Finite A) where
     vec Target n →ᴾ vec Target m
   finiteHandler : ∀ {n} → Source.PR A n →
     (A → Source.PR A (2 + n)) →
-    (WordF (size finiteA) ⇐ (Target `× Target)) `× vec Target n →ᴾ Target
+    (WordF (size finiteA) [ Target `× Target ]) `× vec Target n →ᴾ Target
 
   compileFinite Source.Z = emptyCon
   compileFinite (Source.σ a) = letterCon (encode finiteA a)

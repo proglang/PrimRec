@@ -12,7 +12,7 @@ import Core.PRHO as HO
 import Core.Equations.PRFO as FOEq
 import Core.Equations.PRHO as HOEq
 import Core.Types as Ty
-open Ty using (FO; HO; Ty; TY; lift)
+open Ty using (FO; HO; Ty; TY; lift; _[_])
 
 ----------------------------------------------------------------------
 -- Type-code compatibility lemmas
@@ -73,9 +73,9 @@ lift-σ₀ : (T : TY FO) → (i : Fin 1) →
   lift (Ty.σ₀ T i) ≡ Ty.σ₀ (lift T) i
 lift-σ₀ T zero = refl
 
-lift-⇐ : (G : Ty FO 1) (T : TY FO) →
-  lift (G Ty.⇐ T) ≡ lift G Ty.⇐ lift T
-lift-⇐ G T =
+lift-sub0 : (G : Ty FO 1) (T : TY FO) →
+  lift (G [ T ]) ≡ lift G [ lift T ]
+lift-sub0 G T =
   trans (lift-sub (Ty.σ₀ T) G)
         (sub-cong (lift-σ₀ T) (lift G))
 
@@ -90,15 +90,15 @@ cast-cong : ∀ {A₀ A₁ B₀ B₁ : TY HO}
 cast-cong refl refl equation = equation
 
 fmap-id-cast : ∀ {A A′ : TY HO} (G : Ty HO 1)
-  (pA : G Ty.⇐ A ≡ A′) →
+  (pA : G [ A ] ≡ A′) →
   cast pA pA (HO.fmap G HO.id) HOEq.≈ HO.id
 fmap-id-cast G refl = HOEq.fmap-id G
 
 fmap-C-cast : ∀ {A B D GA GB GD : TY HO}
   (G : Ty HO 1)
-  (pA : G Ty.⇐ A ≡ GA)
-  (pB : G Ty.⇐ B ≡ GB)
-  (pD : G Ty.⇐ D ≡ GD)
+  (pA : G [ A ] ≡ GA)
+  (pB : G [ B ] ≡ GB)
+  (pD : G [ D ] ≡ GD)
   {f : B HO.→ᴾ D} {g : A HO.→ᴾ B} →
   cast pA pD (HO.fmap G (HO.C f g)) HOEq.≈
   HO.C (cast pB pD (HO.fmap G f))
@@ -108,10 +108,10 @@ fmap-C-cast G refl refl refl = HOEq.fmap-C G
 strength-naturalˡ-cast :
   ∀ {A B D GA GB GAD GBD : TY HO}
   (G : Ty HO 1)
-  (pA : G Ty.⇐ A ≡ GA)
-  (pB : G Ty.⇐ B ≡ GB)
-  (pAD : G Ty.⇐ (A Ty.`× D) ≡ GAD)
-  (pBD : G Ty.⇐ (B Ty.`× D) ≡ GBD)
+  (pA : G [ A ] ≡ GA)
+  (pB : G [ B ] ≡ GB)
+  (pAD : G [ A Ty.`× D ] ≡ GAD)
+  (pBD : G [ B Ty.`× D ] ≡ GBD)
   {f : A HO.→ᴾ B} →
   HO.C
     (cast pAD pBD (HO.fmap G (HO.map-× f HO.id)))
@@ -126,9 +126,9 @@ strength-naturalˡ-cast G refl refl refl refl =
 strength-naturalʳ-cast :
   ∀ {A B D GA GAB GAD : TY HO}
   (G : Ty HO 1)
-  (pA : G Ty.⇐ A ≡ GA)
-  (pAB : G Ty.⇐ (A Ty.`× B) ≡ GAB)
-  (pAD : G Ty.⇐ (A Ty.`× D) ≡ GAD)
+  (pA : G [ A ] ≡ GA)
+  (pAB : G [ A Ty.`× B ] ≡ GAB)
+  (pAD : G [ A Ty.`× D ] ≡ GAD)
   {g : B HO.→ᴾ D} →
   HO.C
     (cast pAB pAD (HO.fmap G (HO.map-× HO.id g)))
@@ -143,8 +143,8 @@ strength-naturalʳ-cast G refl refl refl =
 strength-π₁-cast :
   ∀ {A B GA GAB : TY HO}
   (G : Ty HO 1)
-  (pA : G Ty.⇐ A ≡ GA)
-  (pAB : G Ty.⇐ (A Ty.`× B) ≡ GAB) →
+  (pA : G [ A ] ≡ GA)
+  (pAB : G [ A Ty.`× B ] ≡ GAB) →
   HO.C
     (cast pAB pA (HO.fmap G HO.π₁))
     (cast (cong₂ Ty._`×_ pA refl) pAB (HO.strength G))
@@ -155,13 +155,13 @@ strength-π₁-cast G refl refl =
 P-β-cast :
   ∀ {A B GI GIB GAI : TY HO}
   (G : Ty HO 1)
-  (eI : GI ≡ G Ty.⇐ Ty.ind G)
-  (eIB : GIB ≡ G Ty.⇐ (Ty.ind G Ty.`× B))
-  (eAI : GAI ≡ G Ty.⇐ (A Ty.`× Ty.ind G))
+  (eI : GI ≡ G [ Ty.ind G ])
+  (eIB : GIB ≡ G [ Ty.ind G Ty.`× B ])
+  (eAI : GAI ≡ G [ A Ty.`× Ty.ind G ])
   {h : GAI Ty.`× B HO.→ᴾ A} →
   let hᴾ = cast (cong₂ Ty._`×_ eAI refl) refl h
       p = HO.P {G = G} hᴾ in
-  HO.C p (HO.map-× (cast (sym eI) refl HO.fold) HO.id)
+  HO.C p (HO.map-× (cast (sym eI) refl HO.roll) HO.id)
   HOEq.≈
   HO.C h
     (HO.`#
@@ -176,13 +176,13 @@ P-β-cast G refl refl refl = HOEq.P-β
 P-unique-cast :
   ∀ {A B GI GIB GAI : TY HO}
   (G : Ty HO 1)
-  (eI : GI ≡ G Ty.⇐ Ty.ind G)
-  (eIB : GIB ≡ G Ty.⇐ (Ty.ind G Ty.`× B))
-  (eAI : GAI ≡ G Ty.⇐ (A Ty.`× Ty.ind G))
+  (eI : GI ≡ G [ Ty.ind G ])
+  (eIB : GIB ≡ G [ Ty.ind G Ty.`× B ])
+  (eAI : GAI ≡ G [ A Ty.`× Ty.ind G ])
   {h : GAI Ty.`× B HO.→ᴾ A}
   {p : Ty.ind G Ty.`× B HO.→ᴾ A} →
   let hᴾ = cast (cong₂ Ty._`×_ eAI refl) refl h in
-  HO.C p (HO.map-× (cast (sym eI) refl HO.fold) HO.id)
+  HO.C p (HO.map-× (cast (sym eI) refl HO.roll) HO.id)
   HOEq.≈
   HO.C h
     (HO.`#
@@ -213,19 +213,19 @@ translate FO.ι₂ = HO.ι₂
 translate (FO.`case f g) = HO.`case (translate f) (translate g)
 translate FO.dist-+-× = HO.dist-+-×
 translate (FO.fmap {T = T} {U = U} G f) =
-  cast (sym (lift-⇐ G T)) (sym (lift-⇐ G U))
+  cast (sym (lift-sub0 G T)) (sym (lift-sub0 G U))
     (HO.fmap (lift G) (translate f))
 translate (FO.strength {T = T} {U = U} G) =
   cast
-    (cong₂ Ty._`×_ (sym (lift-⇐ G T)) refl)
-    (sym (lift-⇐ G (T Ty.`× U)))
+    (cong₂ Ty._`×_ (sym (lift-sub0 G T)) refl)
+    (sym (lift-sub0 G (T Ty.`× U)))
     (HO.strength (lift G))
-translate (FO.fold {G = G}) =
-  cast (sym (lift-⇐ G (Ty.ind G))) refl HO.fold
+translate (FO.roll {G = G}) =
+  cast (sym (lift-sub0 G (Ty.ind G))) refl HO.roll
 translate {T = Ty.ind G Ty.`× U} {U = T} (FO.P h) =
   HO.P
     (cast
-      (cong₂ Ty._`×_ (lift-⇐ G (T Ty.`× Ty.ind G)) refl)
+      (cong₂ Ty._`×_ (lift-sub0 G (T Ty.`× Ty.ind G)) refl)
       refl
       (translate h))
 
@@ -246,37 +246,37 @@ preserves (FOEq.`#-cong p q) =
 preserves (FOEq.`case-cong p q) =
   HOEq.`case-cong (preserves p) (preserves q)
 preserves (FOEq.fmap-cong {A = A} {B = B} G p) =
-  cast-cong (sym (lift-⇐ G A)) (sym (lift-⇐ G B))
+  cast-cong (sym (lift-sub0 G A)) (sym (lift-sub0 G B))
     (HOEq.fmap-cong (lift G) (preserves p))
-preserves (FOEq.P-cong {A = A} {B = B} {H = H} p) =
+preserves (FOEq.P-cong {A = A} {B = B} {G = H} p) =
   HOEq.P-cong
     (cast-cong
-      (cong₂ Ty._`×_ (lift-⇐ H (A Ty.`× Ty.ind H)) refl)
+      (cong₂ Ty._`×_ (lift-sub0 H (A Ty.`× Ty.ind H)) refl)
       refl
       (preserves p))
 preserves FOEq.C-idˡ = HOEq.C-idˡ
 preserves FOEq.C-idʳ = HOEq.C-idʳ
 preserves FOEq.C-assoc = HOEq.C-assoc
 preserves (FOEq.fmap-id {A = A} G) =
-  fmap-id-cast (lift G) (sym (lift-⇐ G A))
+  fmap-id-cast (lift G) (sym (lift-sub0 G A))
 preserves (FOEq.fmap-C {A = A} {B = B} {D = D} G) =
   fmap-C-cast (lift G)
-    (sym (lift-⇐ G A)) (sym (lift-⇐ G B)) (sym (lift-⇐ G D))
+    (sym (lift-sub0 G A)) (sym (lift-sub0 G B)) (sym (lift-sub0 G D))
 preserves (FOEq.strength-naturalˡ {A = A} {B = B} {D = D} G) =
   strength-naturalˡ-cast (lift G)
-    (sym (lift-⇐ G A))
-    (sym (lift-⇐ G B))
-    (sym (lift-⇐ G (A Ty.`× D)))
-    (sym (lift-⇐ G (B Ty.`× D)))
+    (sym (lift-sub0 G A))
+    (sym (lift-sub0 G B))
+    (sym (lift-sub0 G (A Ty.`× D)))
+    (sym (lift-sub0 G (B Ty.`× D)))
 preserves (FOEq.strength-naturalʳ {A = A} {B = B} {D = D} G) =
   strength-naturalʳ-cast (lift G)
-    (sym (lift-⇐ G A))
-    (sym (lift-⇐ G (A Ty.`× B)))
-    (sym (lift-⇐ G (A Ty.`× D)))
+    (sym (lift-sub0 G A))
+    (sym (lift-sub0 G (A Ty.`× B)))
+    (sym (lift-sub0 G (A Ty.`× D)))
 preserves (FOEq.strength-π₁ {A = A} {B = B} G) =
   strength-π₁-cast (lift G)
-    (sym (lift-⇐ G A))
-    (sym (lift-⇐ G (A Ty.`× B)))
+    (sym (lift-sub0 G A))
+    (sym (lift-sub0 G (A Ty.`× B)))
 preserves FOEq.𝟙-unique = HOEq.𝟙-unique
 preserves FOEq.𝟘-unique = HOEq.𝟘-unique
 preserves FOEq.×-β₁ = HOEq.×-β₁
@@ -287,16 +287,16 @@ preserves FOEq.+-β₂ = HOEq.+-β₂
 preserves FOEq.+-η = HOEq.+-η
 preserves FOEq.dist-undist = HOEq.dist-undist
 preserves FOEq.undist-dist = HOEq.undist-dist
-preserves (FOEq.P-β {A = A} {B = B} {H = H} {h = h}) =
+preserves (FOEq.P-β {A = A} {B = B} {G = H} {h = h}) =
   P-β-cast (lift H)
-    (lift-⇐ H (Ty.ind H))
-    (lift-⇐ H (Ty.ind H Ty.`× B))
-    (lift-⇐ H (A Ty.`× Ty.ind H))
+    (lift-sub0 H (Ty.ind H))
+    (lift-sub0 H (Ty.ind H Ty.`× B))
+    (lift-sub0 H (A Ty.`× Ty.ind H))
     {h = translate h}
-preserves (FOEq.P-unique {A = A} {B = B} {H = H} {h = h} p) =
+preserves (FOEq.P-unique {A = A} {B = B} {G = H} {h = h} p) =
   P-unique-cast (lift H)
-    (lift-⇐ H (Ty.ind H))
-    (lift-⇐ H (Ty.ind H Ty.`× B))
-    (lift-⇐ H (A Ty.`× Ty.ind H))
+    (lift-sub0 H (Ty.ind H))
+    (lift-sub0 H (Ty.ind H Ty.`× B))
+    (lift-sub0 H (A Ty.`× Ty.ind H))
     {h = translate h}
     (preserves p)

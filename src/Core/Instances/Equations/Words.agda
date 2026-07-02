@@ -74,7 +74,7 @@ data _≈ᵂ_ : ∀ {T U} → T →ᴾ U → T →ᴾ U → Set where
     f ≈ᵂ g → p ≈ᵂ q → `# f p ≈ᵂ `# g q
   `case-congᵂ : ∀ {T U V} {f g : T →ᴾ V} {p q : U →ᴾ V} →
     f ≈ᵂ g → p ≈ᵂ q → `case f p ≈ᵂ `case g q
-  P-congᵂ : ∀ {G T U} {f g : (G ⇐ (T `× ind G)) `× U →ᴾ T} →
+  P-congᵂ : ∀ {G T U} {f g : (G [ T `× ind G ]) `× U →ᴾ T} →
     f ≈ᵂ g →
     P {G = G} {T = T} {U = U} f ≈ᵂ P {G = G} {T = T} {U = U} g
 

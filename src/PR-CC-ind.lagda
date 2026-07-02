@@ -352,7 +352,7 @@ data _→ᴾ_ : TY → TY → Set where
   -- distributivity
   dist-+-x : (U `+ V) `× T →ᴾ (U `× T) `+ (V `× T)
   -- inductive, introduction and elimination
-  fold : (G ⇐ ind G) →ᴾ ind G
+  roll : (G ⇐ ind G) →ᴾ ind G
   P : (h : (G ⇐ (T `× ind G)) `× U →ᴾ T) → (ind G `× U →ᴾ T)
 \end{code}
 }
@@ -369,7 +369,7 @@ data _→ᴾ_ : TY → TY → Set where
 ⟦_⟧ᵀ : TY → Set
 
 data Alg (G : Ty 1) : Set where
-  fold : ⟦ G ⇐ ind G ⟧ᵀ → Alg G 
+  roll : ⟦ G ⇐ ind G ⟧ᵀ → Alg G 
 
 ⟦ `𝟘 ⟧ᵀ     = ⊥
 ⟦ `𝟙 ⟧ᵀ     = ⊤
@@ -474,12 +474,12 @@ fmap (` zero) f v        = f v
 }
 \newcommand\ccFunFmapInd{
 \begin{code}
-fmap {S}{T} (ind H) f (fold x)
+fmap {S}{T} (ind H) f (roll x)
   rewrite sym (eq-unfold (σ₀ S) H)
   with fmap (H ⇐ ind H) f x
 ... | ih
   rewrite eq-unfold (σ₀ T) H =
-  fold ih
+  roll ih
 \end{code}
 }
 \begin{code}[hide]
@@ -499,12 +499,12 @@ eval ι₁        = inj₁
 eval ι₂        = inj₂
 eval (`case f g) = λ{ (inj₁ x) → eval f x ; (inj₂ y) → eval g y}
 eval dist-+-x = λ{ (inj₁ x , z) → inj₁ (x , z) ; (inj₂ y , z) → inj₂ (y , z)}
-eval fold     = fold
-eval (P {G = G} h) = λ{ (fold x , u) → eval h ((fmap G (λ v → (eval (P h) (v , u)) , v) x) , u)}
+eval roll     = roll
+eval (P {G = G} h) = λ{ (roll x , u) → eval h ((fmap G (λ v → (eval (P h) (v , u)) , v) x) , u)}
 \end{code}
 }
 \begin{code}[hide]
-eval (F {G = G} h) = λ{ (fold x , u) → eval h ((fmap G (λ v → eval (F h) (v , u)) x) , u) }
+eval (F {G = G} h) = λ{ (roll x , u) → eval h ((fmap G (λ v → eval (F h) (v , u)) x) , u) }
 \end{code}
 \newcommand\ccFunMkvec{%
 \begin{code}
@@ -573,13 +573,13 @@ unit-right-+ = `case id `⊥
 -- mp {G = G₁ `× G₂} h = `# (C (mp {G = G₁} h) π₁) (C (mp {G = G₂} h) π₂)
 -- mp {G = G₁ `+ G₂} h = `case (C ι₁ (mp {G = G₁} h)) (C ι₂ (mp {G = G₂} h))
 -- mp {G = ` zero} h = h
--- mp {G = ind G} h = C fold (C (F {!!}) (`# id `⊤))
+-- mp {G = ind G} h = C roll (C (F {!!}) (`# id `⊤))
 
 -- f : (h : (G ⇐ T) `× U →ᴾ T) → (ind G `× U →ᴾ T)
 -- f h = P {!!}
 
 -- p : (h : (G ⇐ (T `× ind G)) `× U →ᴾ T) → (ind G `× U →ᴾ T)
--- p {G = G} h = C π₁ (F (`# h (C fold (C (mp {G = G} π₂) π₁))))
+-- p {G = G} h = C π₁ (F (`# h (C roll (C (mp {G = G} π₂) π₁))))
 
 module FromNats where
 \end{code}
@@ -599,14 +599,14 @@ module FromNats where
 
   -- zero
   _ : `𝟙 →ᴾ Nat
-  _ = C fold ι₁
+  _ = C roll ι₁
 
   _ : `𝟙 →ᴾ (`𝟙 `+ Nat)
   _ = ι₁
 
   -- successor
   _ : Nat →ᴾ Nat
-  _ = C fold ι₂
+  _ = C roll ι₂
 
   _ : Nat →ᴾ (`𝟙 `+ Nat)
   _ = ι₂
@@ -622,8 +622,8 @@ module FromNats where
   ⟦ [] ⟧*         = `⊤
   ⟦ p ∷ p* ⟧*     = `# ⟦ p ⟧ ⟦ p* ⟧*
 
-  ⟦ Nats.Z ⟧      = C fold ι₁
-  ⟦ Nats.σ ⟧      = C (C fold ι₂) π₁
+  ⟦ Nats.Z ⟧      = C roll ι₁
+  ⟦ Nats.σ ⟧      = C (C roll ι₂) π₁
   ⟦ Nats.π i ⟧    = lookup i
   ⟦ Nats.C f g* ⟧ = C ⟦ f ⟧ ⟦ g* ⟧*
   ⟦ Nats.P g h ⟧  = P (C (`case (C ⟦ g ⟧ π₂) (C ⟦ h ⟧ assoc-×)) dist-+-x)
@@ -650,8 +650,8 @@ module FromWords where
   ⟦_⟧  : Words.PR ⟦ Alpha ⟧ᵀ n → vec Alpha* n →ᴾ Alpha*
   ⟦_⟧* : Vec (Words.PR ⟦ Alpha ⟧ᵀ n) m → vec Alpha* n →ᴾ vec Alpha* m
 
-  ⟦ Words.Z ⟧ = C (C fold ι₁) `⊤
-  ⟦ Words.σ a ⟧ = C (C fold (C ι₂ (`# (C ⟦ a ⟧ᴬ `⊤) id))) π₁
+  ⟦ Words.Z ⟧ = C (C roll ι₁) `⊤
+  ⟦ Words.σ a ⟧ = C (C roll (C ι₂ (`# (C ⟦ a ⟧ᴬ `⊤) id))) π₁
   ⟦ Words.π i ⟧ = lookup i
   ⟦ Words.C f g* ⟧ = C ⟦ f ⟧ ⟦ g* ⟧*
   ⟦ Words.P g h ⟧ = P (C (`case (C ⟦ g ⟧ π₂) (C (C (C (`case (C ⟦ h (inj₁ tt) ⟧ assoc-×) (C ⟦ h (inj₂ tt) ⟧ assoc-×)) dist-+-x) (`# (C (`case (C ι₁ π₂) (C ι₂ π₂)) π₁) π₂)) (`# (C dist-+-x π₁) π₂))) dist-+-x)
@@ -702,8 +702,8 @@ module FromTrees where
   ⟦_⟧  : Trees.PR R-Btree n → vec Btree n →ᴾ Btree
   ⟦_⟧* : Vec (Trees.PR R-Btree n) m → vec Btree n →ᴾ vec Btree m
 
-  ⟦ Trees.σ (inj₁ tt) ⟧ = C fold ι₁
-  ⟦ Trees.σ (inj₂ (tt , tt)) ⟧ = C fold (C ι₂ (`# π₁ (C π₁ π₂)))
+  ⟦ Trees.σ (inj₁ tt) ⟧ = C roll ι₁
+  ⟦ Trees.σ (inj₂ (tt , tt)) ⟧ = C roll (C ι₂ (`# π₁ (C π₁ π₂)))
   ⟦ Trees.π i ⟧ = lookup i
   ⟦ Trees.C f g* ⟧ = C ⟦ f ⟧ ⟦ g* ⟧*
   ⟦ Trees.P h ⟧ = P (C (`case (C ⟦ h (inj₁ tt) ⟧ π₂)

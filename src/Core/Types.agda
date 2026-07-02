@@ -9,6 +9,7 @@ open import Data.Nat using (ℕ; zero; suc)
 -- Type codes shared by the first- and higher-order calculi
 ----------------------------------------------------------------------
 
+--! CoreTypesGrammar {
 data Mode : Set where
   FO HO : Mode
 
@@ -17,24 +18,19 @@ infixr 8 _`+_
 infixr 9 _`⇒_
 
 data Ty : Mode → ℕ → Set where
-  `𝟘 `𝟙 : ∀ {mode n} → Ty mode n
-  _`×_ : ∀ {mode n} → Ty mode n → Ty mode n → Ty mode n
-  _`+_ : ∀ {mode n} → Ty mode n → Ty mode n → Ty mode n
-  _`⇒_ : ∀ {n} → Ty HO 0 → Ty HO n → Ty HO n
-  `    : ∀ {mode n} → Fin n → Ty mode n
-  ind  : ∀ {mode n} → Ty mode (suc n) → Ty mode n
+  `𝟘 `𝟙  : ∀ {md n} → Ty md n
+  _`×_   : ∀ {md n} → Ty md n → Ty md n → Ty md n
+  _`+_   : ∀ {md n} → Ty md n → Ty md n → Ty md n
+  _`⇒_   : ∀ {n} → Ty HO 0 → Ty HO n → Ty HO n
+  `      : ∀ {md n} → Fin n → Ty md n
+  ind    : ∀ {md n} → Ty md (suc n) → Ty md n
 
 TY : Mode → Set
-TY mode = Ty mode 0
-
-FO-TY : Set
-FO-TY = TY FO
-
-HO-TY : Set
-HO-TY = TY HO
+TY md = Ty md 0
+--! }
 
 variable
-  mode : Mode
+  md : Mode
   n m o : ℕ
 
 ----------------------------------------------------------------------
@@ -48,7 +44,7 @@ extᴿ : Ren n m → Ren (suc n) (suc m)
 extᴿ ρ zero    = zero
 extᴿ ρ (suc i) = suc (ρ i)
 
-ren : Ren n m → Ty mode n → Ty mode m
+ren : Ren n m → Ty md n → Ty md m
 ren ρ `𝟘         = `𝟘
 ren ρ `𝟙         = `𝟙
 ren ρ (T `× U) = ren ρ T `× ren ρ U
@@ -58,13 +54,13 @@ ren ρ (` i)     = ` (ρ i)
 ren ρ (ind G)   = ind (ren (extᴿ ρ) G)
 
 Sub : Mode → ℕ → ℕ → Set
-Sub mode n m = Fin n → Ty mode m
+Sub md n m = Fin n → Ty md m
 
-extˢ : Sub mode n m → Sub mode (suc n) (suc m)
+extˢ : Sub md n m → Sub md (suc n) (suc m)
 extˢ σ zero    = ` zero
 extˢ σ (suc i) = ren suc (σ i)
 
-sub : Sub mode n m → Ty mode n → Ty mode m
+sub : Sub md n m → Ty md n → Ty md m
 sub σ `𝟘         = `𝟘
 sub σ `𝟙         = `𝟙
 sub σ (T `× U) = sub σ T `× sub σ U
@@ -73,20 +69,20 @@ sub σ (T `⇒ U) = T `⇒ sub σ U
 sub σ (` i)     = σ i
 sub σ (ind G)   = ind (sub (extˢ σ) G)
 
-ids : Sub mode n n
+ids : Sub md n n
 ids i = ` i
 
-push : Sub mode n m → Ty mode m → Sub mode (suc n) m
+push : Sub md n m → Ty md m → Sub md (suc n) m
 push σ T zero    = T
 push σ T (suc i) = σ i
 
-σ₀ : Ty mode n → Sub mode (suc n) n
+σ₀ : Ty md n → Sub md (suc n) n
 σ₀ T = push ids T
 
-infix 9 _⇐_
+infix 9 _[_]
 
-_⇐_ : Ty mode (suc n) → Ty mode n → Ty mode n
-G ⇐ T = sub (σ₀ T) G
+_[_] : Ty md (suc n) → Ty md n → Ty md n
+G [ T ] = sub (σ₀ T) G
 
 ----------------------------------------------------------------------
 -- The first-order fragment embeds structurally into the HO type codes.

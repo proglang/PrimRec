@@ -40,11 +40,11 @@ supported-injectLetter : ∀ {k T} (a : Fin k) →
 supported-injectLetter a = s-C s-ι₂ (supported-injectLetterAt a)
 
 supported-emptyCon : ∀ {k} → Supported (emptyCon {k})
-supported-emptyCon {k} = s-C (s-fold (flatWordF k)) s-ι₁
+supported-emptyCon {k} = s-C (s-roll (flatWordF k)) s-ι₁
 
 supported-letterCon : ∀ {k} (a : Fin k) → Supported (letterCon a)
 supported-letterCon {k} a =
-  s-C (s-fold (flatWordF k)) (supported-injectLetter a)
+  s-C (s-roll (flatWordF k)) (supported-injectLetter a)
 
 supported-caseLettersAt : ∀ {k T U V}
   {handlers : (a : Fin k) → vec T 1 `× U →ᴾ V} →
@@ -126,7 +126,7 @@ para-letterᴾ : ∀ {k n}
      child , parameters)
 para-letterᴾ {k} {n} {g} {h} sg sh a child parameters =
   trans
-    (para-foldFlat-β {G = WordF k} {T = Word k}
+    (para-rollFlat-β {G = WordF k} {T = Word k}
       {U = vec (Word k) n} (flatWordF k) handlerSem
       (eval (supported-injectLetter a) (child , tt)) parameters)
     (trans
@@ -143,7 +143,7 @@ para-letterᴾ {k} {n} {g} {h} sg sh a child parameters =
         ((recur child , child) , tt) parameters))
   where
   handlerSem :
-    Sem ((WordF k ⇐ (Word k `× Word k)) `× vec (Word k) n) →
+    Sem ((WordF k [ Word k `× Word k ]) `× vec (Word k) n) →
     Sem (Word k)
   handlerSem = eval (supported-wordParaHandlerᴾ sg sh)
 

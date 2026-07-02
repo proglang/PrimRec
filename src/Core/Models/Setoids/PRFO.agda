@@ -22,9 +22,11 @@ module _ {ℓ : Level} (M : PRFO.Model ℓ) where
     ; trans = ≈-transᴹ
     }
 
+  --! CorePRFOHomSetoid {
   homSetoid : (T U : TY FO) → Setoid ℓ ℓ
   homSetoid T U = record
     { Carrier       = T ⇒ᴹ U
     ; _≈_           = _≈ᴹ_
     ; isEquivalence = homIsEquivalence
     }
+  --! }

@@ -23,12 +23,12 @@ flatNatF : Flat NatF
 flatNatF = flat-+ flat-𝟙 flat-`
 
 pHandler : ∀ {n} → Source.PR n → Source.PR (2 Data.Nat.+ n) →
-  (NatF ⇐ (Nat `× Nat)) `× vec Nat n →ᴾ Nat
+  (NatF [ Nat `× Nat ]) `× vec Nat n →ᴾ Nat
 pHandler g h =
   C (`case (C (compile g) π₂) (C (compile h) assoc-×)) dist-+-×
 
 fHandler : ∀ {n} → Source.PR n → Source.PR (1 Data.Nat.+ n) →
-  (NatF ⇐ (Nat `× Nat)) `× vec Nat n →ᴾ Nat
+  (NatF [ Nat `× Nat ]) `× vec Nat n →ᴾ Nat
 fHandler g h =
   C (`case (C (compile g) π₂)
            (C (compile h) (`# (C π₁ π₁) π₂)))
@@ -53,8 +53,8 @@ supported-fHandler g h =
             (s-C (supported h) (s-# (s-C s-π₁ s-π₁) s-π₂)))
     s-dist
 
-supported Source.Z = s-C (s-fold flatNatF) s-ι₁
-supported Source.σ = s-C (s-C (s-fold flatNatF) s-ι₂) s-π₁
+supported Source.Z = s-C (s-roll flatNatF) s-ι₁
+supported Source.σ = s-C (s-C (s-roll flatNatF) s-ι₂) s-π₁
 supported (Source.π i) = supported-lookup i
 supported (Source.C f fs) = s-C (supported f) (supported* fs)
 supported (Source.P g h) = s-P NatF flatNatF (supported-pHandler g h)
