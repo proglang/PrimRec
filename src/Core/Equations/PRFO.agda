@@ -92,11 +92,11 @@ data _≈_ : T →ᴾ U → T →ᴾ U → Set where
   --! CorePRFOParaLaws {
   P-β : ∀ {A B : TY FO} {G : Ty FO 1}
     {h : (G [ A `× ind G ]) `× B →ᴾ A}
-    → C (P h) (map-× (roll {G = G}) id)
+    → C (P h) (map-× (con {G = G}) id)
       ≈ C h (paraArgs G (P h))
 
   P-unique : ∀ {A B : TY FO} {G : Ty FO 1}
     {h : (G [ A `× ind G ]) `× B →ᴾ A} {p : ind G `× B →ᴾ A}
-    → C p (map-× roll id) ≈ C h (paraArgs G p)
+    → C p (map-× con id) ≈ C h (paraArgs G p)
     → p ≈ P h
   --! }

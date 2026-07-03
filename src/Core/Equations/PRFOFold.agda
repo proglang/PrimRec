@@ -90,11 +90,11 @@ data _≈_ : T →ᶠ U → T →ᶠ U → Set where
   F-β : ∀ {A B : TY FO} {H : Ty FO 1}
     {h : (H [ A ]) `× B →ᶠ A}
     → C (F {G = H} {T = A} {U = B} h)
-          (map-× (roll {G = H}) (id {T = B}))
+          (map-× (con {G = H}) (id {T = B}))
       ≈ C h (foldArgs H (F {G = H} {T = A} {U = B} h))
 
   F-unique : ∀ {A B : TY FO} {H : Ty FO 1}
     {h : (H [ A ]) `× B →ᶠ A}
     {p : ind H `× B →ᶠ A}
-    → C p (map-× (roll {G = H}) (id {T = B})) ≈ C h (foldArgs H p)
+    → C p (map-× (con {G = H}) (id {T = B})) ≈ C h (foldArgs H p)
     → p ≈ F {G = H} {T = A} {U = B} h

@@ -70,7 +70,7 @@ supported-injectBranch : ∀ {k T} (rs : Vec ℕ k) (i : Fin k) →
 supported-injectBranch {T = T} rs i rewrite branches-sub rs T = supported-injectAt rs i
 
 supported-con : ∀ {k} (rs : Vec ℕ k) (i : Fin k) → Supported (conᴾ rs i)
-supported-con rs i = s-C (s-roll (flatBranches rs)) (supported-injectBranch rs i)
+supported-con rs i = s-C (s-con (flatBranches rs)) (supported-injectBranch rs i)
 
 supported-caseAt : ∀ {k T U V} (rs : Vec ℕ k)
   {handlers : (i : Fin k) → vec T (lookup rs i) `× U →ᴾ V} →

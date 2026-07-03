@@ -161,7 +161,7 @@ data Exp : ∀ {n : ℕ} → Ctx n → TY → Set where
   ι₂ : ∀ {n : ℕ} {ctx : Ctx n} → Exp ctx V → Exp ctx (U `+ V)
   `case : ∀ {n : ℕ} {ctx : Ctx n} {tyA tyB tyC : TY} →  Exp ctx (tyA `+ tyB) → Exp (tyA ∷ ctx) (tyC) → Exp (tyB ∷ ctx) (tyC) → Exp (ctx) (tyC)
 
-  roll : ∀ {n : ℕ} {ctx : Ctx n} {G} → Exp ctx (sub₀ (ind G) G) → Exp ctx (ind G)
+  con : ∀ {n : ℕ} {ctx : Ctx n} {G} → Exp ctx (sub₀ (ind G) G) → Exp ctx (ind G)
   -- P : (h : sub₀ (T `× ind G) G `× U →ᴾ T) → (ind G `× U →ᴾ T)
   P : ∀ {n : ℕ} {ctx : Ctx n} {G} {P} → Exp ctx ((sub₀ P G) ⇒ P) → Exp ctx (ind G) → Exp ctx P
 ⟦_⟧ᵀ : TY → Set
@@ -169,7 +169,7 @@ data Exp : ∀ {n : ℕ} → Ctx n → TY → Set where
 
 {-# NO_POSITIVITY_CHECK #-}
 data Alg (G : Ty 1) : Set where
-  roll : ⟦ sub₀ (ind G) G ⟧ᵀ → Alg G 
+  con : ⟦ sub₀ (ind G) G ⟧ᵀ → Alg G 
 
 ⟦ `𝟘 ⟧ᵀ     = ⊥
 ⟦ `𝟙 ⟧ᵀ     = ⊤
@@ -196,7 +196,7 @@ eval (ι₂ exp) ctx = inj₂ ((eval exp ctx))
 eval (`case exp l r) ctx with eval exp ctx 
 ... | inj₁ res = eval l (res ∷ᴴ ctx)
 ... | inj₂ res = eval r (res ∷ᴴ ctx)
-eval (roll exp) ctx = roll (eval exp ctx)
+eval (con exp) ctx = con (eval exp ctx)
 eval (P algebra tree) ctx = evalP (eval algebra ctx) (eval tree ctx)
 
 
@@ -223,7 +223,7 @@ weaken ctx (π₂ exp) = π₂ (weaken ctx exp)
 weaken ctx (ι₁ exp) = ι₁ (weaken ctx exp)
 weaken ctx (ι₂ exp) = ι₂ (weaken ctx exp)
 weaken ctx (`case c l r) = `case (weaken ctx c) (weaken ctx l) (weaken ctx r) 
-weaken ctx (roll exp) = roll (weaken ctx exp)
+weaken ctx (con exp) = con (weaken ctx exp)
 weaken ctx (P e1 e2) = P (weaken ctx e1) (weaken ctx e2)
 
 postulate
@@ -251,7 +251,7 @@ PF→NPF {(U PF.`+ V)}  (PF.`case f g) = Lam (`case (Var zero)
           (App (weaken ((embedd-Ty U) ∷ (embedd-Ty U `+ embedd-Ty V ) ∷ [])  (PF→NPF f)) (Var zero)) 
           (App (weaken (embedd-Ty V ∷ embedd-Ty U `+ embedd-Ty V ∷ []) (PF→NPF g)) (Var zero))) 
 PF→NPF PF.dist-+-x = PF→NPF-hard PF.dist-+-x
-PF→NPF PF.roll = PF→NPF-hard PF.roll
+PF→NPF PF.con = PF→NPF-hard PF.con
 PF→NPF (PF.P exp) = PF→NPF-hard (PF.P exp)
 PF→NPF (PF.F exp) = PF→NPF-hard (PF.F exp)
 
@@ -289,7 +289,7 @@ PF→NPF-sound PF.ι₂ args = refl
 PF→NPF-sound {U PF.`+ V} (PF.`case f g) (inj₁ x) rewrite weaken-Eq {ctx = []} {ctx' = embedd-Ty U ∷ embedd-Ty U `+ embedd-Ty V ∷ [] }  []ᴴ (x ∷ᴴ ((inj₁ x) ∷ᴴ []ᴴ))   (PF→NPF f)  = PF→NPF-sound f x 
 PF→NPF-sound {U PF.`+ V} (PF.`case f g) (inj₂ y) rewrite weaken-Eq {ctx = []} {ctx' = embedd-Ty V ∷ embedd-Ty U `+ embedd-Ty V ∷ [] }  []ᴴ (y ∷ᴴ (inj₂ y ∷ᴴ []ᴴ)) (PF→NPF g) = PF→NPF-sound g y
 PF→NPF-sound PF.dist-+-x arg = PF→NPF-sound-hard PF.dist-+-x arg
-PF→NPF-sound PF.roll args = PF→NPF-sound-hard PF.roll args
+PF→NPF-sound PF.con args = PF→NPF-sound-hard PF.con args
 PF→NPF-sound (PF.P f) args = PF→NPF-sound-hard (PF.P f) args
 PF→NPF-sound (PF.F f) args = PF→NPF-sound-hard (PF.F f) args
 

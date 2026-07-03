@@ -92,13 +92,13 @@ data _≈_ : T →ᴾ U → T →ᴾ U → Set where
   P-β : ∀ {A B : TY HO} {H : Ty HO 1}
     {h : (H [ A `× ind H ]) `× B →ᴾ A}
     → C (P {G = H} {T = A} {U = B} h)
-          (map-× (roll {G = H}) (id {T = B}))
+          (map-× (con {G = H}) (id {T = B}))
       ≈ C h (paraArgs H (P {G = H} {T = A} {U = B} h))
 
   P-unique : ∀ {A B : TY HO} {H : Ty HO 1}
     {h : (H [ A `× ind H ]) `× B →ᴾ A}
     {p : ind H `× B →ᴾ A}
-    → C p (map-× (roll {G = H}) (id {T = B})) ≈ C h (paraArgs H p)
+    → C p (map-× (con {G = H}) (id {T = B})) ≈ C h (paraArgs H p)
     → p ≈ P {G = H} {T = A} {U = B} h
 
 ----------------------------------------------------------------------

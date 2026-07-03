@@ -84,7 +84,7 @@ data _≈ᴵ_ : ∀ {T U : TY FO} → T →ᴾ U → T →ᴾ U → Set where
     (parameters : Vec (X →ᴾ Nat) n) →
     let rec = P {G = NatF} {T = Nat} {U = vec Nat n} (nat-P-handler g h)
         parameter-tuple = tupleᴾ parameters
-        zeroᴾ = C (C (roll {G = NatF}) ι₁) (`⊤ {T = X})
+        zeroᴾ = C (C (con {G = NatF}) ι₁) (`⊤ {T = X})
     in
     C rec (`# zeroᴾ parameter-tuple) ≈ᴵ C g parameter-tuple
 
@@ -94,7 +94,7 @@ data _≈ᴵ_ : ∀ {T U : TY FO} → T →ᴾ U → T →ᴾ U → Set where
     (parameters : Vec (X →ᴾ Nat) n) →
     let rec = P {G = NatF} {T = Nat} {U = vec Nat n} (nat-P-handler g h)
         parameter-tuple = tupleᴾ parameters
-        successor = C (C (C (roll {G = NatF}) ι₂) π₁)
+        successor = C (C (C (con {G = NatF}) ι₂) π₁)
                       (`# counter (`⊤ {T = X}))
         result = C rec (`# counter parameter-tuple)
     in
@@ -106,7 +106,7 @@ data _≈ᴵ_ : ∀ {T U : TY FO} → T →ᴾ U → T →ᴾ U → Set where
     (parameters : Vec (X →ᴾ Nat) n) →
     let rec = P {G = NatF} {T = Nat} {U = vec Nat n} (nat-F-handler g h)
         parameter-tuple = tupleᴾ parameters
-        zeroᴾ = C (C (roll {G = NatF}) ι₁) (`⊤ {T = X})
+        zeroᴾ = C (C (con {G = NatF}) ι₁) (`⊤ {T = X})
     in
     C rec (`# zeroᴾ parameter-tuple) ≈ᴵ C g parameter-tuple
 
@@ -116,7 +116,7 @@ data _≈ᴵ_ : ∀ {T U : TY FO} → T →ᴾ U → T →ᴾ U → Set where
     (parameters : Vec (X →ᴾ Nat) n) →
     let rec = P {G = NatF} {T = Nat} {U = vec Nat n} (nat-F-handler g h)
         parameter-tuple = tupleᴾ parameters
-        successor = C (C (C (roll {G = NatF}) ι₂) π₁)
+        successor = C (C (C (con {G = NatF}) ι₂) π₁)
                       (`# counter (`⊤ {T = X}))
         result = C rec (`# counter parameter-tuple)
     in

@@ -49,18 +49,18 @@ Mu D ρ = Value (muC D) ρ
 
 -- The constructor and destructor are definable without any positivity or
 -- termination pragma.  The fixed point is carried entirely by MuShape.
-rollC : ∀ {n} {D : Container (suc n)} {ρ : Fin n → Set} →
+conC : ∀ {n} {D : Container (suc n)} {ρ : Fin n → Set} →
         Value D (extend (Mu D ρ) ρ) → Mu D ρ
-rollC (s , values) =
+conC (s , values) =
   node s (λ p → proj₁ (values zero p)) ,
   λ
     { i (here p)    → values (suc i) p
     ; i (below p q) → proj₂ (values zero p) i q
     }
 
-unrollC : ∀ {n} {D : Container (suc n)} {ρ : Fin n → Set} →
+outC : ∀ {n} {D : Container (suc n)} {ρ : Fin n → Set} →
           Mu D ρ → Value D (extend (Mu D ρ) ρ)
-unrollC (node s children , holes) =
+outC (node s children , holes) =
   s , λ
     { zero    p → children p , λ i q → holes i (below p q)
     ; (suc i) p → holes i (here p)
@@ -68,66 +68,66 @@ unrollC (node s children , holes) =
 
 -- Without assuming function extensionality, the other inverse is stated by
 -- its four observable projections.
-unroll-roll-shape : ∀ {n} {D : Container (suc n)} {ρ : Fin n → Set}
+out-con-shape : ∀ {n} {D : Container (suc n)} {ρ : Fin n → Set}
                     (x : Value D (extend (Mu D ρ) ρ)) →
-                    proj₁ (unrollC (rollC x)) ≡ proj₁ x
-unroll-roll-shape (s , values) = refl
+                    proj₁ (outC (conC x)) ≡ proj₁ x
+out-con-shape (s , values) = refl
 
-unroll-roll-parameter : ∀ {n} {D : Container (suc n)} {ρ : Fin n → Set}
+out-con-parameter : ∀ {n} {D : Container (suc n)} {ρ : Fin n → Set}
                         (x : Value D (extend (Mu D ρ) ρ))
                         (i : Fin n)
                         (p : Position D (proj₁ x) (suc i)) →
-                        proj₂ (unrollC (rollC x)) (suc i) p ≡ proj₂ x (suc i) p
-unroll-roll-parameter (s , values) i p = refl
+                        proj₂ (outC (conC x)) (suc i) p ≡ proj₂ x (suc i) p
+out-con-parameter (s , values) i p = refl
 
-unroll-roll-child-shape : ∀ {n} {D : Container (suc n)} {ρ : Fin n → Set}
+out-con-child-shape : ∀ {n} {D : Container (suc n)} {ρ : Fin n → Set}
                           (x : Value D (extend (Mu D ρ) ρ))
                           (p : Position D (proj₁ x) zero) →
-                          proj₁ (proj₂ (unrollC (rollC x)) zero p) ≡
+                          proj₁ (proj₂ (outC (conC x)) zero p) ≡
                           proj₁ (proj₂ x zero p)
-unroll-roll-child-shape (s , values) p = refl
+out-con-child-shape (s , values) p = refl
 
-unroll-roll-child-value : ∀ {n} {D : Container (suc n)} {ρ : Fin n → Set}
+out-con-child-value : ∀ {n} {D : Container (suc n)} {ρ : Fin n → Set}
                           (x : Value D (extend (Mu D ρ) ρ))
                           (p : Position D (proj₁ x) zero)
                           (i : Fin n)
                           (q : MuPos D (proj₁ (proj₂ x zero p)) i) →
-                          proj₂ (proj₂ (unrollC (rollC x)) zero p) i q ≡
+                          proj₂ (proj₂ (outC (conC x)) zero p) i q ≡
                           proj₂ (proj₂ x zero p) i q
-unroll-roll-child-value (s , values) p i q = refl
+out-con-child-value (s , values) p i q = refl
 
-roll-unroll-root : ∀ {n} {D : Container (suc n)} {ρ : Fin n → Set}
+con-out-root : ∀ {n} {D : Container (suc n)} {ρ : Fin n → Set}
                    {s : Shape D}
                    (children : Position D s zero → MuShape D)
                    (holes : ∀ i → MuPos D (node s children) i → ρ i) →
-                   rootShape (proj₁ (rollC (unrollC (node s children , holes)))) ≡ s
-roll-unroll-root children holes = refl
+                   rootShape (proj₁ (conC (outC (node s children , holes)))) ≡ s
+con-out-root children holes = refl
 
-roll-unroll-branch : ∀ {n} {D : Container (suc n)} {ρ : Fin n → Set}
+con-out-branch : ∀ {n} {D : Container (suc n)} {ρ : Fin n → Set}
                      {s : Shape D}
                      (children : Position D s zero → MuShape D)
                      (holes : ∀ i → MuPos D (node s children) i → ρ i)
                      (p : Position D s zero) →
-                     branch (proj₁ (rollC (unrollC (node s children , holes)))) p ≡ children p
-roll-unroll-branch children holes p = refl
+                     branch (proj₁ (conC (outC (node s children , holes)))) p ≡ children p
+con-out-branch children holes p = refl
 
-roll-unroll-here : ∀ {n} {D : Container (suc n)} {ρ : Fin n → Set}
+con-out-here : ∀ {n} {D : Container (suc n)} {ρ : Fin n → Set}
                    {s : Shape D}
                    (children : Position D s zero → MuShape D)
                    (holes : ∀ i → MuPos D (node s children) i → ρ i)
                    (i : Fin n) (p : Position D s (suc i)) →
-                   proj₂ (rollC (unrollC (node s children , holes))) i (here p) ≡ holes i (here p)
-roll-unroll-here children holes i p = refl
+                   proj₂ (conC (outC (node s children , holes))) i (here p) ≡ holes i (here p)
+con-out-here children holes i p = refl
 
-roll-unroll-below : ∀ {n} {D : Container (suc n)} {ρ : Fin n → Set}
+con-out-below : ∀ {n} {D : Container (suc n)} {ρ : Fin n → Set}
                     {s : Shape D}
                     (children : Position D s zero → MuShape D)
                     (holes : ∀ i → MuPos D (node s children) i → ρ i)
                     (i : Fin n) (p : Position D s zero)
                     (q : MuPos D (children p) i) →
-                    proj₂ (rollC (unrollC (node s children , holes))) i (below p q) ≡
+                    proj₂ (conC (outC (node s children , holes))) i (below p q) ≡
                     holes i (below p q)
-roll-unroll-below children holes i p q = refl
+con-out-below children holes i p q = refl
 
 -- Structural paramorphism.  At every recursive position the algebra sees
 -- both the recursive result and the original subtree.

@@ -30,7 +30,7 @@ Fᴾ {G = G} h = P.P (dropSubtermᴾ G h)
 rebuildᶠ : ∀ {T U} (G : Ty HO 1) →
   (G [ T F.`× F.ind G ]) F.`× U F.→ᶠ F.ind G
 rebuildᶠ G =
-  F.C F.roll (F.C (F.fmap G F.π₂) F.π₁)
+  F.C F.con (F.C (F.fmap G F.π₂) F.π₁)
 
 rememberᶠ : ∀ {T U} (G : Ty HO 1) →
   (G [ T F.`× F.ind G ]) F.`× U F.→ᶠ T →
@@ -61,7 +61,7 @@ toP (F.lam f) = P.lam (toP f)
 toP F.apply = P.apply
 toP (F.fmap G f) = P.fmap G (toP f)
 toP (F.strength G) = P.strength G
-toP F.roll = P.roll
+toP F.con = P.con
 toP (F.F {G = G} h) = Fᴾ (toP h)
 
 toF : ∀ {T U} → T P.→ᴾ U → T F.→ᶠ U
@@ -79,7 +79,7 @@ toF (P.lam f) = F.lam (toF f)
 toF P.apply = F.apply
 toF (P.fmap G f) = F.fmap G (toF f)
 toF (P.strength G) = F.strength G
-toF P.roll = F.roll
+toF P.con = F.con
 toF {T = ind G `× U} {U = T} (P.P h) = Pᶠ (toF h)
 
 ----------------------------------------------------------------------
@@ -136,7 +136,7 @@ dropSubterm-paraArgsᴾ G h p =
 
 Fᴾ-β : ∀ {T U} {G : Ty HO 1}
   {h : (G [ T ]) P.`× U P.→ᴾ T} →
-  P.C (Fᴾ {G = G} h) (P.map-× (P.roll {G = G}) (P.id {T = U}))
+  P.C (Fᴾ {G = G} h) (P.map-× (P.con {G = G}) (P.id {T = U}))
   PEq.≈
   P.C h (foldArgsᴾ G (Fᴾ {G = G} h))
 Fᴾ-β {G = G} {h = h} =
@@ -146,7 +146,7 @@ Fᴾ-β {G = G} {h = h} =
 Fᴾ-unique : ∀ {T U} {G : Ty HO 1}
   {h : (G [ T ]) P.`× U P.→ᴾ T}
   {p : P.ind G P.`× U P.→ᴾ T} →
-  P.C p (P.map-× (P.roll {G = G}) (P.id {T = U}))
+  P.C p (P.map-× (P.con {G = G}) (P.id {T = U}))
   PEq.≈ P.C h (foldArgsᴾ G p) →
   p PEq.≈ Fᴾ {G = G} h
 Fᴾ-unique {G = G} {h = h} premise =
@@ -205,7 +205,7 @@ paraArgsᶠ G p = F.`# (F.pmap G (F.`# p F.π₁)) F.π₂
 
 rebuild₀ᶠ : ∀ {U} (G : Ty HO 1) →
   (G [ F.ind G ]) F.`× U F.→ᶠ F.ind G
-rebuild₀ᶠ G = F.C F.roll F.π₁
+rebuild₀ᶠ G = F.C F.con F.π₁
 
 C-#ᶠ : ∀ {A B D E : TY HO}
   {f : B F.→ᶠ D} {g : B F.→ᶠ E} {h : A F.→ᶠ B} →
@@ -235,14 +235,14 @@ pmap-Cᶠ G =
   FEq.≈-trans FEq.C-assoc
     (FEq.C-cong (FEq.≈-sym (FEq.fmap-C G)) FEq.≈-refl)
 
-π₁-roll-mapᶠ : ∀ {U} {G : Ty HO 1} →
-  F.C F.π₁ (F.map-× (F.roll {G = G}) (F.id {T = U}))
-  FEq.≈ F.C F.roll F.π₁
-π₁-roll-mapᶠ = FEq.×-β₁
+π₁-con-mapᶠ : ∀ {U} {G : Ty HO 1} →
+  F.C F.π₁ (F.map-× (F.con {G = G}) (F.id {T = U}))
+  FEq.≈ F.C F.con F.π₁
+π₁-con-mapᶠ = FEq.×-β₁
 
 rebuild₀-foldArgs-π₁ᶠ : ∀ {U} (G : Ty HO 1) →
   F.C (rebuild₀ᶠ {U = U} G) (F.foldArgs G F.π₁)
-  FEq.≈ F.C F.roll F.π₁
+  FEq.≈ F.C F.con F.π₁
 rebuild₀-foldArgs-π₁ᶠ G =
   FEq.≈-trans (FEq.≈-sym FEq.C-assoc)
     (FEq.≈-trans
@@ -253,7 +253,7 @@ rebuild₀-foldArgs-π₁ᶠ G =
   F.π₁ FEq.≈ F.F {G = G} {T = F.ind G} {U = U} (rebuild₀ᶠ G)
 π₁-is-F-rebuild₀ᶠ {U = U} G =
   FEq.F-unique
-    (FEq.≈-trans π₁-roll-mapᶠ
+    (FEq.≈-trans π₁-con-mapᶠ
       (FEq.≈-sym (rebuild₀-foldArgs-π₁ᶠ {U = U} G)))
 
 rebuild-foldArgsᶠ : ∀ {T U} (G : Ty HO 1)
@@ -310,7 +310,7 @@ foldArgs-rememberᶠ {G = G} h =
 
 Pᶠ-β : ∀ {T U} {G : Ty HO 1}
   {h : (G [ T F.`× F.ind G ]) F.`× U F.→ᶠ T} →
-  F.C (Pᶠ {G = G} h) (F.map-× (F.roll {G = G}) (F.id {T = U}))
+  F.C (Pᶠ {G = G} h) (F.map-× (F.con {G = G}) (F.id {T = U}))
   FEq.≈
   F.C h (paraArgsᶠ G (Pᶠ {G = G} h))
 Pᶠ-β {G = G} {h = h} =
@@ -324,7 +324,7 @@ Pᶠ-β {G = G} {h = h} =
 
 rebuild-paraArgsᶠ : ∀ {T U} (G : Ty HO 1)
   (p : F.ind G F.`× U F.→ᶠ T) →
-  F.C (rebuildᶠ G) (paraArgsᶠ G p) FEq.≈ F.C F.roll F.π₁
+  F.C (rebuildᶠ G) (paraArgsᶠ G p) FEq.≈ F.C F.con F.π₁
 rebuild-paraArgsᶠ G p =
   FEq.≈-trans (rebuild-foldArgsᶠ G (F.`# p F.π₁))
     (FEq.≈-trans
@@ -335,7 +335,7 @@ rebuild-paraArgsᶠ G p =
 Pᶠ-unique : ∀ {T U} {G : Ty HO 1}
   {h : (G [ T F.`× F.ind G ]) F.`× U F.→ᶠ T}
   {p : F.ind G F.`× U F.→ᶠ T} →
-  F.C p (F.map-× (F.roll {G = G}) (F.id {T = U}))
+  F.C p (F.map-× (F.con {G = G}) (F.id {T = U}))
   FEq.≈ F.C h (paraArgsᶠ G p) →
   p FEq.≈ Pᶠ {G = G} h
 Pᶠ-unique {G = G} {h = h} {p = p} premise =
@@ -345,7 +345,7 @@ Pᶠ-unique {G = G} {h = h} {p = p} premise =
         (FEq.≈-trans C-#ᶠ
           (FEq.≈-trans
             (FEq.`#-cong premise
-              (FEq.≈-trans π₁-roll-mapᶠ
+              (FEq.≈-trans π₁-con-mapᶠ
                 (FEq.≈-sym (rebuild-paraArgsᶠ G p))))
             (FEq.≈-sym C-#ᶠ)))))
 
@@ -410,7 +410,7 @@ toP-toF (P.lam f) = PEq.lam-cong (toP-toF f)
 toP-toF P.apply = PEq.≈-refl
 toP-toF (P.fmap G f) = PEq.fmap-cong G (toP-toF f)
 toP-toF (P.strength G) = PEq.≈-refl
-toP-toF P.roll = PEq.≈-refl
+toP-toF P.con = PEq.≈-refl
 toP-toF {T = ind G `× U} {U = T} (P.P h) =
   PEq.P-unique
     (PEq.≈-trans
@@ -432,7 +432,7 @@ toF-toP (F.lam f) = FEq.lam-cong (toF-toP f)
 toF-toP F.apply = FEq.≈-refl
 toF-toP (F.fmap G f) = FEq.fmap-cong G (toF-toP f)
 toF-toP (F.strength G) = FEq.≈-refl
-toF-toP F.roll = FEq.≈-refl
+toF-toP F.con = FEq.≈-refl
 toF-toP (F.F {G = G} h) =
   FEq.F-unique
     (FEq.≈-trans

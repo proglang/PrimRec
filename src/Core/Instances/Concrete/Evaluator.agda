@@ -83,11 +83,11 @@ strengthFlat : ∀ {G T U} → Flat G →
 strengthFlat {T = T} {U = U} p (x , u) =
   unpack p (T `× U) (mapC (λ _ t → t , u) (pack p T x))
 
-rollFlat : ∀ {G} → Flat G → Sem (G [ ind G ]) → Sem (ind G)
-rollFlat {G} p layer with pack p (ind G) layer
+conFlat : ∀ {G} → Flat G → Sem (G [ ind G ]) → Sem (ind G)
+conFlat {G} p layer with pack p (ind G) layer
 ... | s , values =
   proj₁
-    (rollC {D = code G} {ρ = λ ()}
+    (conC {D = code G} {ρ = λ ()}
       (s , λ { zero position → values zero position , λ () }))
 
 paraAlgebra : ∀ {G T U} → Flat G →
@@ -125,12 +125,12 @@ paraStep-as-fmap : ∀ {G T U} (p : Flat G)
 paraStep-as-fmap {G = G} {T = T} p h u layer =
   unpack-cong p (T `× ind G) λ { zero position → refl }
 
-para-rollFlat-β : ∀ {G T U} (p : Flat G)
+para-conFlat-β : ∀ {G T U} (p : Flat G)
   (h : Sem ((G [ T `× ind G ]) `× U) → Sem T)
   (layer : Sem (G [ ind G ])) (u : Sem U) →
-  paraFlat {G = G} {T = T} {U = U} p h (rollFlat p layer , u) ≡
+  paraFlat {G = G} {T = T} {U = U} p h (conFlat p layer , u) ≡
   h (paraStepFlat {G = G} {T = T} {U = U} p h u layer , u)
-para-rollFlat-β {G = G} {T = T} p h layer u
+para-conFlat-β {G = G} {T = T} p h layer u
   with pack p (ind G) layer
 ... | s , values =
   cong h (cong₂ _,_
@@ -159,7 +159,7 @@ data Supported : ∀ {T U} → T →ᴾ U → Set where
   s-fmap : ∀ {G T U} {f : T →ᴾ U} →
            Flat G → Supported f → Supported (fmap G f)
   s-strength : ∀ {G T U} → Flat G → Supported (strength {T = T} {U = U} G)
-  s-roll : ∀ {G} → (p : Flat G) → Supported (roll {G = G})
+  s-con : ∀ {G} → (p : Flat G) → Supported (con {G = G})
   s-P : ∀ {T U} (G : Ty FO 1)
         {h : (G [ T `× ind G ]) `× U →ᴾ T} →
         (p : Flat G) → Supported h →
@@ -181,6 +181,6 @@ eval s-dist (inj₁ x , z) = inj₁ (x , z)
 eval s-dist (inj₂ y , z) = inj₂ (y , z)
 eval (s-fmap p sf) x = fmapFlat p (eval sf) x
 eval (s-strength p) x = strengthFlat p x
-eval (s-roll p) x = rollFlat p x
+eval (s-con p) x = conFlat p x
 eval (s-P {T = T} {U = U} G p sh) x =
   paraFlat {G = G} {T = T} {U = U} p (eval sh) x

@@ -56,7 +56,7 @@ data Ty :    Set where
 ⟦ `t ⟧ₚ arg = arg
 
 data Alg (F : PolyTyOp) : Set where
-    roll : ⟦ F ⟧ₚ (Alg F) → Alg F 
+    con : ⟦ F ⟧ₚ (Alg F) → Alg F 
 
 
 -- tyToTyOp : Ty → PolyTyOp
@@ -99,7 +99,7 @@ data _→ᴾ_ : TY → TY → Set where
   ι₂ : V →ᴾ U `+ V
   `case : (f : U →ᴾ T) → (g : V →ᴾ T) → U `+ V →ᴾ T
   --
-  roll : sub₀ (ind G) G →ᴾ ind G
+  con : sub₀ (ind G) G →ᴾ ind G
   P :  ∀ {T U} {G}  (h : sub₀ (T `× ind G) G `× U →ᴾ T) → (ind G `× U →ᴾ T)
 \end{code}
 }
@@ -115,7 +115,7 @@ data _→ᴾ_ : TY → TY → Set where
 ⟦_⟧ᵀ : TY → Set
 
 -- data Alg (G : PolyTyOp) : Set where
---   roll : ⟦ sub₀ (ind G) G ⟧ᵀ → Alg G 
+--   con : ⟦ sub₀ (ind G) G ⟧ᵀ → Alg G 
 
 ⟦ `𝟙 ⟧ᵀ     = ⊤
 ⟦ T `× U ⟧ᵀ = ⟦ T ⟧ᵀ × ⟦ U ⟧ᵀ
@@ -146,11 +146,11 @@ mapFold `𝟙 G φ x = tt
 mapFold (F1 `× F2) G φ (x , y) = (mapFold F1 G φ x) , mapFold F2 G φ y
 mapFold (F1 `+ F2) G φ (inj₁ x) = inj₁ (mapFold F1 G φ x)
 mapFold (F1 `+ F2) G φ (inj₂ y) = inj₂ ((mapFold F2 G φ y))
-mapFold `t G φ (roll x) = φ (mapFold G G φ x) 
+mapFold `t G φ (con x) = φ (mapFold G G φ x) 
 
 
 foldF : {F : PolyTyOp}{A : Set} -> (⟦ F ⟧ₚ A -> A) -> Alg F -> A
-foldF {pto} φ (roll x) = φ (mapFold pto pto φ x) 
+foldF {pto} φ (con x) = φ (mapFold pto pto φ x) 
 \end{code}
 
 
@@ -186,12 +186,12 @@ eval π₂       = proj₂
 eval ι₁       = inj₁
 eval ι₂       = inj₂
 eval (`case f g) = λ{ (inj₁ x) → eval f x ; (inj₂ y) → eval g y}
-eval roll  =  roll
-eval (P {G = G} h) =   λ {(x , u) → foldF (λ gu → eval h (fmap (λ u' → u' , x) G gu , u)) x} --   λ{ (roll x , u) → eval h ((fmap (λ v → (eval (P h) (v , u)) , v) G x) , u)}
+eval con  =  con
+eval (P {G = G} h) =   λ {(x , u) → foldF (λ gu → eval h (fmap (λ u' → u' , x) G gu , u)) x} --   λ{ (con x , u) → eval h ((fmap (λ v → (eval (P h) (v , u)) , v) G x) , u)}
 \end{code}
 }
 \begin{code}[hide]
-eval (F {G = G} h) =  λ{ (x , u) → foldF (λ gu → eval h (gu , u)) x } --  λ{ (roll x , u) → eval h ((fmap (λ v → eval (F h) (v , u)) G x) , u) }
+eval (F {G = G} h) =  λ{ (x , u) → foldF (λ gu → eval h (gu , u)) x } --  λ{ (con x , u) → eval h ((fmap (λ v → eval (F h) (v , u)) G x) , u) }
 \end{code}
 
 \begin{code}[hide]
@@ -231,14 +231,14 @@ module FromNats where
 
   -- zero
   _ : `𝟙 →ᴾ Nat
-  _ = C roll ι₁
+  _ = C con ι₁
 
   _ : `𝟙 →ᴾ (`𝟙 `+ Nat)
   _ = ι₁
 
   -- successor
   _ : Nat →ᴾ Nat
-  _ = C roll ι₂
+  _ = C con ι₂
 
   _ : Nat →ᴾ (`𝟙 `+ Nat)
   _ = ι₂
@@ -255,8 +255,8 @@ module FromNats where
   ⟦_⟧  : Nats.PR n → mkvec Nat n →ᴾ Nat
   ⟦_⟧* : Vec (Nats.PR n) m → mkvec Nat n →ᴾ mkvec Nat m
 
-  ⟦ Nats.Z ⟧      = C roll ι₁
-  ⟦ Nats.σ ⟧      = C (C roll ι₂) π₁
+  ⟦ Nats.Z ⟧      = C con ι₁
+  ⟦ Nats.σ ⟧      = C (C con ι₂) π₁
   ⟦ Nats.π i ⟧    = lookup i
   ⟦ Nats.C f g* ⟧ = C ⟦ f ⟧ ⟦ g* ⟧*
   ⟦ Nats.P g h ⟧  = P (C (`case (C ⟦ g ⟧ π₂) (C ⟦ h ⟧ assoc-×)) dist-+-x)
@@ -290,8 +290,8 @@ module FromWords where
   ⟦_⟧  : Words.PR ⟦ Alpha ⟧ᵀ n → mkvec Alpha* n →ᴾ Alpha*
   ⟦_⟧* : Vec (Words.PR ⟦ Alpha ⟧ᵀ n) m → mkvec Alpha* n →ᴾ mkvec Alpha* m
 
-  ⟦ Words.Z ⟧ = C (C roll ι₁) `0
-  ⟦ Words.σ a ⟧ = C (C roll (C ι₂ (`# (C ⟦ a ⟧ᴬ `0) id))) π₁
+  ⟦ Words.Z ⟧ = C (C con ι₁) `0
+  ⟦ Words.σ a ⟧ = C (C con (C ι₂ (`# (C ⟦ a ⟧ᴬ `0) id))) π₁
   ⟦ Words.π i ⟧ = lookup i
   ⟦ Words.C f g* ⟧ = C ⟦ f ⟧ ⟦ g* ⟧*
   ⟦ Words.P g h ⟧ = P (C (`case (C ⟦ g ⟧ π₂) (C (C (C (`case (C ⟦ h (inj₁ tt) ⟧ assoc-×) (C ⟦ h (inj₂ tt) ⟧ assoc-×)) dist-+-x) (`# (C (`case (C ι₁ π₂) (C ι₂ π₂)) π₁) π₂)) (`# (C dist-+-x π₁) π₂))) dist-+-x)
@@ -336,8 +336,8 @@ module FromTrees where
   ⟦_⟧  : Trees.PR R-Btree n → mkvec Btree n →ᴾ Btree
   ⟦_⟧* : Vec (Trees.PR R-Btree n) m → mkvec Btree n →ᴾ mkvec Btree m
 
-  ⟦ Trees.σ (inj₁ tt) ⟧ = C roll ι₁
-  ⟦ Trees.σ (inj₂ (tt , tt)) ⟧ = C roll (C ι₂ (`# π₁ (C π₁ π₂)))
+  ⟦ Trees.σ (inj₁ tt) ⟧ = C con ι₁
+  ⟦ Trees.σ (inj₂ (tt , tt)) ⟧ = C con (C ι₂ (`# π₁ (C π₁ π₂)))
   ⟦ Trees.π i ⟧ = lookup i
   ⟦ Trees.C f g* ⟧ = C ⟦ f ⟧ ⟦ g* ⟧*
   ⟦ Trees.P h ⟧ = P (C (`case (C ⟦ h (inj₁ tt) ⟧ π₂)

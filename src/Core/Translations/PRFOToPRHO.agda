@@ -161,7 +161,7 @@ P-β-cast :
   {h : GAI Ty.`× B HO.→ᴾ A} →
   let hᴾ = cast (cong₂ Ty._`×_ eAI refl) refl h
       p = HO.P {G = G} hᴾ in
-  HO.C p (HO.map-× (cast (sym eI) refl HO.roll) HO.id)
+  HO.C p (HO.map-× (cast (sym eI) refl HO.con) HO.id)
   HOEq.≈
   HO.C h
     (HO.`#
@@ -182,7 +182,7 @@ P-unique-cast :
   {h : GAI Ty.`× B HO.→ᴾ A}
   {p : Ty.ind G Ty.`× B HO.→ᴾ A} →
   let hᴾ = cast (cong₂ Ty._`×_ eAI refl) refl h in
-  HO.C p (HO.map-× (cast (sym eI) refl HO.roll) HO.id)
+  HO.C p (HO.map-× (cast (sym eI) refl HO.con) HO.id)
   HOEq.≈
   HO.C h
     (HO.`#
@@ -220,8 +220,8 @@ translate (FO.strength {T = T} {U = U} G) =
     (cong₂ Ty._`×_ (sym (lift-sub0 G T)) refl)
     (sym (lift-sub0 G (T Ty.`× U)))
     (HO.strength (lift G))
-translate (FO.roll {G = G}) =
-  cast (sym (lift-sub0 G (Ty.ind G))) refl HO.roll
+translate (FO.con {G = G}) =
+  cast (sym (lift-sub0 G (Ty.ind G))) refl HO.con
 translate {T = Ty.ind G Ty.`× U} {U = T} (FO.P h) =
   HO.P
     (cast

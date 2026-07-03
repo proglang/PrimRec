@@ -142,13 +142,13 @@ module FromCC where
   from-T (T₁ CC.`× T₂) (x , y) = (from-T T₁ x) , (from-T T₂ y)
   from-T (T₁ CC.`+ T₂) (inj₁ x) = inj₁ (from-T T₁ x)
   from-T (T₁ CC.`+ T₂) (inj₂ y) = inj₂ (from-T T₂ y)
-  from-T (CC.ind G) (CC.roll x) = roll (from-fmap G G from-T x)
+  from-T (CC.ind G) (CC.con x) = con (from-fmap G G from-T x)
 
   to-T CC.`𝟙 tt = tt
   to-T (T₁ CC.`× T₂) (x , y) = (to-T T₁ x) , (to-T T₂ y)
   to-T (T₁ CC.`+ T₂) (inj₁ x) = inj₁ (to-T T₁ x)
   to-T (T₁ CC.`+ T₂) (inj₂ y) = inj₂ (to-T T₂ y)
-  to-T (CC.ind G) (roll x) = CC.roll (to-fmap G G to-T x)
+  to-T (CC.ind G) (con x) = CC.con (to-fmap G G to-T x)
 
   from-fmap G H f x =
     subst ⟦_⟧ᵀ (trans-compat-subst0 G (CC.ind H))
@@ -180,7 +180,7 @@ module FromCC where
     cong₂ _,_ (to∘from-T T₁ x) (to∘from-T T₂ y)
   to∘from-T (T₁ CC.`+ T₂) (inj₁ x) = cong inj₁ (to∘from-T T₁ x)
   to∘from-T (T₁ CC.`+ T₂) (inj₂ y) = cong inj₂ (to∘from-T T₂ y)
-  to∘from-T (CC.ind G) (CC.roll x) = cong CC.roll (to∘from-fmap-T G G x)
+  to∘from-T (CC.ind G) (CC.con x) = cong CC.con (to∘from-fmap-T G G x)
 
   to∘from-fmap-T G H x =
     trans
@@ -195,7 +195,7 @@ module FromCC where
     cong₂ _,_ (from∘to-T T₁ x) (from∘to-T T₂ y)
   from∘to-T (T₁ CC.`+ T₂) (inj₁ x) = cong inj₁ (from∘to-T T₁ x)
   from∘to-T (T₁ CC.`+ T₂) (inj₂ y) = cong inj₂ (from∘to-T T₂ y)
-  from∘to-T (CC.ind G) (roll x) = cong roll (from∘to-fmap-T G G x)
+  from∘to-T (CC.ind G) (con x) = cong con (from∘to-fmap-T G G x)
 
   from∘to-fmap-T G H x =
     trans
@@ -230,8 +230,8 @@ module FromCC where
   E⟦ CC.ι₂ ⟧ = ι₂
   E⟦ CC.`case p₁ p₂ ⟧ = `case E⟦ p₁ ⟧ E⟦ p₂ ⟧
   E⟦ CC.dist-+-x ⟧ = dist-+-x
-  E⟦ CC.roll{G = G} ⟧
-    rewrite trans-compat-subst0 G (CC.ind G) = roll
+  E⟦ CC.con{G = G} ⟧
+    rewrite trans-compat-subst0 G (CC.ind G) = con
   E⟦ CC.P{G = G}{T = T} p ⟧
     with E⟦ p ⟧
   ... | Ep
@@ -258,8 +258,8 @@ module FromCC where
 
   subst-ind : ∀ {G H : Ty 1} (p : G ≡ H)
     (x : ⟦ G ⇐ ind G ⟧ᵀ)
-    → subst ⟦_⟧ᵀ (cong ind p) (roll x)
-      ≡ roll (subst ⟦_⟧ᵀ (cong (λ K → K ⇐ ind K) p) x)
+    → subst ⟦_⟧ᵀ (cong ind p) (con x)
+      ≡ con (subst ⟦_⟧ᵀ (cong (λ K → K ⇐ ind K) p) x)
   subst-ind refl x = refl
 
   from-T-subst : ∀ {A B : CC.TY} (p : A ≡ B) (x : CC.⟦ A ⟧ᵀ)
@@ -290,8 +290,8 @@ module FromCC where
     (f : CC.⟦ S ⟧ᵀ → CC.⟦ T ⟧ᵀ)
     (x : CC.⟦ CC.sub (CC.extˢ (CC.σ₀ S)) G
               CC.⇐ CC.ind (CC.sub (CC.extˢ (CC.σ₀ S)) G) ⟧ᵀ)
-    → CC.fmap (CC.ind G) f (CC.roll x)
-      ≡ CC.roll
+    → CC.fmap (CC.ind G) f (CC.con x)
+      ≡ CC.con
           (subst CC.⟦_⟧ᵀ (CC.eq-unfold (CC.σ₀ T) G)
             (CC.fmap (G CC.⇐ CC.ind G) f
               (subst CC.⟦_⟧ᵀ (sym (CC.eq-unfold (CC.σ₀ S) G)) x)))
@@ -303,8 +303,8 @@ module FromCC where
   fmap-ind : ∀ {S T : TY} (G : Ty 2)
     (f : ⟦ S ⟧ᵀ → ⟦ T ⟧ᵀ)
     (x : ⟦ sub (extˢ (σ₀ S)) G ⇐ ind (sub (extˢ (σ₀ S)) G) ⟧ᵀ)
-    → fmap (ind G) f (roll x)
-      ≡ roll
+    → fmap (ind G) f (con x)
+      ≡ con
           (subst ⟦_⟧ᵀ (eq-unfoldᵀ (σ₀ T) G)
             (fmap (sub (σ₀ (ind G)) G) f
               (subst ⟦_⟧ᵀ (sym (eq-unfoldᵀ (σ₀ S) G)) x)))
@@ -364,23 +364,23 @@ module FromCC where
                     (from-T (H CC.⇐ S) y)
           | from-fmap-natural H h y = refl
   from-fmap-natural (CC.` zero) h x = h x
-  from-fmap-natural {S} {T} (CC.ind G) {f} {f′} h (CC.roll x)
+  from-fmap-natural {S} {T} (CC.ind G) {f} {f′} h (CC.con x)
     = begin
       subst ⟦_⟧ᵀ (cong ind (trans-compat-ind G T))
         (from-T (CC.ind (CC.sub (CC.extˢ (CC.σ₀ T)) G))
-          (CC.fmap (CC.ind G) f (CC.roll x)))
+          (CC.fmap (CC.ind G) f (CC.con x)))
     ≡⟨ cong
          (λ z → subst ⟦_⟧ᵀ (cong ind (trans-compat-ind G T))
            (from-T (CC.ind (CC.sub (CC.extˢ (CC.σ₀ T)) G)) z))
          (CC-fmap-ind G f x) ⟩
       subst ⟦_⟧ᵀ (cong ind (trans-compat-ind G T))
         (from-T (CC.ind (CC.sub (CC.extˢ (CC.σ₀ T)) G))
-          (CC.roll
+          (CC.con
             (subst CC.⟦_⟧ᵀ (CC.eq-unfold (CC.σ₀ T) G)
               (CC.fmap (G CC.⇐ CC.ind G) f
                 (subst CC.⟦_⟧ᵀ (sym (CC.eq-unfold (CC.σ₀ S) G)) x)))))
     ≡⟨ subst-ind (trans-compat-ind G T) _ ⟩
-      roll
+      con
         (subst ⟦_⟧ᵀ
           (cong (λ K → K ⇐ ind K) (trans-compat-ind G T))
           (subst ⟦_⟧ᵀ
@@ -393,7 +393,7 @@ module FromCC where
               (subst CC.⟦_⟧ᵀ (CC.eq-unfold (CC.σ₀ T) G)
                 (CC.fmap (G CC.⇐ CC.ind G) f
                   (subst CC.⟦_⟧ᵀ (sym (CC.eq-unfold (CC.σ₀ S) G)) x))))))
-    ≡⟨ cong roll
+    ≡⟨ cong con
          (let G₀ = G CC.⇐ CC.ind G
               G₀ᵀ = sub (σ₀ (ind T⟦ G ⟧)) T⟦ G ⟧
               Hₛ = CC.sub (CC.extˢ (CC.σ₀ S)) G
@@ -462,7 +462,7 @@ module FromCC where
             subst ⟦_⟧ᵀ eₜᵀ
               (fmap G₀ᵀ f′ (subst ⟦_⟧ᵀ (sym eₛᵀ) zₛ))
           ∎) ⟩
-      roll
+      con
         (subst ⟦_⟧ᵀ (eq-unfoldᵀ (σ₀ T⟦ T ⟧) T⟦ G ⟧)
           (fmap (sub (σ₀ (ind T⟦ G ⟧)) T⟦ G ⟧) f′
             (subst ⟦_⟧ᵀ (sym (eq-unfoldᵀ (σ₀ T⟦ S ⟧) T⟦ G ⟧))
@@ -477,7 +477,7 @@ module FromCC where
                       CC.ind (CC.sub (CC.extˢ (CC.σ₀ S)) G)) x))))))
     ≡⟨ sym (fmap-ind T⟦ G ⟧ f′ _) ⟩
       fmap (ind T⟦ G ⟧) f′
-        (roll
+        (con
           (subst ⟦_⟧ᵀ
             (cong (λ K → K ⇐ ind K) (trans-compat-ind G S))
             (subst ⟦_⟧ᵀ
@@ -491,14 +491,14 @@ module FromCC where
          (sym (subst-ind (trans-compat-ind G S) _)) ⟩
       fmap (ind T⟦ G ⟧) f′
         (subst ⟦_⟧ᵀ (cong ind (trans-compat-ind G S))
-          (from-T (CC.ind (CC.sub (CC.extˢ (CC.σ₀ S)) G)) (CC.roll x)))
+          (from-T (CC.ind (CC.sub (CC.extˢ (CC.σ₀ S)) G)) (CC.con x)))
     ∎
 
-  eval-E-roll : ∀ {G : CC.Ty 1}
+  eval-E-con : ∀ {G : CC.Ty 1}
     (x : ⟦ T⟦ G CC.⇐ CC.ind G ⟧ ⟧ᵀ)
-    → eval E⟦ CC.roll {G = G} ⟧ x
-      ≡ roll (subst ⟦_⟧ᵀ (trans-compat-subst0 G (CC.ind G)) x)
-  eval-E-roll {G} x rewrite trans-compat-subst0 G (CC.ind G) = refl
+    → eval E⟦ CC.con {G = G} ⟧ x
+      ≡ con (subst ⟦_⟧ᵀ (trans-compat-subst0 G (CC.ind G)) x)
+  eval-E-con {G} x rewrite trans-compat-subst0 G (CC.ind G) = refl
 
   unsubst : ∀ {A B : TY} (p : A ≡ B) {x : ⟦ A ⟧ᵀ} {y : ⟦ B ⟧ᵀ}
     → subst ⟦_⟧ᵀ p x ≡ y → x ≡ subst ⟦_⟧ᵀ (sym p) y
@@ -507,7 +507,7 @@ module FromCC where
   eval-E-P : ∀ {G : CC.Ty 1} {T U : CC.TY}
     (p : (G CC.⇐ (T CC.`× CC.ind G)) CC.`× U CC.→ᴾ T)
     (x : ⟦ T⟦ G ⟧ ⇐ ind T⟦ G ⟧ ⟧ᵀ) (u : ⟦ T⟦ U ⟧ ⟧ᵀ)
-    → eval E⟦ CC.P {G = G} {T = T} {U = U} p ⟧ (roll x , u)
+    → eval E⟦ CC.P {G = G} {T = T} {U = U} p ⟧ (con x , u)
       ≡ eval E⟦ p ⟧
           (subst ⟦_⟧ᵀ (sym (trans-compat-subst0 G (T CC.`× CC.ind G)))
             (fmap T⟦ G ⟧
@@ -518,7 +518,7 @@ module FromCC where
   eval-E-F : ∀ {G : CC.Ty 1} {T U : CC.TY}
     (p : (G CC.⇐ T) CC.`× U CC.→ᴾ T)
     (x : ⟦ T⟦ G ⟧ ⇐ ind T⟦ G ⟧ ⟧ᵀ) (u : ⟦ T⟦ U ⟧ ⟧ᵀ)
-    → eval E⟦ CC.F {G = G} {T = T} {U = U} p ⟧ (roll x , u)
+    → eval E⟦ CC.F {G = G} {T = T} {U = U} p ⟧ (con x , u)
       ≡ eval E⟦ p ⟧
           (subst ⟦_⟧ᵀ (sym (trans-compat-subst0 G T))
             (fmap T⟦ G ⟧
@@ -548,9 +548,9 @@ module FromCC where
   trans-preserves-hard (CC.`case p₁ p₂) (inj₂ y) = trans-preserves-hard p₂ y
   trans-preserves-hard CC.dist-+-x (inj₁ x , z) = refl
   trans-preserves-hard CC.dist-+-x (inj₂ y , z) = refl
-  trans-preserves-hard (CC.roll {G = G}) x =
-    sym (eval-E-roll (from-T (G CC.⇐ CC.ind G) x))
-  trans-preserves-hard (CC.P {G = G} {T = T} {U = U} p) (CC.roll x , u)
+  trans-preserves-hard (CC.con {G = G}) x =
+    sym (eval-E-con (from-T (G CC.⇐ CC.ind G) x))
+  trans-preserves-hard (CC.P {G = G} {T = T} {U = U} p) (CC.con x , u)
     = trans
         (trans-preserves-hard p
           (CC.fmap G (λ v → CC.eval (CC.P {G = G} {T = T} {U = U} p) (v , u) , v) x , u))
@@ -567,7 +567,7 @@ module FromCC where
             (subst ⟦_⟧ᵀ (trans-compat-subst0 G (CC.ind G))
               (from-T (G CC.⇐ CC.ind G) x))
             (from-T U u))))
-  trans-preserves-hard (CC.F {G = G} {T = T} {U = U} p) (CC.roll x , u)
+  trans-preserves-hard (CC.F {G = G} {T = T} {U = U} p) (CC.con x , u)
     = trans
         (trans-preserves-hard p
           (CC.fmap G (λ v → CC.eval (CC.F {G = G} {T = T} {U = U} p) (v , u)) x , u))
@@ -605,7 +605,7 @@ module FromCC where
   trans-preserves (CC.`case p₁ p₂) (inj₁ x) = trans-preserves p₁ x
   trans-preserves (CC.`case p₁ p₂) (inj₂ y) = trans-preserves p₂ y
   trans-preserves CC.dist-+-x x = trans-preserves-hard CC.dist-+-x x
-  trans-preserves CC.roll x = trans-preserves-hard CC.roll x
+  trans-preserves CC.con x = trans-preserves-hard CC.con x
   trans-preserves (CC.P p) x = trans-preserves-hard (CC.P p) x
   trans-preserves (CC.F p) x = trans-preserves-hard (CC.F p) x
 

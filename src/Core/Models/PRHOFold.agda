@@ -36,7 +36,7 @@ record Structure (ℓ : Level) : Set (suc ℓ) where
     fmapᴹ : ∀ {T U} (G : Ty HO 1) → (T ⇒ᴹ U) → (G [ T ] ⇒ᴹ G [ U ])
     strengthᴹ : ∀ {T U} (G : Ty HO 1) → (G [ T ]) `× U ⇒ᴹ G [ T `× U ]
 
-    rollᴹ : ∀ {G : Ty HO 1} → G [ ind G ] ⇒ᴹ ind G
+    conᴹ : ∀ {G : Ty HO 1} → G [ ind G ] ⇒ᴹ ind G
     Fᴹ : ∀ {T U} {G : Ty HO 1}
       → ((G [ T ]) `× U ⇒ᴹ T)
       → (ind G `× U ⇒ᴹ T)
@@ -133,11 +133,11 @@ record Model (ℓ : Level) : Set (suc ℓ) where
     ⇒-ηᴹ : ∀ {A B D} {f : A ⇒ᴹ B `⇒ D} → lamᴹ (thetaᴹ structure f) ≈ᴹ f
 
     F-βᴹ : ∀ {A B} {G : Ty HO 1} {h : (G [ A ]) `× B ⇒ᴹ A}
-      → Cᴹ (Fᴹ {T = A} {U = B} {G = G} h) (map-×ᴹ structure (rollᴹ {G = G}) (idᴹ {T = B}))
+      → Cᴹ (Fᴹ {T = A} {U = B} {G = G} h) (map-×ᴹ structure (conᴹ {G = G}) (idᴹ {T = B}))
         ≈ᴹ Cᴹ h (foldArgsᴹ structure G (Fᴹ {T = A} {U = B} {G = G} h))
     F-uniqueᴹ : ∀ {A B} {G : Ty HO 1} {h : (G [ A ]) `× B ⇒ᴹ A}
       {p : ind G `× B ⇒ᴹ A}
-      → Cᴹ p (map-×ᴹ structure (rollᴹ {G = G}) (idᴹ {T = B})) ≈ᴹ Cᴹ h (foldArgsᴹ structure G p)
+      → Cᴹ p (map-×ᴹ structure (conᴹ {G = G}) (idᴹ {T = B})) ≈ᴹ Cᴹ h (foldArgsᴹ structure G p)
       → p ≈ᴹ Fᴹ {T = A} {U = B} {G = G} h
 
 ----------------------------------------------------------------------
@@ -162,7 +162,7 @@ module _ {ℓ} (S : Structure ℓ) where
   interpret Syn.apply = applyᴹ
   interpret (Syn.fmap G f) = fmapᴹ G (interpret f)
   interpret (Syn.strength G) = strengthᴹ G
-  interpret Syn.roll = rollᴹ
+  interpret Syn.con = conᴹ
   interpret (Syn.F h) = Fᴹ (interpret h)
 
 module _ {ℓ} (M : Model ℓ) where
@@ -199,3 +199,19 @@ module _ {ℓ} (M : Model ℓ) where
   sound Eq.⇒-η = ⇒-ηᴹ
   sound Eq.F-β = F-βᴹ
   sound (Eq.F-unique p) = F-uniqueᴹ (sound p)
+
+  --------------------------------------------------------------------
+  -- Derived distributivity in every PR-HO fold-primitive model
+  --------------------------------------------------------------------
+
+  dist-undistᴹ : ∀ {A B D}
+    → Cᴹ (distᴹ structure {T = A} {U = B} {V = D})
+        (undistᴹ structure)
+      ≈ᴹ idᴹ
+  dist-undistᴹ = sound Eq.dist-undist
+
+  undist-distᴹ : ∀ {A B D}
+    → Cᴹ (undistᴹ structure)
+        (distᴹ structure {T = A} {U = B} {V = D})
+      ≈ᴹ idᴹ
+  undist-distᴹ = sound Eq.undist-dist

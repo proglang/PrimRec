@@ -39,7 +39,7 @@ data _⊢_ : TY HO → TY HO → Set where
   fmap : (G : Ty HO 1) → (A ⊢ B) → (G [ A ] ⊢ G [ B ])
   strength : (G : Ty HO 1) → (G [ A ]) `× B ⊢ G [ A `× B ]
 
-  roll : G [ ind G ] ⊢ ind G
+  con : G [ ind G ] ⊢ ind G
   prec : ((G [ A `× ind G ]) `× B ⊢ A)
     → (ind G `× B ⊢ A)
 

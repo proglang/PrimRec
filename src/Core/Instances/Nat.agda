@@ -38,8 +38,8 @@ Nat-polynomial = Core.Semantics.Types.fo-polynomial Nat
 compile : ∀ {n} → Source.PR n → vec Nat n →ᴾ Nat
 compile* : ∀ {m n} → Vec (Source.PR n) m → vec Nat n →ᴾ vec Nat m
 
-compile Source.Z = C roll ι₁
-compile Source.σ = C (C roll ι₂) π₁
+compile Source.Z = C con ι₁
+compile Source.σ = C (C con ι₂) π₁
 compile (Source.π i) = lookupᴾ i
 compile (Source.C f fs) = C (compile f) (compile* fs)
 compile (Source.P g h) =
@@ -76,8 +76,8 @@ module Semantics {ℓ : Level} (M : Model.Model ℓ) where
   denote : ∀ {n} → Source.PR n → vec Nat n ⇒ᴹ Nat
   denote* : ∀ {m n} → Vec (Source.PR n) m → vec Nat n ⇒ᴹ vec Nat m
 
-  denote Source.Z = Cᴹ rollᴹ ι₁ᴹ
-  denote Source.σ = Cᴹ (Cᴹ rollᴹ ι₂ᴹ) π₁ᴹ
+  denote Source.Z = Cᴹ conᴹ ι₁ᴹ
+  denote Source.σ = Cᴹ (Cᴹ conᴹ ι₂ᴹ) π₁ᴹ
   denote (Source.π i) = Model.interpret structure (lookupᴾ i)
   denote (Source.C f fs) = Cᴹ (denote f) (denote* fs)
   denote (Source.P g h) =

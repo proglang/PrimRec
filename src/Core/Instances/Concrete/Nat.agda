@@ -53,8 +53,8 @@ supported-fHandler g h =
             (s-C (supported h) (s-# (s-C s-π₁ s-π₁) s-π₂)))
     s-dist
 
-supported Source.Z = s-C (s-roll flatNatF) s-ι₁
-supported Source.σ = s-C (s-C (s-roll flatNatF) s-ι₂) s-π₁
+supported Source.Z = s-C (s-con flatNatF) s-ι₁
+supported Source.σ = s-C (s-C (s-con flatNatF) s-ι₂) s-π₁
 supported (Source.π i) = supported-lookup i
 supported (Source.C f fs) = s-C (supported f) (supported* fs)
 supported (Source.P g h) = s-P NatF flatNatF (supported-pHandler g h)

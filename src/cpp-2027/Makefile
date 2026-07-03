@@ -7,7 +7,9 @@ AGDATEX_SRCS=\
 	$(ROOT)/Core/PRFOFold.agda \
 	$(ROOT)/Core/PRHO.agda \
 	$(ROOT)/Core/Equations/PRFO.agda \
-	$(ROOT)/Core/Models/Setoids/PRFO.agda
+	$(ROOT)/Core/Models/PRHO.agda \
+	$(ROOT)/Core/Models/Setoids/PRFO.agda \
+	$(ROOT)/Core/Translations/PRFOParamorphismFold.agda
 
 .PHONY: all agda-snippets clean
 

@@ -74,17 +74,17 @@ strengthSem (A `⇒ G) (g , u) = λ a → strengthSem G (g a , u)
 strengthSem (` zero) (x , u) = x , u
 strengthSem (ind G) x = other
 
-rollSem : ∀ {G : Ty HO 1} → Sem (G [ ind G ]) → Sem (ind G)
-rollSem {G = `𝟘} x = other
-rollSem {G = `𝟙} x = other
-rollSem {G = G `× H} x = other
-rollSem {G = `𝟙 `+ ` zero} (inj₁ _) = nat zero
-rollSem {G = `𝟙 `+ ` zero} (inj₂ (nat n)) = nat (suc n)
-rollSem {G = `𝟙 `+ ` zero} (inj₂ other) = other
-rollSem {G = G `+ H} x = other
-rollSem {G = A `⇒ G} x = other
-rollSem {G = ` zero} x = other
-rollSem {G = ind G} x = other
+conSem : ∀ {G : Ty HO 1} → Sem (G [ ind G ]) → Sem (ind G)
+conSem {G = `𝟘} x = other
+conSem {G = `𝟙} x = other
+conSem {G = G `× H} x = other
+conSem {G = `𝟙 `+ ` zero} (inj₁ _) = nat zero
+conSem {G = `𝟙 `+ ` zero} (inj₂ (nat n)) = nat (suc n)
+conSem {G = `𝟙 `+ ` zero} (inj₂ other) = other
+conSem {G = G `+ H} x = other
+conSem {G = A `⇒ G} x = other
+conSem {G = ` zero} x = other
+conSem {G = ind G} x = other
 
 paraNat : ∀ {T U : TY HO} →
   (Sem ((NatF [ T `× Natᴴ ]) `× U) → Sem T) →
@@ -122,7 +122,7 @@ structure = record
   ; applyᴹ = λ { (f , x) → f x }
   ; fmapᴹ = fmapSem
   ; strengthᴹ = strengthSem
-  ; rollᴹ = rollSem
+  ; conᴹ = conSem
   ; Pᴹ = PSem
   }
 

@@ -18,33 +18,43 @@ variable
 
 -- Catamorphism in the paramorphism-primitive presentation: drop the
 -- remembered original subterm from the paramorphism layer.
-dropSubtermᴾ : ∀ {T U} (G : Ty FO 1) →
-  (G [ T ]) P.`× U P.→ᴾ T →
-  (G [ T P.`× P.ind G ]) P.`× U P.→ᴾ T
-dropSubtermᴾ G h =
-  P.C h (P.`# (P.C (P.fmap G P.π₁) P.π₁) P.π₂)
+--! CorePRFOParamorphismFoldDerivedP {
+module _ where
+  open P
 
-Fᴾ : ∀ {T U} {G : Ty FO 1} →
-  (G [ T ]) P.`× U P.→ᴾ T →
-  P.ind G P.`× U P.→ᴾ T
-Fᴾ {G = G} h = P.P (dropSubtermᴾ G h)
+  dropSubtermᴾ : ∀ {T U} (G : Ty FO 1) →
+    (G [ T ]) `× U →ᴾ T →
+    (G [ T `× ind G ]) `× U →ᴾ T
+  dropSubtermᴾ G h =
+    C h (`# (C (fmap G π₁) π₁) π₂)
 
--- Paramorphism in the catamorphism-primitive presentation: roll to pairs
+  Fᴾ : ∀ {T U} {G : Ty FO 1} →
+    (G [ T ]) `× U →ᴾ T →
+    ind G `× U →ᴾ T
+  Fᴾ {G = G} h = P (dropSubtermᴾ G h)
+--! }
+
+-- Paramorphism in the catamorphism-primitive presentation: construct pairs
 -- consisting of the recursive result and the original reconstructed subterm.
-rebuildᶠ : ∀ {T U} (G : Ty FO 1) →
-  (G [ T F.`× F.ind G ]) F.`× U F.→ᶠ F.ind G
-rebuildᶠ G =
-  F.C F.roll (F.C (F.fmap G F.π₂) F.π₁)
+--! CorePRFOParamorphismFoldDerivedF {
+module _ where
+  open F
 
-rememberᶠ : ∀ {T U} (G : Ty FO 1) →
-  (G [ T F.`× F.ind G ]) F.`× U F.→ᶠ T →
-  (G [ T F.`× F.ind G ]) F.`× U F.→ᶠ T F.`× F.ind G
-rememberᶠ G h = F.`# h (rebuildᶠ G)
+  rebuildᶠ : ∀ {T U} (G : Ty FO 1) →
+    (G [ T `× ind G ]) `× U →ᶠ ind G
+  rebuildᶠ G =
+    C con (C (fmap G π₂) π₁)
 
-Pᶠ : ∀ {T U} {G : Ty FO 1} →
-  (G [ T F.`× F.ind G ]) F.`× U F.→ᶠ T →
-  F.ind G F.`× U F.→ᶠ T
-Pᶠ {G = G} h = F.C F.π₁ (F.F (rememberᶠ G h))
+  rememberᶠ : ∀ {T U} (G : Ty FO 1) →
+    (G [ T `× ind G ]) `× U →ᶠ T →
+    (G [ T `× ind G ]) `× U →ᶠ T `× ind G
+  rememberᶠ G h = `# h (rebuildᶠ G)
+
+  Pᶠ : ∀ {T U} {G : Ty FO 1} →
+    (G [ T `× ind G ]) `× U →ᶠ T →
+    ind G `× U →ᶠ T
+  Pᶠ {G = G} h = C π₁ (F (rememberᶠ G h))
+--! }
 
 ----------------------------------------------------------------------
 -- Raw translations
@@ -64,7 +74,7 @@ toP (F.`case f g) = P.`case (toP f) (toP g)
 toP F.dist-+-× = P.dist-+-×
 toP (F.fmap G f) = P.fmap G (toP f)
 toP (F.strength G) = P.strength G
-toP F.roll = P.roll
+toP F.con = P.con
 toP (F.F {G = G} h) = Fᴾ (toP h)
 
 toF : ∀ {T U} → T P.→ᴾ U → T F.→ᶠ U
@@ -81,7 +91,7 @@ toF (P.`case f g) = F.`case (toF f) (toF g)
 toF P.dist-+-× = F.dist-+-×
 toF (P.fmap G f) = F.fmap G (toF f)
 toF (P.strength G) = F.strength G
-toF P.roll = F.roll
+toF P.con = F.con
 toF {T = ind G `× U} {U = T} (P.P h) = Pᶠ (toF h)
 
 ----------------------------------------------------------------------
@@ -144,7 +154,7 @@ dropSubterm-paraArgsᴾ G h p =
 
 Fᴾ-β : ∀ {T U} {G : Ty FO 1}
   {h : (G [ T ]) P.`× U P.→ᴾ T} →
-  P.C (Fᴾ {G = G} h) (P.map-× (P.roll {G = G}) (P.id {T = U}))
+  P.C (Fᴾ {G = G} h) (P.map-× (P.con {G = G}) (P.id {T = U}))
   PEq.≈
   P.C h (foldArgsᴾ G (Fᴾ {G = G} h))
 Fᴾ-β {G = G} {h = h} =
@@ -154,7 +164,7 @@ Fᴾ-β {G = G} {h = h} =
 Fᴾ-unique : ∀ {T U} {G : Ty FO 1}
   {h : (G [ T ]) P.`× U P.→ᴾ T}
   {p : P.ind G P.`× U P.→ᴾ T} →
-  P.C p (P.map-× (P.roll {G = G}) (P.id {T = U}))
+  P.C p (P.map-× (P.con {G = G}) (P.id {T = U}))
   PEq.≈ P.C h (foldArgsᴾ G p) →
   p PEq.≈ Fᴾ {G = G} h
 Fᴾ-unique {G = G} {h = h} premise =
@@ -211,7 +221,7 @@ paraArgsᶠ G p = F.`# (F.pmap G (F.`# p F.π₁)) F.π₂
 
 rebuild₀ᶠ : ∀ {U} (G : Ty FO 1) →
   (G [ F.ind G ]) F.`× U F.→ᶠ F.ind G
-rebuild₀ᶠ G = F.C F.roll F.π₁
+rebuild₀ᶠ G = F.C F.con F.π₁
 
 C-#ᶠ : ∀ {A B D E : TY FO}
   {f : B F.→ᶠ D} {g : B F.→ᶠ E} {h : A F.→ᶠ B} →
@@ -241,14 +251,14 @@ pmap-Cᶠ G =
   FEq.≈-trans FEq.C-assoc
     (FEq.C-cong (FEq.≈-sym (FEq.fmap-C G)) FEq.≈-refl)
 
-π₁-roll-mapᶠ : ∀ {U} {G : Ty FO 1} →
-  F.C F.π₁ (F.map-× (F.roll {G = G}) (F.id {T = U}))
-  FEq.≈ F.C F.roll F.π₁
-π₁-roll-mapᶠ = FEq.×-β₁
+π₁-con-mapᶠ : ∀ {U} {G : Ty FO 1} →
+  F.C F.π₁ (F.map-× (F.con {G = G}) (F.id {T = U}))
+  FEq.≈ F.C F.con F.π₁
+π₁-con-mapᶠ = FEq.×-β₁
 
 rebuild₀-foldArgs-π₁ᶠ : ∀ {U} (G : Ty FO 1) →
   F.C (rebuild₀ᶠ {U = U} G) (F.foldArgs G F.π₁)
-  FEq.≈ F.C F.roll F.π₁
+  FEq.≈ F.C F.con F.π₁
 rebuild₀-foldArgs-π₁ᶠ G =
   FEq.≈-trans (FEq.≈-sym FEq.C-assoc)
     (FEq.≈-trans
@@ -259,7 +269,7 @@ rebuild₀-foldArgs-π₁ᶠ G =
   F.π₁ FEq.≈ F.F {G = G} {T = F.ind G} {U = U} (rebuild₀ᶠ G)
 π₁-is-F-rebuild₀ᶠ {U = U} G =
   FEq.F-unique
-    (FEq.≈-trans π₁-roll-mapᶠ
+    (FEq.≈-trans π₁-con-mapᶠ
       (FEq.≈-sym (rebuild₀-foldArgs-π₁ᶠ {U = U} G)))
 
 rebuild-foldArgsᶠ : ∀ {T U} (G : Ty FO 1)
@@ -316,7 +326,7 @@ foldArgs-rememberᶠ {G = G} h =
 
 Pᶠ-β : ∀ {T U} {G : Ty FO 1}
   {h : (G [ T F.`× F.ind G ]) F.`× U F.→ᶠ T} →
-  F.C (Pᶠ {G = G} h) (F.map-× (F.roll {G = G}) (F.id {T = U}))
+  F.C (Pᶠ {G = G} h) (F.map-× (F.con {G = G}) (F.id {T = U}))
   FEq.≈
   F.C h (paraArgsᶠ G (Pᶠ {G = G} h))
 Pᶠ-β {G = G} {h = h} =
@@ -330,7 +340,7 @@ Pᶠ-β {G = G} {h = h} =
 
 rebuild-paraArgsᶠ : ∀ {T U} (G : Ty FO 1)
   (p : F.ind G F.`× U F.→ᶠ T) →
-  F.C (rebuildᶠ G) (paraArgsᶠ G p) FEq.≈ F.C F.roll F.π₁
+  F.C (rebuildᶠ G) (paraArgsᶠ G p) FEq.≈ F.C F.con F.π₁
 rebuild-paraArgsᶠ G p =
   FEq.≈-trans (rebuild-foldArgsᶠ G (F.`# p F.π₁))
     (FEq.≈-trans
@@ -341,7 +351,7 @@ rebuild-paraArgsᶠ G p =
 Pᶠ-unique : ∀ {T U} {G : Ty FO 1}
   {h : (G [ T F.`× F.ind G ]) F.`× U F.→ᶠ T}
   {p : F.ind G F.`× U F.→ᶠ T} →
-  F.C p (F.map-× (F.roll {G = G}) (F.id {T = U}))
+  F.C p (F.map-× (F.con {G = G}) (F.id {T = U}))
   FEq.≈ F.C h (paraArgsᶠ G p) →
   p FEq.≈ Pᶠ {G = G} h
 Pᶠ-unique {G = G} {h = h} {p = p} premise =
@@ -351,7 +361,7 @@ Pᶠ-unique {G = G} {h = h} {p = p} premise =
         (FEq.≈-trans C-#ᶠ
           (FEq.≈-trans
             (FEq.`#-cong premise
-              (FEq.≈-trans π₁-roll-mapᶠ
+              (FEq.≈-trans π₁-con-mapᶠ
                 (FEq.≈-sym (rebuild-paraArgsᶠ G p))))
             (FEq.≈-sym C-#ᶠ)))))
 
@@ -413,7 +423,7 @@ toP-toF (P.`case f g) = PEq.`case-cong (toP-toF f) (toP-toF g)
 toP-toF P.dist-+-× = PEq.≈-refl
 toP-toF (P.fmap G f) = PEq.fmap-cong G (toP-toF f)
 toP-toF (P.strength G) = PEq.≈-refl
-toP-toF P.roll = PEq.≈-refl
+toP-toF P.con = PEq.≈-refl
 toP-toF {T = ind G `× U} {U = T} (P.P h) =
   PEq.P-unique
     (PEq.≈-trans
@@ -434,9 +444,61 @@ toF-toP (F.`case f g) = FEq.`case-cong (toF-toP f) (toF-toP g)
 toF-toP F.dist-+-× = FEq.≈-refl
 toF-toP (F.fmap G f) = FEq.fmap-cong G (toF-toP f)
 toF-toP (F.strength G) = FEq.≈-refl
-toF-toP F.roll = FEq.≈-refl
+toF-toP F.con = FEq.≈-refl
 toF-toP (F.F {G = G} h) =
   FEq.F-unique
     (FEq.≈-trans
       (toF-preserves (Fᴾ-β {G = G} {h = toP h}))
       (FEq.C-cong (toF-toP h) FEq.≈-refl))
+
+----------------------------------------------------------------------
+-- Compact theorem statements used in the paper
+----------------------------------------------------------------------
+
+--! CorePRFOParamorphismFoldLaws {
+module _ where
+  open P
+  open PEq
+
+  Fᴾ-β′ : ∀ {T U} {G : Ty FO 1}
+    {h : (G [ T ]) `× U →ᴾ T} →
+    C (Fᴾ h) (map-× (con {G = G}) id) ≈ C h (foldArgsᴾ G (Fᴾ h))
+  Fᴾ-β′ = Fᴾ-β
+
+  Fᴾ-unique′ : ∀ {T U} {G : Ty FO 1}
+    {h : (G [ T ]) `× U →ᴾ T} {p : ind G `× U →ᴾ T} →
+    C p (map-× (con {G = G}) id) ≈ C h (foldArgsᴾ G p) →
+    p ≈ Fᴾ h
+  Fᴾ-unique′ = Fᴾ-unique
+
+module _ where
+  open F
+  open FEq
+
+  Pᶠ-β′ : ∀ {T U} {G : Ty FO 1}
+    {h : (G [ T `× ind G ]) `× U →ᶠ T} →
+    C (Pᶠ h) (map-× (con {G = G}) id) ≈ C h (paraArgsᶠ G (Pᶠ h))
+  Pᶠ-β′ = Pᶠ-β
+
+  Pᶠ-unique′ : ∀ {T U} {G : Ty FO 1}
+    {h : (G [ T `× ind G ]) `× U →ᶠ T} {p : ind G `× U →ᶠ T} →
+    C p (map-× (con {G = G}) id) ≈ C h (paraArgsᶠ G p) →
+    p ≈ Pᶠ h
+  Pᶠ-unique′ = Pᶠ-unique
+--! }
+
+--! CorePRFOParamorphismFoldEquivalence {
+toP-preserves′ : ∀ {T U} {f g : T F.→ᶠ U} →
+  f FEq.≈ g → toP f PEq.≈ toP g
+toP-preserves′ = toP-preserves
+
+toF-preserves′ : ∀ {T U} {f g : T P.→ᴾ U} →
+  f PEq.≈ g → toF f FEq.≈ toF g
+toF-preserves′ = toF-preserves
+
+toP-toF′ : ∀ {T U} (f : T P.→ᴾ U) → toP (toF f) PEq.≈ f
+toP-toF′ = toP-toF
+
+toF-toP′ : ∀ {T U} (f : T F.→ᶠ U) → toF (toP f) FEq.≈ f
+toF-toP′ = toF-toP
+--! }

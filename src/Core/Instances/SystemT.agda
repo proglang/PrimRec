@@ -69,10 +69,10 @@ app : ∀ {Γ A B : TY HO}
 app f x = Ctx.cut Ctx.eval (Ctx.pair f x)
 
 zeroᴴ : ∀ {Γ : TY HO} → Γ Ctx.⊢ Natᴴ
-zeroᴴ = Ctx.cut Ctx.roll (Ctx.cut Ctx.inl Ctx.unit)
+zeroᴴ = Ctx.cut Ctx.con (Ctx.cut Ctx.inl Ctx.unit)
 
 sucᴴ : ∀ {Γ : TY HO} → Γ Ctx.⊢ Natᴴ `⇒ Natᴴ
-sucᴴ = Ctx.curry (Ctx.cut Ctx.roll (Ctx.cut Ctx.inr Ctx.snd))
+sucᴴ = Ctx.curry (Ctx.cut Ctx.con (Ctx.cut Ctx.inr Ctx.snd))
 
 numeral : ∀ {Γ : TY HO} → Nat.ℕ → Γ Ctx.⊢ Natᴴ
 numeral Nat.zero = zeroᴴ
@@ -175,10 +175,10 @@ module Semantics {ℓ : Level} (M : Model.Model ℓ) where
   app-congᴹ f≈ x≈ = C-congᴹ ≈-reflᴹ (pair-congᴹ f≈ x≈)
 
   zeroᴹ : ∀ {Γ : TY HO} → Γ ⇒ᴹ Natᴴ
-  zeroᴹ = Cᴹ rollᴹ (Cᴹ ι₁ᴹ ⊤ᴹ)
+  zeroᴹ = Cᴹ conᴹ (Cᴹ ι₁ᴹ ⊤ᴹ)
 
   sucᴹ : ∀ {Γ : TY HO} → Γ ⇒ᴹ Natᴴ `⇒ Natᴴ
-  sucᴹ = lamᴹ (Cᴹ rollᴹ (Cᴹ ι₂ᴹ π₂ᴹ))
+  sucᴹ = lamᴹ (Cᴹ conᴹ (Cᴹ ι₂ᴹ π₂ᴹ))
 
   numeralᴹ : ∀ {Γ : TY HO} → Nat.ℕ → Γ ⇒ᴹ Natᴴ
   numeralᴹ Nat.zero = zeroᴹ

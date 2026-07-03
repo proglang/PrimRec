@@ -42,7 +42,7 @@ data _→ᶠ_ : TY FO → TY FO → Set where
 
   --! CorePRFOFoldPrimitive {
   -- inductive types and catamorphism
-  roll      : G [ ind G ] →ᶠ ind G
+  con      : G [ ind G ] →ᶠ ind G
   F         : (G [ T ]) `× U →ᶠ T
     → ind G `× U →ᶠ T
   --! }

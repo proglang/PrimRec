@@ -127,13 +127,27 @@ formalized in Agda~\cite{DBLP:conf/afp/Norell08} through point-free
 calculi, with a checked artifact and explicit correspondence between
 the paper and Agda modules.
 
+Primitive recursive functions have been part of recursion theory since
+the early work of Skolem and Curry; Curry attributes the basic idea to
+Skolem's recursive arithmetic~\cite{skolem23,curry41:_formal_recur_arith}.
+Kleene's work on general recursive functions made the contrast between
+primitive recursion and unrestricted recursion a standard one
+in computability theory~\cite{kleene36:_gener_recur_funct_natur_number}.
+Well-known total functions outside primitive recursion, such as
+Ackermann's function, Knuth's up-arrow notation, and Conway's arrow
+notation, motivate higher-order extensions of the basic
+system~\cite{szasz1991machine,knuth76:_mathem_comput_scien,conway96:_book_number,DBLP:journals/corr/Widemann16}.
+
 \paragraph{Contributions.}
 \begin{itemize}
 \item Categorical, point-free core calculi for first-order and
   higher-order primitive recursion.
 \item Equational theories with setoid equality on hom-sets.
-\item Models and interpretation soundness for paramorphism-
-  primitive and fold-primitive presentations.
+\item A model-level distributivity theorem for \PRHO{}: every
+  law-bearing \PRHO{} model validates the canonical distributivity
+  isomorphism derived from exponentials.
+\item Models and interpretation soundness for both recursion
+  primitives.
 \item Formal translations between paramorphism-primitive and
   fold-primitive calculi, including equation preservation and round
   trips up to the equational theory.
@@ -245,7 +259,8 @@ embedding.}
 Before turning to the Agda artifact, we spell out the mathematical
 pattern that the artifact abstracts.  The starting point is the familiar
 class of primitive recursive functions on natural numbers.  In the usual
-presentation, an \(n\)-ary program denotes a function
+presentation~\cite{martin2019logik,wiki:Primitive_recursive_function},
+an \(n\)-ary program denotes a function
 \(\mathbb{N}^n \to \mathbb{N}\).  The basic programs are zero,
 successor, and projections; larger programs are built by composition and
 by a primitive-recursion constructor.
@@ -334,15 +349,15 @@ checked translation from one concrete source language, such as
 translation shows that the concrete language is not a separate calculus:
 it is an instance of the same point-free structure.
 
-The next step is higher order.  Harper's textbook presentation of
-System~T~\cite{DBLP:books/cu/Ha2016} extends simply typed lambda
-calculus with natural numbers and a natural-number recursor.  Our
-higher-order core, \PRHO{}, adds exponentials to the first-order
-categorical language, yielding a point-free counterpart of function
-types, abstraction, and application.  This makes it possible to connect
-System~T directly to \PRHO{} and then to view simply typed lambda
-calculus with polynomial inductive types as the contextual presentation
-of the same structure.
+The next step is higher order.  G\"odel's System~T~\cite{goedel58}, in
+Harper's textbook presentation~\cite[Chapter~9]{DBLP:books/cu/Ha2016},
+extends simply typed lambda calculus with natural numbers and their
+recursor.  Our higher-order core, \PRHO{}, adds
+exponentials to the first-order categorical language, yielding a
+point-free counterpart of function types, abstraction, and application.
+This makes it possible to connect System~T directly to \PRHO{} and then
+to view simply typed lambda calculus with polynomial inductive types as
+the contextual presentation of the same structure.
 
 Table~\ref{tab:artifact-map} maps the main paper claims to the checked
 Agda modules.
@@ -381,6 +396,33 @@ higher-order calculi, \PRHO{} and \PRHOF{}, extend the same syntax with
 exponentials.  The suffix-free calculi take paramorphism as primitive;
 the \(F\)-suffixed calculi take fold as primitive.
 
+\subsection{Target Categories}
+\label{sec:target-categories}
+
+The target of compilation is not Agda's category of types.  Each core
+calculus presents a syntactic category.  Write
+\(\mathcal{C}_{\mathsf{FO}}^P\),
+\(\mathcal{C}_{\mathsf{FO}}^F\),
+\(\mathcal{C}_{\mathsf{HO}}^P\), and
+\(\mathcal{C}_{\mathsf{HO}}^F\) for the categories presented by the four
+calculi.  In each case, objects are closed type codes
+\(A : \AgdaDatatype{Ty}\ \AgdaBound{md}\ 0\).  Morphisms
+\(A \to B\) are arrows of the corresponding intrinsic syntax modulo the
+generated equality relation described in
+Section~\ref{sec:equations-models}; in Agda, this quotient is represented
+as a hom-setoid rather than as a quotient type.
+
+Thus \(\mathcal{C}_{\mathsf{FO}}^P\) and
+\(\mathcal{C}_{\mathsf{FO}}^F\) are the first-order target categories:
+they have finite products and coproducts, the type-code endofunctors with
+their functorial action and strength, chosen initial-algebra objects
+\(\mu G\), and either paramorphisms or folds satisfying their laws.
+Likewise, \(\mathcal{C}_{\mathsf{HO}}^P\) and
+\(\mathcal{C}_{\mathsf{HO}}^F\) add closed-domain exponentials and their
+beta/eta laws.  The instance compilers land in these syntactic
+categories; the set interpreter and the model interfaces later in the
+paper are semantics of these categories, not the targets themselves.
+
 All four calculi share the same type language, parameterized by a mode.
 The mode index \AgdaBound{md} prevents exponentials from appearing in first-order
 types, while allowing the rest of the grammar to be reused unchanged.
@@ -408,12 +450,14 @@ of the Agda datatype.  The first-order core with primitive paramorphisms
 is shown below.  The constructors up to \AgdaInductiveConstructor{`case}
 are the usual categorical structure for finite products and coproducts.
 The constructor \AgdaInductiveConstructor{dist-+-×} is included as
-first-order infrastructure.  The constructors \AgdaInductiveConstructor{fmap}
-and \AgdaInductiveConstructor{strength} make polynomial functors
-available at the term level, and \AgdaInductiveConstructor{P} is the
-primitive paramorphism operator.  We write \AgdaBound{G}\AgdaSpace{}[
-\AgdaBound{T}\AgdaSpace{}] for substituting \AgdaBound{T} for the
-bound type variable in \AgdaBound{G}.
+first-order infrastructure, following the standard notion of a
+distributive category~\cite{cockett_1993}.  The constructors
+\AgdaInductiveConstructor{fmap} and \AgdaInductiveConstructor{strength}
+make polynomial functors available at the term level, and
+\AgdaInductiveConstructor{P} is the primitive paramorphism operator.  We
+write \AgdaBound{G}\AgdaSpace{}[ \AgdaBound{T}\AgdaSpace{}] for
+substituting \AgdaBound{T} for the bound type variable in
+\AgdaBound{G}.
 
 {\small
 \CorePRFOSyntax*
@@ -422,7 +466,7 @@ bound type variable in \AgdaBound{G}.
 The type of \AgdaInductiveConstructor{P} is the categorical version of
 primitive induction.  Given an input of type \AgdaDatatype{ind}
 \AgdaBound{G} and parameters \AgdaBound{U}, the step arrow receives the
-one-layer unrolling of the inductive value where recursive positions
+one-layer unconstructing of the inductive value where recursive positions
 carry both the already computed result of type \AgdaBound{T} and the
 original substructure of type \AgdaDatatype{ind} \AgdaBound{G}.  This is
 the paramorphism distinction: a step can inspect the original recursive
@@ -454,11 +498,16 @@ One reason to separate the first- and higher-order cores is that some
 categorical structure can be primitive in one presentation and derived
 in another.  In \PRFO{}, distributivity is a constructor.  In \PRHO{},
 it is definable from exponentials, case analysis, lambda abstraction,
-and application:
+and application, following the standard cartesian-closed construction
+for coproduct/product distributivity~\cite{https://doi.org/10.48550/arxiv.1406.0961}:
 
 {\small
 \CorePRHODerivedDist
 }
+
+The model-level status of this derived arrow is stated after the model
+interface has been introduced, in
+Section~\ref{sec:prho-model-distributivity}.
 
 \subsection{Derived Operations}
 \label{sec:core-calculi-derived}
@@ -551,41 +600,375 @@ proofs of equality preservation.  The same pattern is repeated for the
 fold-primitive variants and for the higher-order calculi; only the list
 of primitive operations and laws changes.
 
+\section{Distributivity in \PRHO{} Models}
+\label{sec:prho-model-distributivity}
+
+We can now state the distributivity result at the level where it is
+used.  The definition from Section~\ref{sec:core-calculi-ho} is not only
+a property of the concrete Agda set interpretation.  The model interface
+for \PRHO{} has no distributivity field: a model supplies the
+categorical operations, coproducts, products, exponentials with their
+beta/eta laws, functorial action, strength, and primitive recursion laws.
+Inside the module parameterized by an arbitrary \(M :
+\AgdaRecord{Model}\ \ell\), Agda states the result as follows:
+
+{\small
+\CorePRHOModelDistributivity*
+}
+
+The arrows \AgdaFunction{distᴹ} and \AgdaFunction{undistᴹ} are derived
+from the model structure, not supplied as fields of the model.  The two
+proofs are obtained by applying interpretation soundness to the syntactic
+\PRHO{} proofs \AgdaFunction{Core.Equations.PRHO.dist-undist} and
+\AgdaFunction{Core.Equations.PRHO.undist-dist}.  Thus the result applies
+to every structure packaged as a \PRHO{} model; the category of Agda
+types is only one instance of that interface.  For a nontrivial model,
+such as a functor-category model with more complicated exponentials, the
+remaining obligation is to instantiate the \PRHO{} model interface and
+prove the beta/eta and recursion laws for that model.  Distributivity
+then follows from the generic theorem above, rather than from any
+set-specific calculation.
+
 \section{Paramorphisms and Folds}
 \label{sec:paramorphisms-folds}
 
-Present the two primitive choices:
-paramorphism primitive (\(P\)) and fold primitive (\(F\)).  State the
-formal interdefinability theorem:
-translations in both directions preserve equations and compose to the
-identity up to the appropriate equational theory.
+The preceding sections treat \(P\) and \(F\) as two alternative primitive
+choices.  This section explains why the artifact contains both.  A fold,
+or catamorphism, is the simpler eliminator: its step is given a layer
+\(G[T]\) of recursive results and parameters \(U\), and returns a result
+of type \(T\)~\cite{DBLP:conf/fpca/MeijerFP91}.  A paramorphism is more
+informative: its step is given a layer \(G[T \times \mu G]\), so every
+recursive position contains both the recursive result and the original
+substructure.  The paramorphism presentation is convenient for compiling
+primitive-recursion source languages, where successor and tree
+constructors often expose the predecessor or child in addition to the
+recursive value.  The fold presentation is convenient as a conventional
+categorical interface, including in higher-order settings with
+exponentials~\cite{DBLP:conf/fpca/MeijerH95}.
+
+The two presentations are nevertheless interdefinable.  If \(P\) is
+primitive, a fold is obtained by discarding the remembered original
+subterm before invoking \(P\):
+
+{\small
+\CorePRFOParamorphismFoldDerivedP*
+}
+
+If \(F\) is primitive, a paramorphism is obtained by folding to pairs:
+each recursive result is paired with the subterm rebuilt from the
+functor layer:
+
+{\small
+\CorePRFOParamorphismFoldDerivedF*
+}
+
+The definition \AgdaFunction{Fᴾ} says that a fold algebra
+\(G[T]\times U \to T\) can be run by first applying
+\AgdaFunction{dropSubtermᴾ}, which projects away the original subterm
+from the paramorphism layer.  Conversely, \AgdaFunction{Pᶠ} runs a fold
+whose intermediate result is a pair.  The auxiliary
+\AgdaFunction{rebuildᶠ} reconstructs the current substructure, while
+\AgdaFunction{rememberᶠ} pairs that substructure with the result computed
+by the paramorphism step.
+
+The definitions alone are not enough: they must satisfy the laws expected
+of the primitive they define.  The formalization proves the beta and
+uniqueness principles in both directions.  For a fold encoded using
+paramorphisms, the laws are:
+
+{\small
+\CorePRFOParamorphismFoldLaws*
+}
+
+The first pair of statements shows that \AgdaFunction{Fᴾ} behaves like a
+fold: after one constructor step it applies its algebra to
+\AgdaFunction{foldArgsᴾ}, and any arrow satisfying the same equation is
+equal to \AgdaFunction{Fᴾ}.  The second pair states the corresponding
+facts for \AgdaFunction{Pᶠ}: the encoded paramorphism satisfies the
+paramorphism beta law and is unique among arrows satisfying that law.  The
+proofs are ordinary derivations in the generated equation layers.  For
+example, the proof of the fold beta law uses the paramorphism beta law,
+then proves that the extra subterm component prepared by
+\AgdaFunction{paraArgs} is eliminated by \AgdaFunction{dropSubtermᴾ}.
+
+The translations extend homomorphically over all non-recursive syntax.
+Only the recursive constructor changes: \(F\) is translated to
+\AgdaFunction{Fᴾ}, and \(P\) is translated to \AgdaFunction{Pᶠ}.  The
+translation theorems state two facts.  First, both translations preserve
+the generated equations.  Second, translating there and back yields an
+arrow equal to the original one in the appropriate equational theory:
+
+{\small
+\CorePRFOParamorphismFoldEquivalence*
+}
+
+These four theorems are the formal content of the \(P/F\) equivalence
+arrows in Figure~\ref{fig:contribution-overview}.  They are proved
+separately for \PRFO{} and \PRHO{}.  The higher-order proof follows the
+same structure as the first-order proof, with additional cases for
+lambda abstraction, application, and the higher-order beta/eta laws.
+Thus the choice of taking \(P\) or \(F\) as primitive is not a semantic
+commitment: it is a presentation choice, and the artifact checks that the
+two presentations define the same theory up to their generated
+equalities.
 
 \section{Instances}
 \label{sec:instances}
 
-Summarize the verified instances: natural numbers, finite alphabets and
-words, trees, and many-sorted signatures.  Explain the semantic
-correctness statements and representation theorems.
+The core calculi are intentionally small; the instance layer shows that
+they are expressive enough to host the concrete source languages that
+motivated the development.  Each first-order instance follows the same
+pattern.  A source language defines its own typed syntax and evaluator.
+The instance module chooses a closed \PRFO{} type for the source data,
+defines a structurally recursive compiler
+\(\AgdaFunction{compile}\), and proves that the compiled arrow has the
+same meaning as a direct categorical denotation in every \PRFO{} model.
+For a source program \(p\), the characteristic theorem has the shape
+\begin{equation}
+\label{eq:instance-preservation}
+  \AgdaFunction{interpret}\;(\AgdaFunction{compile}\;p)
+  \;\approx_M\;
+  \AgdaFunction{denote}\;p .
+\end{equation}
+Thus the compiler is not validated only by the executable Agda set
+semantics; it is validated parametrically for all models of the target
+calculus.
+
+\paragraph{Natural numbers.}
+The natural-number instance embeds the original \AgdaFile{PR-Nat}
+language.  The target type is \(\mu X.\,1+X\), written
+\AgdaFunction{Nat}; zero and successor compile to the two injections
+followed by \AgdaInductiveConstructor{con}.  Composition compiles to
+categorical composition and tupling.  The two primitive-recursion
+constructors in the legacy source, one written as a paramorphism and one
+as a fold-style recursor, are both compiled to the paramorphism primitive
+of \PRFO{} by building the appropriate case handler over the one-step
+unfolding of natural numbers.  The theorem \AgdaFunction{preserves} in
+the nested \AgdaModule{Semantics} module states that interpretation of
+the compiled \PRFO{} arrow agrees with the direct source denotation in an
+arbitrary \PRFO{} model.
+
+\paragraph{Words.}
+The word instance handles primitive recursion over words.  For an
+alphabet of size \(k\), the target is the initial algebra for a signature
+with one nullary constructor for the empty word and one unary constructor
+for each letter.  The compiler maps the empty-word constant and letter
+constructors to the corresponding \PRFO{} constructors, projections to
+product projections, and the word recursor to a paramorphism whose
+handler has one branch for the empty word and one branch for each letter.
+The same module also provides a wrapper for an arbitrary finite alphabet
+\(A\): a finite presentation supplies encode/decode maps between \(A\)
+and \(\AgdaDatatype{Fin}\;k\), and the compiler targets the corresponding
+\(k\)-letter word type.
+
+\paragraph{Ranked and many-sorted trees.}
+The ranked-tree instance compiles a source language over a ranked
+signature.  Such a signature determines the polynomial
+\(\sum_{c\in\Sigma} X^{\mathsf{ar}(c)}\); the target type is the
+corresponding \PRFO{} tree type, and each source constructor compiles to
+the generic constructor arrow \AgdaFunction{conᴾ}.  The paramorphism case
+uses a generic handler built from the rank vector, so each constructor
+branch receives the recursive results and the original children in the
+order expected by the source evaluator.
+
+The many-sorted instance extends this pattern to many-sorted signatures.
+The source language is intrinsically sorted: programs carry their input
+and output sorts in their indices, and environments are sorted vectors of
+terms.  The target \PRFO{} type erases the sort index to a single tagged
+tree algebra \AgdaFunction{Target}; source typing is still used to
+construct only well-sorted programs, while the compiler itself reuses the
+ranked-tree compiler after erasing the sort indices.  The preservation
+theorem again states that the compiled arrow agrees with the direct
+sorted denotation in every \PRFO{} model.
+
+\paragraph{Representation theorems.}
+The model-level preservation schema in
+Equation~\ref{eq:instance-preservation} says that the categorical
+compiler commutes with categorical denotation.  The representation
+modules give the corresponding executable correctness statements for the
+concrete set interpreter.  That interpreter is backed by
+\AgdaFile{Core.Semantics.Inductive}, which implements the closed
+inductive carriers as a W-style fixed point of container descriptions,
+and by a separate evaluator for the supported flat \PRFO{} fragment.  The
+representation modules define encodings of source values as elements of
+the compiled target type, prove that these encodings satisfy the relevant
+logical relation \(\AgdaFunction{Related}\), and use the fundamental
+theorem \(\AgdaFunction{correct}\) from the corresponding concrete module.
+The theorem \(\AgdaFunction{correct}\) says that, for any related input
+environment, evaluating the supported compiled \PRFO{} program produces a
+result related to the source evaluator's result.  The representation
+modules then specialize this theorem to encoded inputs as
+\AgdaFunction{compiler-correct-on-representations} for natural numbers,
+words, ranked trees, and many-sorted trees.
+
+\paragraph{System T}
+The higher-order instance translates the legacy System~T syntax into
+contextual \PRHO{} and then into point-free \PRHO{}.  Source types
+translate by sending \(\mathsf{Nat}\) to \(\mu X.\,1+X\) and function
+types to \PRHO{} exponentials; contexts translate to products.  Variables
+become projections, lambda abstraction and application become
+curry/evaluation, numerals are built from zero and successor, and the
+System~T recursor elaborates to the \PRHO{} paramorphism over natural
+numbers.  The module proves that the contextual translation reifies back
+to the elaborated contextual term, that contextual equations are
+preserved by compilation, and that in any \PRHO{} model the interpreted
+point-free arrow agrees with a direct structural denotation of the
+System~T term.  For the executable set model, the module defines a
+logical relation over translated System~T types and proves its
+fundamental theorem \(\AgdaFunction{concrete-correct}\): related
+environments are mapped to related results.  The closed natural-number
+corollary \AgdaFunction{closed-nat-correct} states that a closed System~T
+numeral program computes to the concrete encoding of the legacy
+evaluator's result.
+
+\begin{table}
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+Instance & Compiler & Concrete theorem \\
+\midrule
+Nat & \AgdaFile{Nat} & \AgdaFile{Representation.Nat} \\
+Words & \AgdaFile{Words} & \AgdaFile{Representation.Words} \\
+Trees & \AgdaFile{Trees} & \AgdaFile{Representation.Trees} \\
+Many-sorted & \AgdaFile{ManySorted} &
+  \AgdaFile{Representation.ManySorted} \\
+System~T & \AgdaFile{SystemT} & \AgdaFunction{concrete-correct} \\
+\bottomrule
+\end{tabular}
+\caption{Verified instance translations.  Module names in the two right
+columns are relative to \AgdaFile{Core.Instances}.}
+\label{tab:instances}
+\end{table}
 
 \section{Formalization Design}
 \label{sec:formalization-design}
 
-CPP reviewers usually expect design tradeoffs.  Discuss:
-\begin{itemize}
-\item intrinsic syntax versus contextual syntax;
-\item setoids instead of quotients;
-\item strictly positive descriptions/containers for inductive types;
-\item guardedness and finitary fragments;
-\item why distributivity is treated as infrastructure, not novelty;
-\item safe Agda checking and the role of \AgdaFile{Everything.agda}.
-\end{itemize}
+Several design choices are visible in the Agda artifact but easy to miss
+from the mathematical presentation alone.
+
+\paragraph{Intrinsic point-free targets.}
+The core calculi are intrinsically typed: the source and target objects
+of an arrow are indices of the Agda datatype, so ill-typed target arrows
+cannot be constructed.  This is convenient for categorical syntax,
+because products, coproducts, exponentials, functorial action, strength,
+and recursion all have their categorical arities in their constructors.
+It also means that the compilers produce target arrows directly, rather
+than producing untyped syntax plus a separate typing derivation.  The
+shared type grammar is indexed by a first-order/higher-order mode, which
+lets the first-order and higher-order developments share substitution and
+renaming while preventing exponentials from appearing in first-order
+types.
+
+\paragraph{Contextual syntax as a front end.}
+The artifact also keeps contextual calculi for the cases where ordinary
+typed syntax is the right interface.  Their judgement
+\(\Gamma \vdash A\) can be read as the simply typed fragment of a
+category with families in the sense of
+Dybjer~\cite{Dybjer1996InternalTypeTheory}; more precisely, it is close
+to the simply typed CwFs of
+Castellan, Clairambault, and Dybjer~\cite{CastellanClairambaultDybjer2021CwF}.
+Contexts are closed objects, substitutions are arrows
+\(\Delta \to \Gamma\), terms are arrows \(\Gamma \to A\), the empty
+context is the terminal object, and context extension is product.
+Since types are closed and do not depend on terms, reindexing of types is
+trivial; this is a constant-family CwF-style presentation, not a
+dependent CwF.
+
+This bridge is used concretely by the System~T instance.  Its
+translation is written against contextual \PRHO{}, because that is the
+natural shape of simply typed lambda terms, while the resulting programs
+still live in the same point-free target category as the other
+instances.  The module \AgdaFile{ContextualPRHO} in
+\AgdaFile{Core.Translations} defines compile and reify maps between the
+two presentations, proves that they are mutually inverse on raw syntax,
+and proves that both maps preserve the independently generated
+equations.  The contextual syntax is therefore not a second semantics,
+but a CwF-style interface to the same target category described in
+Section~\ref{sec:target-categories}.
+
+\paragraph{Setoids instead of quotients.}
+The equational theories are generated inductively over raw arrows, and
+the model interfaces carry an explicit equality relation with the
+required laws.  The corresponding homs are packaged as standard-library
+setoids.  This avoids quotient types and keeps all code in Agda's safe
+fragment, at the cost of making equality preservation and congruence
+proofs explicit.  That tradeoff is deliberate: it keeps the syntax
+inspectable and executable while still letting the paper state the
+categorical results in terms of hom-setoids.
+
+\paragraph{Type codes, guardedness, and containers.}
+The syntax of types is intentionally larger than the class of type codes
+that should be used to form inductive objects.  The artifact therefore
+separates raw \AgdaDatatype{Ty} codes from validated codes: guardedness
+checks that the recursive variable occurs below a data constructor, and
+well-formedness checks this condition recursively under nested
+\AgdaInductiveConstructor{ind}.  Clients validate type codes at language
+boundaries instead of assuming that every raw code is productive.  The
+set interpretation maps type codes to indexed containers, and closed
+inductive types are interpreted by a W-style fixed point of those
+containers.  This gives executable constructor, destructor, fold, and paramorphism
+operations without using termination or positivity pragmas.  The
+formalization also records which codes are polynomial: first-order codes
+are polynomial, while higher-order exponentials may introduce infinitely
+many positions.  This container-based route replaces the earlier
+prototype's induction-recursive generic algebra; induction-recursion is
+a standard way to organize such initial-algebra
+constructions~\cite{DBLP:journals/apal/DybjerS03}, but it is not needed
+in the checked core presented here.
+
+\paragraph{Two primitive recursion presentations.}
+The artifact contains both paramorphism-primitive and fold-primitive
+calculi, rather than hiding the choice behind one overloaded interface.
+This creates some parallel definitions and proofs, but it makes the
+presentation-specific laws explicit and lets the translations of
+Section~\ref{sec:paramorphisms-folds} be stated as checked
+interdefinability theorems.  In particular, the first-order and
+higher-order P/F results are not informal meta-level observations: they
+are equation-preserving translations with round trips in the generated
+equational theories.
+
+\paragraph{Infrastructure.}
+Distributivity is treated as categorical infrastructure, not as a source
+feature.  In the first-order target it is a
+primitive operation because bicartesian first-order structure alone does
+not provide exponentials.  In \PRHO{}, the distributivity arrow is
+derived from the exponential structure, and
+Section~\ref{sec:prho-model-distributivity} proves that this derivation
+is valid in every \PRHO{} model.  This design keeps the model interface
+honest: higher-order models need not provide distributivity as an extra
+field.
+
+\paragraph{Checked entry point.}
+The module \AgdaFile{Everything.agda} is the trusted entry point for the
+new development.  It imports the core syntax, equations, model
+interfaces, set semantics, contextual syntax, translations, and verified
+instances, all under Agda's \AgdaKeyword{--safe} option.  Legacy bridge
+modules that rely on older unsafe or termination-marked code are kept
+outside this aggregate; they are useful for comparison, but they are not
+part of the checked claim made by the paper.
 
 \section{Related Work}
 \label{sec:related-work}
 
-Position the work relative to primitive recursion, System~T, categorical
-semantics, mechanized metatheory, Agda formalizations of syntax with
-binders, and libraries for containers or W-types.
+The historical baseline is the classical theory of primitive recursive
+and general recursive functions~\cite{skolem23,curry41:_formal_recur_arith,kleene36:_gener_recur_funct_natur_number}.
+Our first-order instances keep the ordinary textbook presentation of
+primitive recursion on natural numbers~\cite{martin2019logik,wiki:Primitive_recursive_function},
+but factor it through a typed categorical target.  The use of folds and
+related recursion schemes follows the categorical-programming line of
+work on catamorphisms and higher-order
+folds~\cite{DBLP:conf/fpca/MeijerFP91,DBLP:conf/fpca/MeijerH95}.
+
+On the semantic side, the first-order core uses distributive categories
+in Cockett's sense~\cite{cockett_1993}, while the higher-order core uses
+the cartesian-closed construction of distributivity studied by
+Benini~\cite{https://doi.org/10.48550/arxiv.1406.0961}.  The
+higher-order instance is related to G\"odel's System~T~\cite{goedel58}
+and to presentations of System~T in modern type-theoretic
+texts~\cite{DBLP:books/cu/Ha2016}.  The Agda formalization itself is in
+the tradition of mechanized metatheory in dependently typed languages,
+using Agda as introduced by Norell~\cite{DBLP:conf/afp/Norell08}.
 
 \section{Conclusion}
 \label{sec:conclusion}

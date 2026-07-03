@@ -135,7 +135,7 @@ injectBranch {T = T} rs i rewrite branches-sub rs T = injectAt rs i
 
 conᴾ : ∀ {k} (rs : Vec ℕ k) (i : Fin k) →
        vec (Tree rs) (lookup rs i) →ᴾ Tree rs
-conᴾ rs i = C roll (injectBranch rs i)
+conᴾ rs i = C con (injectBranch rs i)
 
 caseAt : ∀ {k T U V} (rs : Vec ℕ k) →
   ((i : Fin k) → vec T (lookup rs i) `× U →ᴾ V) →

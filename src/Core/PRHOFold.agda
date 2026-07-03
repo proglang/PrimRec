@@ -42,7 +42,7 @@ data _→ᶠ_ : TY HO → TY HO → Set where
   strength : (G : Ty HO 1) → (G [ T ]) `× U →ᶠ G [ T `× U ]
 
   -- inductive types and catamorphism
-  roll : G [ ind G ] →ᶠ ind G
+  con : G [ ind G ] →ᶠ ind G
   F : (G [ T ]) `× U →ᶠ T
     → ind G `× U →ᶠ T
 

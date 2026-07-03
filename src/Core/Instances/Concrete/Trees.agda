@@ -94,7 +94,7 @@ para-con : ∀ {k n} (rs : Vec ℕ k)
         children , parameters))
 para-con {k = k} {n = n} rs steps ss i children parameters =
   trans
-    (para-rollFlat-β {G = Branches rs} {T = Tree rs}
+    (para-conFlat-β {G = Branches rs} {T = Tree rs}
       {U = vec (Tree rs) n} (flatBranches rs)
       handlerSem
       (eval (supported-injectBranch {T = Tree rs} rs i) children) parameters)

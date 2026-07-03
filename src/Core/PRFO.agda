@@ -42,9 +42,8 @@ data _→ᴾ_ : TY FO → TY FO → Set where
   strength  : (G : Ty FO 1) → (G [ T ]) `× U →ᴾ G [ T `× U ]
 
   -- inductive types and primitive recursion
-  roll      : G [ ind G ] →ᴾ ind G
-  P         : (G [ T `× ind G ]) `× U →ᴾ T
-    → ind G `× U →ᴾ T
+  con      : G [ ind G ] →ᴾ ind G
+  P         : (G [ T `× ind G ]) `× U →ᴾ T → ind G `× U →ᴾ T
 --! }
 
 --! CorePRFODerivedOperations {

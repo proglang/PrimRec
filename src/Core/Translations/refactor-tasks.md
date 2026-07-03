@@ -16,7 +16,7 @@ treated as an optional extension rather than baked into the argument.
 
 1. Define a small record for the shared syntax surface:
    category operations, terminal/initial objects, products, sums, functorial
-   action, strength, `roll`, and either primitive `P` or primitive `F`.
+   action, strength, `con`, and either primitive `P` or primitive `F`.
 2. Define a corresponding record of equations:
    congruence, category/product/sum laws, functoriality, strength naturality,
    `strength-π₁`, and the primitive recursion or fold computation/uniqueness

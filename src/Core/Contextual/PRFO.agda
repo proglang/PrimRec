@@ -29,7 +29,7 @@ data _⊢_ : TY FO → TY FO → Set where
   fmap : (G : Ty FO 1) → (A ⊢ B) → (G [ A ] ⊢ G [ B ])
   strength : (G : Ty FO 1) → (G [ A ]) `× B ⊢ G [ A `× B ]
 
-  roll : G [ ind G ] ⊢ ind G
+  con : G [ ind G ] ⊢ ind G
   prec : ((G [ A `× ind G ]) `× B ⊢ A)
     → (ind G `× B ⊢ A)
 

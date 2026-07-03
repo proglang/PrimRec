@@ -44,7 +44,7 @@ data _→ᴾ_ : TY HO → TY HO → Set where
   strength : (G : Ty HO 1) → (G [ T ]) `× U →ᴾ G [ T `× U ]
 
   -- inductive types and primitive recursion
-  roll : G [ ind G ] →ᴾ ind G
+  con : G [ ind G ] →ᴾ ind G
   P : ((G [ T `× ind G ]) `× U →ᴾ T)
     → (ind G `× U →ᴾ T)
 

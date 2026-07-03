@@ -24,7 +24,7 @@ compile (Ctx.cases t u) = PF.`case (compile t) (compile u)
 compile Ctx.dist-+-× = PF.dist-+-×
 compile (Ctx.fmap G t) = PF.fmap G (compile t)
 compile (Ctx.strength G) = PF.strength G
-compile Ctx.roll = PF.roll
+compile Ctx.con = PF.con
 compile (Ctx.prec h) = PF.P (compile h)
 
 reify : ∀ {Γ A} → Γ PF.→ᴾ A → Γ Ctx.⊢ A
@@ -41,7 +41,7 @@ reify (PF.`case f g) = Ctx.cases (reify f) (reify g)
 reify PF.dist-+-× = Ctx.dist-+-×
 reify (PF.fmap G f) = Ctx.fmap G (reify f)
 reify (PF.strength G) = Ctx.strength G
-reify PF.roll = Ctx.roll
+reify PF.con = Ctx.con
 reify (PF.P h) = Ctx.prec (reify h)
 
 compile-reify : ∀ {Γ A} (f : Γ PF.→ᴾ A) → compile (reify f) ≡ f
@@ -58,7 +58,7 @@ compile-reify (PF.`case f g) = cong₂ PF.`case (compile-reify f) (compile-reify
 compile-reify PF.dist-+-× = refl
 compile-reify (PF.fmap G f) = cong (PF.fmap G) (compile-reify f)
 compile-reify (PF.strength G) = refl
-compile-reify PF.roll = refl
+compile-reify PF.con = refl
 compile-reify (PF.P h) = cong PF.P (compile-reify h)
 
 reify-compile : ∀ {Γ A} (t : Γ Ctx.⊢ A) → reify (compile t) ≡ t
@@ -75,7 +75,7 @@ reify-compile (Ctx.cases t u) = cong₂ Ctx.cases (reify-compile t) (reify-compi
 reify-compile Ctx.dist-+-× = refl
 reify-compile (Ctx.fmap G t) = cong (Ctx.fmap G) (reify-compile t)
 reify-compile (Ctx.strength G) = refl
-reify-compile Ctx.roll = refl
+reify-compile Ctx.con = refl
 reify-compile (Ctx.prec h) = cong Ctx.prec (reify-compile h)
 
 compile-reify≈ : ∀ {Γ A} (f : Γ PF.→ᴾ A) → compile (reify f) PFEq.≈ f

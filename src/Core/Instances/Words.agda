@@ -77,7 +77,7 @@ letterSymbol : ∀ {k} → Fin k → Fin (suc k)
 letterSymbol = suc
 
 emptyCon : ∀ {k} → vec (Word k) 0 →ᴾ Word k
-emptyCon = C roll ι₁
+emptyCon = C con ι₁
 
 injectLetterAt : ∀ {k T} (a : Fin k) →
   vec T 1 →ᴾ LetterF k [ T ]
@@ -89,7 +89,7 @@ injectLetter : ∀ {k T} (a : Fin k) →
 injectLetter a = C ι₂ (injectLetterAt a)
 
 letterCon : ∀ {k} (a : Fin k) → vec (Word k) 1 →ᴾ Word k
-letterCon {k} a = C roll (injectLetter a)
+letterCon {k} a = C con (injectLetter a)
 
 caseLettersAt : ∀ {k T U V} →
   ((a : Fin k) → vec T 1 `× U →ᴾ V) →
