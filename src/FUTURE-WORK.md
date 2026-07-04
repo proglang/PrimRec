@@ -1,4 +1,4 @@
-# Future Work: Positive Higher-Order Type Operators
+# Future Work: Mixed-Variance Higher-Order Type Operators
 
 The current PR-HO type syntax restricts function domains to closed
 types:
@@ -7,49 +7,61 @@ types:
 _`=>_ : forall {n} -> Ty HO 0 -> Ty HO n -> Ty HO n
 ```
 
-This avoids mixed variance.  If a type expression has the shape
-`A X => B X`, then occurrences of `X` in `A X` are contravariant in the
-whole type.  Given an arrow `f : T -> U`, functoriality for the whole
-type would require a map
+This is a conservative way to avoid mixed variance.  Exponentials are
+not covariant in both arguments: categorically they are bifunctorial as
 
 ```text
-(A T => B T) -> (A U => B U)
+(- => -) : C^op x C -> C
 ```
 
-The codomain side is covariant: from `f` one can map `B T -> B U`.
-The domain side, however, would require a map `A U -> A T` in order to
-feed an `A U` argument to a function expecting `A T`.  Thus merely
-allowing positive occurrences in the function argument is not enough:
-positive occurrences inside a function domain become negative in the
-whole function type.
+Thus the principled generalization is not merely to allow type variables
+in positive positions in function domains.  Instead, higher-order type
+codes should be treated as mixed-variance functors, with separate
+contravariant and covariant variable contexts:
 
-A clean generalization would track variance in the type syntax.  In
-such a polarized syntax:
+```text
+(C^op)^m x C^n -> C
+```
 
-- products and sums preserve variance;
-- in `A => B`, variances in `A` are flipped and variances in `B` are
-  preserved;
-- `ind G`, `fmap G`, and `strength G` are available only when the
-  relevant variable is positive overall.
+or equivalently as type expressions indexed by negative and positive
+variables.  Products and sums preserve variance.  In a function type
+`A => B`, variables in `A` have their variance flipped and variables in
+`B` keep their variance.  The current closed-domain rule is then the
+special case where the negative context of the function domain is empty
+by construction.
 
-With this discipline, function domains may mention variables when the
-whole type operator remains covariant.  For example, a continuation-like
-type `(X => R) => R` is positive in `X` overall: the inner function
-domain flips once, and the outer function domain flips again.
+This bifunctorial formulation subsumes the earlier positive-positions
+proposal.  Positivity is still the criterion for forming inductive
+types, but it becomes a derived check on the variance of the recursive
+variable: `ind G`, `fmap G`, `strength G`, and the recursion principles
+are available only when `G` is covariant in that variable overall.  With
+this discipline, function domains may mention variables when the whole
+type operator remains covariant.  For example, a continuation-like type
+`(X => R) => R` is positive in `X` overall: the inner function domain
+flips once, and the outer function domain flips again.
 
-Categorically, this changes the development from ordinary covariant type
-operators to mixed-variance type expressions.  Exponentials are
-bifunctorial as `(-)^(-) : C^op x C -> C`, not covariant in both
-arguments.  The current closed-domain restriction avoids this machinery
-and guarantees that every `Ty HO n` acts covariantly in its variables.
+This would simplify the conceptual story: PR-HO type operators would no
+longer be described as ordinary covariant functors with an ad hoc
+closed-domain restriction, but as mixed-variance functors whose positive
+fragments support inductive types.  It would not be a small
+implementation cleanup.  It would likely require:
 
-This extension is possible, but it would be a substantial refactor.  It
-would require a polarized or variance-indexed `Ty`, variance-aware
-substitution and action, and corresponding changes to `fmap`,
-`strength`, recursion, equations, model interfaces, and translations.
-The model obligations would also become stronger, because models would
-need initial-algebra or recursion structure for the larger class of
-positive higher-order functors.
+- a variance-indexed or two-context `Ty`;
+- variance-aware renaming and substitution;
+- a mixed-variance action replacing the current unary `fmap`;
+- a reformulation of `strength` for the covariant part, or an interface
+  that exposes strength only for positive functors;
+- recursion, equations, models, and translations parameterized by the
+  positive fragment of the mixed-variance syntax;
+- rechecking the P/F equivalence proofs against that more general
+  interface.
+
+This direction also clarifies the generic P/F refactor.  The generic
+proof should abstract over the structure it really needs: a positive
+functorial action with strength, a constructor, and either primitive
+folds or primitive paramorphisms.  Mixed-variance bifunctors would then
+be one richer way to instantiate that interface, not something the core
+P/F proof should depend on directly.
 
 # Future Work: CwF Connections
 
