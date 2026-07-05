@@ -41,6 +41,9 @@ Exp = ST.Exp
 NatF : Ty HO 1
 NatF = `𝟙 `+ ` Fin.zero
 
+NatF-structural : StructuralFunctor NatF
+NatF-structural = sf-+ sf-𝟙 sf-var
+
 Natᴴ : TY HO
 Natᴴ = ind NatF
 

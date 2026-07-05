@@ -3,6 +3,7 @@
 module Core.Models.PRHOFold where
 
 open import Level using (Level; suc)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl)
 open import Core.Types
 import Core.PRHOFold as Syn
 import Core.Equations.PRHOFold as Eq
@@ -68,6 +69,34 @@ module _ {ℓ} (S : Structure ℓ) where
     (pairᴹ (Cᴹ ι₁ᴹ π₁ᴹ) π₂ᴹ)
     (pairᴹ (Cᴹ ι₂ᴹ π₁ᴹ) π₂ᴹ)
 
+  fmapᶜᴹ : ∀ {T U G} → StructuralFunctor G →
+    (T ⇒ᴹ U) → (G [ T ] ⇒ᴹ G [ U ])
+  fmapᶜᴹ sf-𝟘 f = idᴹ
+  fmapᶜᴹ sf-𝟙 f = idᴹ
+  fmapᶜᴹ sf-var f = f
+  fmapᶜᴹ (sf-× S R) f = map-×ᴹ (fmapᶜᴹ S f) (fmapᶜᴹ R f)
+  fmapᶜᴹ (sf-+ S R) f =
+    caseᴹ (Cᴹ ι₁ᴹ (fmapᶜᴹ S f)) (Cᴹ ι₂ᴹ (fmapᶜᴹ R f))
+  fmapᶜᴹ (sf-⇒ A S) f = lamᴹ (Cᴹ (fmapᶜᴹ S f) applyᴹ)
+
+  strengthᶜᴹ : ∀ {T U G} → StructuralFunctor G →
+    (G [ T ]) `× U ⇒ᴹ G [ T `× U ]
+  strengthᶜᴹ sf-𝟘 = π₁ᴹ
+  strengthᶜᴹ sf-𝟙 = π₁ᴹ
+  strengthᶜᴹ sf-var = idᴹ
+  strengthᶜᴹ (sf-× S R) =
+    pairᴹ
+      (Cᴹ (strengthᶜᴹ S) (pairᴹ (Cᴹ π₁ᴹ π₁ᴹ) π₂ᴹ))
+      (Cᴹ (strengthᶜᴹ R) (pairᴹ (Cᴹ π₂ᴹ π₁ᴹ) π₂ᴹ))
+  strengthᶜᴹ (sf-+ S R) =
+    Cᴹ (caseᴹ (Cᴹ ι₁ᴹ (strengthᶜᴹ S)) (Cᴹ ι₂ᴹ (strengthᶜᴹ R))) distᴹ
+  strengthᶜᴹ (sf-⇒ A S) =
+    lamᴹ
+      (Cᴹ (strengthᶜᴹ S)
+        (pairᴹ
+          (Cᴹ applyᴹ (pairᴹ (Cᴹ π₁ᴹ π₁ᴹ) π₂ᴹ))
+          (Cᴹ π₂ᴹ π₁ᴹ)))
+
 ----------------------------------------------------------------------
 -- Law-bearing PR-HO fold-primitive models
 ----------------------------------------------------------------------
@@ -107,6 +136,9 @@ record Model (ℓ : Level) : Set (suc ℓ) where
     fmap-idᴹ : ∀ {A} (G : Ty HO 1) → fmapᴹ G (idᴹ {T = A}) ≈ᴹ idᴹ
     fmap-Cᴹ : ∀ {A B D} (G : Ty HO 1) {f : B ⇒ᴹ D} {g : A ⇒ᴹ B}
       → fmapᴹ G (Cᴹ f g) ≈ᴹ Cᴹ (fmapᴹ G f) (fmapᴹ G g)
+    fmap-βᶜᴹ : ∀ {A B} {G : Ty HO 1}
+      (S : StructuralFunctor G) {f : A ⇒ᴹ B}
+      → fmapᴹ G f ≈ᴹ fmapᶜᴹ structure S f
 
     strength-naturalˡᴹ : ∀ {A B D} (G : Ty HO 1) {f : A ⇒ᴹ B}
       → Cᴹ (fmapᴹ G (map-×ᴹ structure f (idᴹ {T = D}))) (strengthᴹ {T = A} {U = D} G)
@@ -117,6 +149,9 @@ record Model (ℓ : Level) : Set (suc ℓ) where
     strength-π₁ᴹ : ∀ {A B} (G : Ty HO 1)
       → Cᴹ (fmapᴹ G (π₁ᴹ {T = A} {U = B})) (strengthᴹ {T = A} {U = B} G)
         ≈ᴹ π₁ᴹ
+    strength-βᶜᴹ : ∀ {A B} {G : Ty HO 1}
+      (S : StructuralFunctor G)
+      → strengthᴹ {T = A} {U = B} G ≈ᴹ strengthᶜᴹ structure S
 
     𝟙-uniqueᴹ : ∀ {A} {f : A ⇒ᴹ `𝟙} → f ≈ᴹ ⊤ᴹ
     𝟘-uniqueᴹ : ∀ {A} {f : `𝟘 ⇒ᴹ A} → f ≈ᴹ ⊥ᴹ
@@ -165,6 +200,33 @@ module _ {ℓ} (S : Structure ℓ) where
   interpret Syn.con = conᴹ
   interpret (Syn.F h) = Fᴹ (interpret h)
 
+  interpret-fmapᶜ : ∀ {A B G} (R : StructuralFunctor G)
+    (f : A Syn.→ᶠ B) →
+    interpret (Syn.fmapᶜ R f) ≡ fmapᶜᴹ S R (interpret f)
+  interpret-fmapᶜ sf-𝟘 f = refl
+  interpret-fmapᶜ sf-𝟙 f = refl
+  interpret-fmapᶜ sf-var f = refl
+  interpret-fmapᶜ (sf-× R Q) f
+    rewrite interpret-fmapᶜ R f | interpret-fmapᶜ Q f = refl
+  interpret-fmapᶜ (sf-+ R Q) f
+    rewrite interpret-fmapᶜ R f | interpret-fmapᶜ Q f = refl
+  interpret-fmapᶜ (sf-⇒ A R) f
+    rewrite interpret-fmapᶜ R f = refl
+
+  interpret-strengthᶜ : ∀ {A B G} (R : StructuralFunctor G) →
+    interpret (Syn.strengthᶜ {T = A} {U = B} R) ≡ strengthᶜᴹ S R
+  interpret-strengthᶜ sf-𝟘 = refl
+  interpret-strengthᶜ sf-𝟙 = refl
+  interpret-strengthᶜ sf-var = refl
+  interpret-strengthᶜ {A = A} {B = B} (sf-× R Q)
+    rewrite interpret-strengthᶜ {A = A} {B = B} R
+          | interpret-strengthᶜ {A = A} {B = B} Q = refl
+  interpret-strengthᶜ {A = A} {B = B} (sf-+ R Q)
+    rewrite interpret-strengthᶜ {A = A} {B = B} R
+          | interpret-strengthᶜ {A = A} {B = B} Q = refl
+  interpret-strengthᶜ {A = A} {B = B} (sf-⇒ C R)
+    rewrite interpret-strengthᶜ {A = A} {B = B} R = refl
+
 module _ {ℓ} (M : Model ℓ) where
   open Model M
 
@@ -184,9 +246,14 @@ module _ {ℓ} (M : Model ℓ) where
   sound Eq.C-assoc = C-assocᴹ
   sound (Eq.fmap-id G) = fmap-idᴹ G
   sound (Eq.fmap-C G) = fmap-Cᴹ G
+  sound (Eq.fmap-βᶜ S {f = f})
+    rewrite interpret-fmapᶜ structure S f = fmap-βᶜᴹ S
   sound (Eq.strength-naturalˡ G) = strength-naturalˡᴹ G
   sound (Eq.strength-naturalʳ G) = strength-naturalʳᴹ G
   sound (Eq.strength-π₁ G) = strength-π₁ᴹ G
+  sound (Eq.strength-βᶜ {A = A} {B = B} S)
+    rewrite interpret-strengthᶜ structure {A = A} {B = B} S =
+      strength-βᶜᴹ S
   sound Eq.𝟙-unique = 𝟙-uniqueᴹ
   sound Eq.𝟘-unique = 𝟘-uniqueᴹ
   sound Eq.×-β₁ = ×-β₁ᴹ

@@ -7,8 +7,7 @@ open import Core.Types public
 infix 6 _→ᶠ_
 
 variable
-  T U V W : TY FO
-  G : Ty FO 1
+  W : TY FO
 
 ----------------------------------------------------------------------
 -- Point-free first-order syntax with primitive catamorphism
@@ -37,14 +36,13 @@ data _→ᶠ_ : TY FO → TY FO → Set where
   dist-+-× : (U `+ V) `× T →ᶠ (U `× T) `+ (V `× T)
 
   -- functorial action and its right strength
-  fmap : (G : Ty FO 1) → (T →ᶠ U) → (G [ T ] →ᶠ G [ U ])
-  strength : (G : Ty FO 1) → (G [ T ]) `× U →ᶠ G [ T `× U ]
+  fmap      : (G : Ty FO 1) → (T →ᶠ U) → (G [ T ] →ᶠ G [ U ])
+  strength  : (G : Ty FO 1) → (G [ T ]) `× U →ᶠ G [ T `× U ]
 
   --! CorePRFOFoldPrimitive {
   -- inductive types and catamorphism
-  con      : G [ ind G ] →ᶠ ind G
-  F         : (G [ T ]) `× U →ᶠ T
-    → ind G `× U →ᶠ T
+  con       : G [ ind G ] →ᶠ ind G
+  F         : (G [ T ]) `× U →ᶠ T → ind G `× U →ᶠ T
   --! }
 
 map-× : U →ᶠ T → V →ᶠ W → U `× V →ᶠ T `× W

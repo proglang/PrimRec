@@ -2,7 +2,7 @@
 
 module Core.Equations.PRHO where
 
-open import Core.PRHO public hiding (T; U; V; W; G)
+open import Core.PRHO public
 
 infix 4 _≈_
 
@@ -12,8 +12,7 @@ infix 4 _≈_
 
 private
   variable
-    A B D E F I S T U V : TY HO
-    G H : Ty HO 1
+    F I : TY HO
 
 data _≈_ : T →ᴾ U → T →ᴾ U → Set where
   ≈-refl  : {f : A →ᴾ B} → f ≈ f
@@ -52,6 +51,9 @@ data _≈_ : T →ᴾ U → T →ᴾ U → Set where
   fmap-C : ∀ {A B D : TY HO} (H : Ty HO 1)
     {f : B →ᴾ D} {g : A →ᴾ B}
     → fmap H (C f g) ≈ C (fmap H f) (fmap H g)
+  fmap-βᶜ : ∀ {A B : TY HO} {H : Ty HO 1}
+    (S : StructuralFunctor H) {f : A →ᴾ B}
+    → fmap H f ≈ fmapᶜ S f
 
   strength-naturalˡ : ∀ {A B D : TY HO} (H : Ty HO 1)
     {f : A →ᴾ B}
@@ -64,6 +66,9 @@ data _≈_ : T →ᴾ U → T →ᴾ U → Set where
   strength-π₁ : ∀ {A B : TY HO} (H : Ty HO 1)
     → C (fmap H (π₁ {U = A} {V = B})) (strength {T = A} {U = B} H)
       ≈ π₁
+  strength-βᶜ : ∀ {A B : TY HO} {H : Ty HO 1}
+    (S : StructuralFunctor H)
+    → strength {T = A} {U = B} H ≈ strengthᶜ S
 
   𝟙-unique : {f : A →ᴾ `𝟙}
     → f ≈ `⊤
@@ -398,3 +403,154 @@ undist-dist =
         (≈-trans C-assoc
           (≈-trans (C-cong π₂-undist ≈-refl) project₂-after-dist)))
       pair-id)
+
+P-βᶜ :
+  ∀ {A B X : TY HO} {H : Ty HO 1}
+  (S : StructuralFunctor H)
+  {h : (H [ A `× ind H ]) `× B →ᴾ A}
+  {x : X →ᴾ H [ ind H ]}
+  {u : X →ᴾ B} →
+  C (P {G = H} {T = A} {U = B} h) (`# (C con x) u)
+    ≈
+  C h
+    (`#
+      (C (fmapᶜ S (`# (P {G = H} {T = A} {U = B} h) π₁))
+        (C (strengthᶜ S) (`# x u)))
+      u)
+P-βᶜ {A = A} {B = B} {H = H} S {h = h} {x = x} {u = u} =
+  ≈-trans
+    (C-cong ≈-refl constructor-input)
+    (≈-trans C-assoc
+      (≈-trans (C-cong P-β ≈-refl)
+        (≈-trans (≈-sym C-assoc)
+          (C-cong ≈-refl para-input))))
+  where
+  p : ind H `× B →ᴾ A
+  p = P {G = H} {T = A} {U = B} h
+
+  layer : _ →ᴾ H [ ind H ]
+  layer = x
+
+  parameter : _ →ᴾ B
+  parameter = u
+
+  constructor-input :
+    `# (C con layer) parameter
+      ≈ C (map-× con (id {T = B})) (`# layer parameter)
+  constructor-input =
+    ≈-sym
+      (≈-trans map-×-#
+        (`#-cong ≈-refl C-idˡ))
+
+  para-layer :
+    C (C (fmap H (`# p π₁)) (strength H)) (`# layer parameter)
+      ≈
+    C (fmapᶜ S (`# p π₁))
+      (C (strengthᶜ S) (`# layer parameter))
+  para-layer =
+    ≈-trans (≈-sym C-assoc)
+      (C-cong (fmap-βᶜ S)
+        (C-cong (strength-βᶜ S) ≈-refl))
+
+  para-input :
+    C (paraArgs H p) (`# layer parameter)
+      ≈
+    `#
+      (C (fmapᶜ S (`# p π₁))
+        (C (strengthᶜ S) (`# layer parameter)))
+      parameter
+  para-input =
+    ≈-trans C-#
+      (`#-cong para-layer ×-β₂)
+
+pmap-naturalʳ :
+  ∀ {A B D E : TY HO} (G : Ty HO 1)
+  {f : A `× B →ᴾ E} {k : D →ᴾ B} →
+  C (pmap G f) (map-× (id {T = G [ A ]}) k)
+    ≈ pmap G (C f (map-× (id {T = A}) k))
+pmap-naturalʳ G {f = f} {k = k} =
+  ≈-trans (≈-sym C-assoc)
+    (≈-trans
+      (C-cong ≈-refl (≈-sym (strength-naturalʳ G)))
+      (≈-trans C-assoc
+        (C-cong (≈-sym (fmap-C G)) ≈-refl)))
+
+map-×-π₁ :
+  ∀ {A B D E : TY HO} {f : A →ᴾ B} {g : D →ᴾ E} →
+  C π₁ (map-× f g) ≈ C f π₁
+map-×-π₁ = ×-β₁
+
+map-×-π₂ :
+  ∀ {A B D E : TY HO} {f : A →ᴾ B} {g : D →ᴾ E} →
+  C π₂ (map-× f g) ≈ C g π₂
+map-×-π₂ = ×-β₂
+
+paraArgs-naturalʳ :
+  ∀ {A B D : TY HO} (G : Ty HO 1)
+  {p : ind G `× B →ᴾ A} {k : D →ᴾ B} →
+  C (paraArgs G p) (map-× (id {T = G [ ind G ]}) k)
+    ≈
+  C (map-× (id {T = G [ A `× ind G ]}) k)
+    (paraArgs G (C p (map-× (id {T = ind G}) k)))
+paraArgs-naturalʳ G {p = p} {k = k} =
+  ≈-trans C-#
+    (≈-trans
+      (`#-cong
+        (≈-trans (pmap-naturalʳ G)
+          (C-cong
+            (fmap-cong G
+              (≈-trans C-#
+                (`#-cong ≈-refl
+                  (≈-trans map-×-π₁ C-idˡ))))
+            ≈-refl))
+        map-×-π₂)
+      (≈-sym
+        (≈-trans map-×-#
+          (`#-cong C-idˡ ≈-refl))))
+
+map-×-parameter-square :
+  ∀ {B D : TY HO} {G : Ty HO 1} {k : D →ᴾ B} →
+  C (map-× (id {T = ind G}) k)
+    (map-× (con {G = G}) (id {T = D}))
+    ≈
+  C (map-× (con {G = G}) (id {T = B}))
+    (map-× (id {T = G [ ind G ]}) k)
+map-×-parameter-square {k = k} =
+  ≈-trans
+    (≈-trans map-×-C (map-×-cong C-idˡ C-idʳ))
+    (≈-sym
+      (≈-trans map-×-C (map-×-cong C-idʳ C-idˡ)))
+
+P-parameterʳ :
+  ∀ {A B D : TY HO} {G : Ty HO 1}
+  {h : (G [ A `× ind G ]) `× B →ᴾ A}
+  {k : D →ᴾ B} →
+  P {G = G} {T = A} {U = D}
+    (C h (map-× (id {T = G [ A `× ind G ]}) k))
+    ≈
+  C (P {G = G} {T = A} {U = B} h)
+    (map-× (id {T = ind G}) k)
+P-parameterʳ {A = A} {B = B} {D = D} {G = G} {h = h} {k = k} =
+  ≈-sym (P-unique premise)
+  where
+  p : ind G `× D →ᴾ A
+  p = C (P {G = G} {T = A} {U = B} h)
+        (map-× (id {T = ind G}) k)
+
+  h′ : (G [ A `× ind G ]) `× D →ᴾ A
+  h′ = C h (map-× (id {T = G [ A `× ind G ]}) k)
+
+  premise :
+    C p (map-× (con {G = G}) (id {T = D}))
+      ≈ C h′ (paraArgs G p)
+  premise =
+    ≈-trans (≈-sym C-assoc)
+      (≈-trans
+        (C-cong ≈-refl map-×-parameter-square)
+        (≈-trans C-assoc
+          (≈-trans
+            (C-cong P-β ≈-refl)
+            (≈-trans (≈-sym C-assoc)
+              (≈-trans
+                (C-cong ≈-refl (paraArgs-naturalʳ G))
+                C-assoc)))))

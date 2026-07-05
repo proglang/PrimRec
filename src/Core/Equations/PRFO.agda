@@ -2,7 +2,7 @@
 
 module Core.Equations.PRFO where
 
-open import Core.PRFO public hiding (T; U; V; W; G)
+open import Core.PRFO public
 
 infix 4 _≈_
 
@@ -15,11 +15,6 @@ infix 4 _≈_
 ----------------------------------------------------------------------
 
 --! CorePRFOEquivalence {
-private
-  variable
-    A B D E S T U V : TY FO
-    G H : Ty FO 1
-
 data _≈_ : T →ᴾ U → T →ᴾ U → Set where
   ≈-refl  : {f : A →ᴾ B} → f ≈ f
   ≈-sym   : {f g : A →ᴾ B} → f ≈ g → g ≈ f

@@ -7,8 +7,7 @@ open import Core.Types public
 infix 6 _→ᴾ_
 
 variable
-  T U V W : TY HO
-  G : Ty HO 1
+  W : TY HO
 
 ----------------------------------------------------------------------
 -- Point-free higher-order syntax
@@ -52,6 +51,15 @@ data _→ᴾ_ : TY HO → TY HO → Set where
 map-× : (U →ᴾ T) → (V →ᴾ W) → (U `× V →ᴾ T `× W)
 map-× f g = `# (C f π₁) (C g π₂)
 
+fmapᶜ : ∀ {T U G} → StructuralFunctor G → (T →ᴾ U) → (G [ T ] →ᴾ G [ U ])
+fmapᶜ sf-𝟘 f = id
+fmapᶜ sf-𝟙 f = id
+fmapᶜ sf-var f = f
+fmapᶜ (sf-× p q) f = map-× (fmapᶜ p f) (fmapᶜ q f)
+fmapᶜ (sf-+ p q) f =
+  `case (C ι₁ (fmapᶜ p f)) (C ι₂ (fmapᶜ q f))
+fmapᶜ (sf-⇒ A p) f = lam (C (fmapᶜ p f) apply)
+
 pmap : (G : Ty HO 1) → (T `× U →ᴾ V)
   → ((G [ T ]) `× U →ᴾ G [ V ])
 pmap G f = C (fmap G f) (strength G)
@@ -61,13 +69,30 @@ paraArgs : (G : Ty HO 1) → (ind G `× U →ᴾ T)
 paraArgs G p = `# (pmap G (`# p π₁)) π₂
 --! }
 
+--! CorePRHODerivedDist {
 theta : (U →ᴾ V `⇒ T) → (U `× V →ᴾ T)
 theta f = C apply (map-× f id)
 
---! CorePRHODerivedDist {
 dist-+-× : (U `+ V) `× T →ᴾ (U `× T) `+ (V `× T)
 dist-+-× = theta (`case (lam ι₁) (lam ι₂))
 --! }
 
 undist-+-× : (U `× T) `+ (V `× T) →ᴾ (U `+ V) `× T
 undist-+-× = `case (`# (C ι₁ π₁) π₂) (`# (C ι₂ π₁) π₂)
+
+strengthᶜ : ∀ {T U G} → StructuralFunctor G →
+  (G [ T ]) `× U →ᴾ G [ T `× U ]
+strengthᶜ sf-𝟘 = π₁
+strengthᶜ sf-𝟙 = π₁
+strengthᶜ sf-var = id
+strengthᶜ (sf-× p q) =
+  `#
+    (C (strengthᶜ p) (`# (C π₁ π₁) π₂))
+    (C (strengthᶜ q) (`# (C π₂ π₁) π₂))
+strengthᶜ (sf-+ p q) =
+  C (`case (C ι₁ (strengthᶜ p)) (C ι₂ (strengthᶜ q))) dist-+-×
+strengthᶜ (sf-⇒ A p) =
+  lam
+    (C (strengthᶜ p)
+      (`# (C apply (`# (C π₁ π₁) π₂))
+          (C π₂ π₁)))

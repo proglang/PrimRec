@@ -2,7 +2,7 @@
 
 module Core.Equations.PRHOFold where
 
-open import Core.PRHOFold public hiding (T; U; V; W; G)
+open import Core.PRHOFold public
 
 infix 4 _≈_
 
@@ -12,8 +12,7 @@ infix 4 _≈_
 
 private
   variable
-    A B D E I R S T U V : TY HO
-    G H : Ty HO 1
+    I R : TY HO
 
 data _≈_ : T →ᶠ U → T →ᶠ U → Set where
   ≈-refl  : {f : A →ᶠ B} → f ≈ f
@@ -52,6 +51,9 @@ data _≈_ : T →ᶠ U → T →ᶠ U → Set where
   fmap-C : ∀ {A B D : TY HO} (H : Ty HO 1)
     {f : B →ᶠ D} {g : A →ᶠ B}
     → fmap H (C f g) ≈ C (fmap H f) (fmap H g)
+  fmap-βᶜ : ∀ {A B : TY HO} {H : Ty HO 1}
+    (S : StructuralFunctor H) {f : A →ᶠ B}
+    → fmap H f ≈ fmapᶜ S f
 
   strength-naturalˡ : ∀ {A B D : TY HO} (H : Ty HO 1)
     {f : A →ᶠ B}
@@ -64,6 +66,9 @@ data _≈_ : T →ᶠ U → T →ᶠ U → Set where
   strength-π₁ : ∀ {A B : TY HO} (H : Ty HO 1)
     → C (fmap H (π₁ {U = A} {V = B})) (strength {T = A} {U = B} H)
       ≈ π₁
+  strength-βᶜ : ∀ {A B : TY HO} {H : Ty HO 1}
+    (S : StructuralFunctor H)
+    → strength {T = A} {U = B} H ≈ strengthᶜ S
 
   𝟙-unique : {f : A →ᶠ `𝟙}
     → f ≈ `⊤

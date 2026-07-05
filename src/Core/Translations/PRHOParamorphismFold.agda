@@ -6,11 +6,11 @@ import Core.PRHO as P
 import Core.PRHOFold as F
 import Core.Equations.PRHO as PEq
 import Core.Equations.PRHOFold as FEq
+open import Relation.Binary.PropositionalEquality using (_≡_; refl)
 open import Core.Types
 
 variable
-  T U V W : TY HO
-  G : Ty HO 1
+  W : TY HO
 
 ----------------------------------------------------------------------
 -- Derived eliminators
@@ -81,6 +81,58 @@ toF (P.fmap G f) = F.fmap G (toF f)
 toF (P.strength G) = F.strength G
 toF P.con = F.con
 toF {T = ind G `× U} {U = T} (P.P h) = Pᶠ (toF h)
+
+toP-fmapᶜ : ∀ {T U G} (S : StructuralFunctor G) (f : T F.→ᶠ U) →
+  toP (F.fmapᶜ S f) ≡ P.fmapᶜ S (toP f)
+toP-fmapᶜ sf-𝟘 f = refl
+toP-fmapᶜ sf-𝟙 f = refl
+toP-fmapᶜ sf-var f = refl
+toP-fmapᶜ (sf-× S R) f
+  rewrite toP-fmapᶜ S f | toP-fmapᶜ R f = refl
+toP-fmapᶜ (sf-+ S R) f
+  rewrite toP-fmapᶜ S f | toP-fmapᶜ R f = refl
+toP-fmapᶜ (sf-⇒ A S) f
+  rewrite toP-fmapᶜ S f = refl
+
+toP-strengthᶜ : ∀ {T U G} (S : StructuralFunctor G) →
+  toP (F.strengthᶜ {T = T} {U = U} S) ≡ P.strengthᶜ S
+toP-strengthᶜ sf-𝟘 = refl
+toP-strengthᶜ sf-𝟙 = refl
+toP-strengthᶜ sf-var = refl
+toP-strengthᶜ {T = T} {U = U} (sf-× S R)
+  rewrite toP-strengthᶜ {T = T} {U = U} S
+        | toP-strengthᶜ {T = T} {U = U} R = refl
+toP-strengthᶜ {T = T} {U = U} (sf-+ S R)
+  rewrite toP-strengthᶜ {T = T} {U = U} S
+        | toP-strengthᶜ {T = T} {U = U} R = refl
+toP-strengthᶜ {T = T} {U = U} (sf-⇒ A S)
+  rewrite toP-strengthᶜ {T = T} {U = U} S = refl
+
+toF-fmapᶜ : ∀ {T U G} (S : StructuralFunctor G) (f : T P.→ᴾ U) →
+  toF (P.fmapᶜ S f) ≡ F.fmapᶜ S (toF f)
+toF-fmapᶜ sf-𝟘 f = refl
+toF-fmapᶜ sf-𝟙 f = refl
+toF-fmapᶜ sf-var f = refl
+toF-fmapᶜ (sf-× S R) f
+  rewrite toF-fmapᶜ S f | toF-fmapᶜ R f = refl
+toF-fmapᶜ (sf-+ S R) f
+  rewrite toF-fmapᶜ S f | toF-fmapᶜ R f = refl
+toF-fmapᶜ (sf-⇒ A S) f
+  rewrite toF-fmapᶜ S f = refl
+
+toF-strengthᶜ : ∀ {T U G} (S : StructuralFunctor G) →
+  toF (P.strengthᶜ {T = T} {U = U} S) ≡ F.strengthᶜ S
+toF-strengthᶜ sf-𝟘 = refl
+toF-strengthᶜ sf-𝟙 = refl
+toF-strengthᶜ sf-var = refl
+toF-strengthᶜ {T = T} {U = U} (sf-× S R)
+  rewrite toF-strengthᶜ {T = T} {U = U} S
+        | toF-strengthᶜ {T = T} {U = U} R = refl
+toF-strengthᶜ {T = T} {U = U} (sf-+ S R)
+  rewrite toF-strengthᶜ {T = T} {U = U} S
+        | toF-strengthᶜ {T = T} {U = U} R = refl
+toF-strengthᶜ {T = T} {U = U} (sf-⇒ A S)
+  rewrite toF-strengthᶜ {T = T} {U = U} S = refl
 
 ----------------------------------------------------------------------
 -- Equation preservation: fold-primitive into paramorphism-primitive
@@ -177,9 +229,13 @@ toP-preserves FEq.C-idʳ = PEq.C-idʳ
 toP-preserves FEq.C-assoc = PEq.C-assoc
 toP-preserves (FEq.fmap-id G) = PEq.fmap-id G
 toP-preserves (FEq.fmap-C G) = PEq.fmap-C G
+toP-preserves (FEq.fmap-βᶜ S {f = f})
+  rewrite toP-fmapᶜ S f = PEq.fmap-βᶜ S
 toP-preserves (FEq.strength-naturalˡ G) = PEq.strength-naturalˡ G
 toP-preserves (FEq.strength-naturalʳ G) = PEq.strength-naturalʳ G
 toP-preserves (FEq.strength-π₁ G) = PEq.strength-π₁ G
+toP-preserves (FEq.strength-βᶜ {A = A} {B = B} S)
+  rewrite toP-strengthᶜ {T = A} {U = B} S = PEq.strength-βᶜ S
 toP-preserves FEq.𝟙-unique = PEq.𝟙-unique
 toP-preserves FEq.𝟘-unique = PEq.𝟘-unique
 toP-preserves FEq.×-β₁ = PEq.×-β₁
@@ -373,9 +429,13 @@ toF-preserves PEq.C-idʳ = FEq.C-idʳ
 toF-preserves PEq.C-assoc = FEq.C-assoc
 toF-preserves (PEq.fmap-id G) = FEq.fmap-id G
 toF-preserves (PEq.fmap-C G) = FEq.fmap-C G
+toF-preserves (PEq.fmap-βᶜ S {f = f})
+  rewrite toF-fmapᶜ S f = FEq.fmap-βᶜ S
 toF-preserves (PEq.strength-naturalˡ G) = FEq.strength-naturalˡ G
 toF-preserves (PEq.strength-naturalʳ G) = FEq.strength-naturalʳ G
 toF-preserves (PEq.strength-π₁ G) = FEq.strength-π₁ G
+toF-preserves (PEq.strength-βᶜ {A = A} {B = B} S)
+  rewrite toF-strengthᶜ {T = A} {U = B} S = FEq.strength-βᶜ S
 toF-preserves PEq.𝟙-unique = FEq.𝟙-unique
 toF-preserves PEq.𝟘-unique = FEq.𝟘-unique
 toF-preserves PEq.×-β₁ = FEq.×-β₁

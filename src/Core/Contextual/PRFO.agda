@@ -7,8 +7,7 @@ open import Core.Types public
 infix 6 _⊢_
 
 variable
-  Γ A B C D : TY FO
-  G : Ty FO 1
+  Γ C : TY FO
 
 data _⊢_ : TY FO → TY FO → Set where
   var : Γ ⊢ Γ

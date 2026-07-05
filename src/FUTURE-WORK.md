@@ -63,6 +63,30 @@ folds or primitive paramorphisms.  Mixed-variance bifunctors would then
 be one richer way to instantiate that interface, not something the core
 P/F proof should depend on directly.
 
+# Future Work: PREC Completeness
+
+The current Nat-instance development constructs the forward comparison:
+PR-Nat programs form the category `PREC`, and `compile*` is the arrow
+part of a functor from `PREC` into the finite-`Nat` subcategory of the
+PR-FO target.  A natural completeness theorem would prove the converse
+direction on morphisms: every PR-FO arrow
+
+```text
+vec Nat n -> vec Nat m
+```
+
+in the finite-`Nat` subcategory is represented, up to the generated
+PR-FO equality, by an `m`-tuple of PR-Nat programs of arity `n`.
+Equivalently, the functor from `PREC` to the finite-`Nat` target
+subcategory should be full.
+
+This would turn the current bridge into a precise representation
+theorem for the Nat fragment of PR-FO.  Proving it likely requires a
+normalization or definability argument for PR-FO arrows whose source and
+target are finite products of `Nat`, showing that intermediate uses of
+products, sums, and the polynomial `Nat` encoding do not define more
+maps than ordinary primitive recursion on natural-number tuples.
+
 # Future Work: CwF Connections
 
 ## Reusable Simply Typed CwF Interface

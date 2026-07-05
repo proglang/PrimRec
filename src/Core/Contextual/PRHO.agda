@@ -7,8 +7,7 @@ open import Core.Types public
 infix 6 _⊢_
 
 variable
-  Γ A B C D : TY HO
-  G : Ty HO 1
+  Γ C : TY HO
 
 ----------------------------------------------------------------------
 -- Contextual PR-HO with explicit substitution
@@ -46,6 +45,15 @@ data _⊢_ : TY HO → TY HO → Set where
 map-× : (A ⊢ C) → (B ⊢ D) → (A `× B ⊢ C `× D)
 map-× f g = pair (cut f fst) (cut g snd)
 
+fmapᶜ : ∀ {A B G} → StructuralFunctor G → (A ⊢ B) → (G [ A ] ⊢ G [ B ])
+fmapᶜ sf-𝟘 f = var
+fmapᶜ sf-𝟙 f = var
+fmapᶜ sf-var f = f
+fmapᶜ (sf-× p q) f = map-× (fmapᶜ p f) (fmapᶜ q f)
+fmapᶜ (sf-+ p q) f =
+  cases (cut inl (fmapᶜ p f)) (cut inr (fmapᶜ q f))
+fmapᶜ (sf-⇒ A p) f = curry (cut (fmapᶜ p f) eval)
+
 pmap : (G : Ty HO 1) → (A `× B ⊢ C)
   → ((G [ A ]) `× B ⊢ G [ C ])
 pmap G f = cut (fmap G f) (strength G)
@@ -62,3 +70,21 @@ dist-+-× = uncurry (cases (curry inl) (curry inr))
 
 undist-+-× : (A `× C) `+ (B `× C) ⊢ (A `+ B) `× C
 undist-+-× = cases (pair (cut inl fst) snd) (pair (cut inr fst) snd)
+
+strengthᶜ : ∀ {A B G} → StructuralFunctor G →
+  (G [ A ]) `× B ⊢ G [ A `× B ]
+strengthᶜ sf-𝟘 = fst
+strengthᶜ sf-𝟙 = fst
+strengthᶜ sf-var = var
+strengthᶜ (sf-× p q) =
+  pair
+    (cut (strengthᶜ p) (pair (cut fst fst) snd))
+    (cut (strengthᶜ q) (pair (cut snd fst) snd))
+strengthᶜ (sf-+ p q) =
+  cut (cases (cut inl (strengthᶜ p)) (cut inr (strengthᶜ q))) dist-+-×
+strengthᶜ (sf-⇒ A p) =
+  curry
+    (cut (strengthᶜ p)
+      (pair
+        (cut eval (pair (cut fst fst) snd))
+        (cut snd fst)))

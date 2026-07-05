@@ -96,6 +96,60 @@ compile-reify≈ f rewrite compile-reify f = PFEq.≈-refl
 reify-compile≈ : ∀ {Γ A} (t : Γ Ctx.⊢ A) → reify (compile t) CtxEq.≈ t
 reify-compile≈ t rewrite reify-compile t = CtxEq.≈-refl
 
+compile-fmapᶜ : ∀ {A B G} (S : Ctx.StructuralFunctor G)
+  (t : A Ctx.⊢ B) →
+  compile (Ctx.fmapᶜ S t) ≡ PF.fmapᶜ S (compile t)
+compile-fmapᶜ Ctx.sf-𝟘 t = refl
+compile-fmapᶜ Ctx.sf-𝟙 t = refl
+compile-fmapᶜ Ctx.sf-var t = refl
+compile-fmapᶜ (Ctx.sf-× S R) t
+  rewrite compile-fmapᶜ S t | compile-fmapᶜ R t = refl
+compile-fmapᶜ (Ctx.sf-+ S R) t
+  rewrite compile-fmapᶜ S t | compile-fmapᶜ R t = refl
+compile-fmapᶜ (Ctx.sf-⇒ A S) t
+  rewrite compile-fmapᶜ S t = refl
+
+compile-strengthᶜ : ∀ {A B G} (S : Ctx.StructuralFunctor G) →
+  compile (Ctx.strengthᶜ {A = A} {B = B} S) ≡ PF.strengthᶜ S
+compile-strengthᶜ Ctx.sf-𝟘 = refl
+compile-strengthᶜ Ctx.sf-𝟙 = refl
+compile-strengthᶜ Ctx.sf-var = refl
+compile-strengthᶜ {A = A} {B = B} (Ctx.sf-× S R)
+  rewrite compile-strengthᶜ {A = A} {B = B} S
+        | compile-strengthᶜ {A = A} {B = B} R = refl
+compile-strengthᶜ {A = A} {B = B} (Ctx.sf-+ S R)
+  rewrite compile-strengthᶜ {A = A} {B = B} S
+        | compile-strengthᶜ {A = A} {B = B} R = refl
+compile-strengthᶜ {A = A} {B = B} (Ctx.sf-⇒ C S)
+  rewrite compile-strengthᶜ {A = A} {B = B} S = refl
+
+reify-fmapᶜ : ∀ {A B G} (S : Ctx.StructuralFunctor G)
+  (f : A PF.→ᴾ B) →
+  reify (PF.fmapᶜ S f) ≡ Ctx.fmapᶜ S (reify f)
+reify-fmapᶜ Ctx.sf-𝟘 f = refl
+reify-fmapᶜ Ctx.sf-𝟙 f = refl
+reify-fmapᶜ Ctx.sf-var f = refl
+reify-fmapᶜ (Ctx.sf-× S R) f
+  rewrite reify-fmapᶜ S f | reify-fmapᶜ R f = refl
+reify-fmapᶜ (Ctx.sf-+ S R) f
+  rewrite reify-fmapᶜ S f | reify-fmapᶜ R f = refl
+reify-fmapᶜ (Ctx.sf-⇒ A S) f
+  rewrite reify-fmapᶜ S f = refl
+
+reify-strengthᶜ : ∀ {A B G} (S : Ctx.StructuralFunctor G) →
+  reify (PF.strengthᶜ {T = A} {U = B} S) ≡ Ctx.strengthᶜ S
+reify-strengthᶜ Ctx.sf-𝟘 = refl
+reify-strengthᶜ Ctx.sf-𝟙 = refl
+reify-strengthᶜ Ctx.sf-var = refl
+reify-strengthᶜ {A = A} {B = B} (Ctx.sf-× S R)
+  rewrite reify-strengthᶜ {A = A} {B = B} S
+        | reify-strengthᶜ {A = A} {B = B} R = refl
+reify-strengthᶜ {A = A} {B = B} (Ctx.sf-+ S R)
+  rewrite reify-strengthᶜ {A = A} {B = B} S
+        | reify-strengthᶜ {A = A} {B = B} R = refl
+reify-strengthᶜ {A = A} {B = B} (Ctx.sf-⇒ C S)
+  rewrite reify-strengthᶜ {A = A} {B = B} S = refl
+
 ----------------------------------------------------------------------
 -- Both translations preserve the independently generated equations.
 ----------------------------------------------------------------------
@@ -115,9 +169,13 @@ compile-sound CtxEq.cut-varʳ = PFEq.C-idʳ
 compile-sound CtxEq.cut-assoc = PFEq.C-assoc
 compile-sound (CtxEq.fmap-var G) = PFEq.fmap-id G
 compile-sound (CtxEq.fmap-cut G) = PFEq.fmap-C G
+compile-sound (CtxEq.fmap-βᶜ S {t = t})
+  rewrite compile-fmapᶜ S t = PFEq.fmap-βᶜ S
 compile-sound (CtxEq.strength-naturalˡ G) = PFEq.strength-naturalˡ G
 compile-sound (CtxEq.strength-naturalʳ G) = PFEq.strength-naturalʳ G
 compile-sound (CtxEq.strength-π₁ G) = PFEq.strength-π₁ G
+compile-sound (CtxEq.strength-βᶜ {A = A} {B = B} S)
+  rewrite compile-strengthᶜ {A = A} {B = B} S = PFEq.strength-βᶜ S
 compile-sound CtxEq.𝟙-unique = PFEq.𝟙-unique
 compile-sound CtxEq.𝟘-unique = PFEq.𝟘-unique
 compile-sound CtxEq.×-β₁ = PFEq.×-β₁
@@ -146,9 +204,13 @@ reify-sound PFEq.C-idʳ = CtxEq.cut-varʳ
 reify-sound PFEq.C-assoc = CtxEq.cut-assoc
 reify-sound (PFEq.fmap-id G) = CtxEq.fmap-var G
 reify-sound (PFEq.fmap-C G) = CtxEq.fmap-cut G
+reify-sound (PFEq.fmap-βᶜ S {f = f})
+  rewrite reify-fmapᶜ S f = CtxEq.fmap-βᶜ S
 reify-sound (PFEq.strength-naturalˡ G) = CtxEq.strength-naturalˡ G
 reify-sound (PFEq.strength-naturalʳ G) = CtxEq.strength-naturalʳ G
 reify-sound (PFEq.strength-π₁ G) = CtxEq.strength-π₁ G
+reify-sound (PFEq.strength-βᶜ {A = A} {B = B} S)
+  rewrite reify-strengthᶜ {A = A} {B = B} S = CtxEq.strength-βᶜ S
 reify-sound PFEq.𝟙-unique = CtxEq.𝟙-unique
 reify-sound PFEq.𝟘-unique = CtxEq.𝟘-unique
 reify-sound PFEq.×-β₁ = CtxEq.×-β₁

@@ -2,18 +2,13 @@
 
 module Core.Equations.PRFOFold where
 
-open import Core.PRFOFold public hiding (T; U; V; W; G)
+open import Core.PRFOFold public
 
 infix 4 _≈_
 
 ----------------------------------------------------------------------
 -- Equational theory for first-order PR with primitive catamorphism
 ----------------------------------------------------------------------
-
-private
-  variable
-    A B D E S T U V : TY FO
-    G H : Ty FO 1
 
 data _≈_ : T →ᶠ U → T →ᶠ U → Set where
   ≈-refl  : {f : A →ᶠ B} → f ≈ f

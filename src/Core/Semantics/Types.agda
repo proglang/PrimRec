@@ -87,13 +87,13 @@ validate T with wellFormed T in equation
 -- Syntactic polynomiality excludes exponentials.  Every FO code is
 -- polynomial; HO exponentials may introduce infinitely many positions.
 data Polynomial : ∀ {mode n} → Ty mode n → Set where
-  poly-𝟘   : ∀ {mode n} → Polynomial (`𝟘 {mode} {n})
-  poly-𝟙   : ∀ {mode n} → Polynomial (`𝟙 {mode} {n})
+  poly-𝟘   : ∀ {mode n} → Polynomial (`𝟘 {md = mode} {n = n})
+  poly-𝟙   : ∀ {mode n} → Polynomial (`𝟙 {md = mode} {n = n})
   poly-× : ∀ {mode n} {T U : Ty mode n} →
            Polynomial T → Polynomial U → Polynomial (T `× U)
   poly-+ : ∀ {mode n} {T U : Ty mode n} →
            Polynomial T → Polynomial U → Polynomial (T `+ U)
-  poly-` : ∀ {mode n} {i : Fin n} → Polynomial (` {mode} i)
+  poly-` : ∀ {mode n} {i : Fin n} → Polynomial (` {md = mode} i)
   poly-ind : ∀ {mode n} {G : Ty mode (suc n)} →
              Polynomial G → Polynomial (ind G)
 

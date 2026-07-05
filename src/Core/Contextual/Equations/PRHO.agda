@@ -34,6 +34,9 @@ data _≈_ : ∀ {Γ A} → Γ ⊢ A → Γ ⊢ A → Set where
   fmap-var : ∀ {A} (G : Ty HO 1) → fmap G (var { Γ = A }) ≈ var
   fmap-cut : ∀ {A B C} (G : Ty HO 1) {t : B ⊢ C} {u : A ⊢ B}
     → fmap G (cut t u) ≈ cut (fmap G t) (fmap G u)
+  fmap-βᶜ : ∀ {A B} {G : Ty HO 1}
+    (S : StructuralFunctor G) {t : A ⊢ B}
+    → fmap G t ≈ fmapᶜ S t
 
   strength-naturalˡ : ∀ {A B C} (G : Ty HO 1) {t : A ⊢ B}
     → cut (fmap G (map-× t (var { Γ = C }))) (strength {A = A} {B = C} G)
@@ -44,6 +47,9 @@ data _≈_ : ∀ {Γ A} → Γ ⊢ A → Γ ⊢ A → Set where
   strength-π₁ : ∀ {A B} (G : Ty HO 1)
     → cut (fmap G (fst {A = A} {B = B})) (strength {A = A} {B = B} G)
       ≈ fst
+  strength-βᶜ : ∀ {A B} {G : Ty HO 1}
+    (S : StructuralFunctor G)
+    → strength {A = A} {B = B} G ≈ strengthᶜ S
 
   𝟙-unique : ∀ {Γ} {t : Γ ⊢ `𝟙} → t ≈ unit
   𝟘-unique : ∀ {A} {t : `𝟘 ⊢ A} → t ≈ abort

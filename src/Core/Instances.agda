@@ -3,6 +3,7 @@
 module Core.Instances where
 
 import Core.Instances.Model
+import Core.Instances.PREC
 import Core.Instances.Nat
 import Core.Instances.Words
 import Core.Instances.Trees

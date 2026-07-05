@@ -9,29 +9,47 @@ open import Data.Nat using (ℕ; zero; suc)
 -- Type codes shared by the first- and higher-order calculi
 ----------------------------------------------------------------------
 
---! CoreTypesGrammar {
-data Mode : Set where
-  FO HO : Mode
 
 infixr 7 _`×_
 infixr 8 _`+_
 infixr 9 _`⇒_
 
-data Ty : Mode → ℕ → Set where
-  `𝟘 `𝟙  : ∀ {md n} → Ty md n
-  _`×_   : ∀ {md n} → Ty md n → Ty md n → Ty md n
-  _`+_   : ∀ {md n} → Ty md n → Ty md n → Ty md n
-  _`⇒_   : ∀ {n} → Ty HO 0 → Ty HO n → Ty HO n
-  `      : ∀ {md n} → Fin n → Ty md n
-  ind    : ∀ {md n} → Ty md (suc n) → Ty md n
-
-TY : Mode → Set
-TY md = Ty md 0
---! }
+data Mode : Set
 
 variable
   md : Mode
   n m o : ℕ
+
+--! CoreTypesGrammar {
+data Mode where
+  FO HO : Mode
+
+data Ty : Mode → ℕ → Set where
+  `𝟘 `𝟙  : Ty md n
+  _`×_   : Ty md n → Ty md n → Ty md n
+  _`+_   : Ty md n → Ty md n → Ty md n
+  _`⇒_   : Ty HO 0 → Ty HO n → Ty HO n
+  `      : Fin n → Ty md n
+  ind    : Ty md (suc n) → Ty md n
+
+TY : Mode → Set
+TY md = Ty md 0
+
+variable
+  A B D E S T U V : TY md
+  G H : Ty md 1
+--! }
+
+data StructuralFunctor : Ty HO 1 → Set where
+  sf-𝟘   : StructuralFunctor `𝟘
+  sf-𝟙   : StructuralFunctor `𝟙
+  sf-var : StructuralFunctor (` zero)
+  sf-×   : StructuralFunctor G → StructuralFunctor H →
+           StructuralFunctor (G `× H)
+  sf-+   : StructuralFunctor G → StructuralFunctor H →
+           StructuralFunctor (G `+ H)
+  sf-⇒   : (A : TY HO) → StructuralFunctor G →
+           StructuralFunctor (A `⇒ G)
 
 ----------------------------------------------------------------------
 -- Renaming and substitution of type variables

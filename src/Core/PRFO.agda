@@ -7,8 +7,7 @@ open import Core.Types public
 infix 6 _→ᴾ_
 
 variable
-  T U V W : TY FO
-  G : Ty FO 1
+  W : TY FO
 
 ----------------------------------------------------------------------
 -- Point-free first-order syntax
@@ -32,7 +31,7 @@ data _→ᴾ_ : TY FO → TY FO → Set where
   -- sums
   ι₁        : U →ᴾ U `+ V
   ι₂        : V →ᴾ U `+ V
-  `case    : U →ᴾ T → V →ᴾ T → U `+ V →ᴾ T
+  `case     : U →ᴾ T → V →ᴾ T → U `+ V →ᴾ T
 
   -- distributivity
   dist-+-× : (U `+ V) `× T →ᴾ (U `× T) `+ (V `× T)
@@ -42,7 +41,7 @@ data _→ᴾ_ : TY FO → TY FO → Set where
   strength  : (G : Ty FO 1) → (G [ T ]) `× U →ᴾ G [ T `× U ]
 
   -- inductive types and primitive recursion
-  con      : G [ ind G ] →ᴾ ind G
+  con       : G [ ind G ] →ᴾ ind G
   P         : (G [ T `× ind G ]) `× U →ᴾ T → ind G `× U →ᴾ T
 --! }
 

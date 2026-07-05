@@ -9,8 +9,7 @@ import Core.Equations.PRFOFold as FEq
 open import Core.Types
 
 variable
-  T U V W : TY FO
-  G : Ty FO 1
+  W : TY FO
 
 ----------------------------------------------------------------------
 -- Derived eliminators
