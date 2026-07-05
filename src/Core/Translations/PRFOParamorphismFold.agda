@@ -17,9 +17,9 @@ variable
 
 -- Catamorphism in the paramorphism-primitive presentation: drop the
 -- remembered original subterm from the paramorphism layer.
---! CorePRFOParamorphismFoldDerivedP {
 module _ where
-  open P
+  --! CorePRFOParamorphismFoldDerivedP {
+  open import Core.PRFO
 
   dropSubtermᴾ : ∀ {T U} (G : Ty FO 1) →
     (G [ T ]) `× U →ᴾ T →
@@ -31,13 +31,13 @@ module _ where
     (G [ T ]) `× U →ᴾ T →
     ind G `× U →ᴾ T
   Fᴾ {G = G} h = P (dropSubtermᴾ G h)
---! }
+  --! }
 
 -- Paramorphism in the catamorphism-primitive presentation: construct pairs
 -- consisting of the recursive result and the original reconstructed subterm.
---! CorePRFOParamorphismFoldDerivedF {
 module _ where
-  open F
+  --! CorePRFOParamorphismFoldDerivedF {
+  open import Core.PRFOFold
 
   rebuildᶠ : ∀ {T U} (G : Ty FO 1) →
     (G [ T `× ind G ]) `× U →ᶠ ind G
@@ -53,7 +53,7 @@ module _ where
     (G [ T `× ind G ]) `× U →ᶠ T →
     ind G `× U →ᶠ T
   Pᶠ {G = G} h = C π₁ (F (rememberᶠ G h))
---! }
+  --! }
 
 ----------------------------------------------------------------------
 -- Raw translations
@@ -454,50 +454,65 @@ toF-toP (F.F {G = G} h) =
 -- Compact theorem statements used in the paper
 ----------------------------------------------------------------------
 
---! CorePRFOParamorphismFoldLaws {
 module _ where
-  open P
-  open PEq
+  --! CorePRFOParamorphismFoldLawsP {
+  open import Core.Equations.PRFO
 
   Fᴾ-β′ : ∀ {T U} {G : Ty FO 1}
     {h : (G [ T ]) `× U →ᴾ T} →
     C (Fᴾ h) (map-× (con {G = G}) id) ≈ C h (foldArgsᴾ G (Fᴾ h))
+  --! [
   Fᴾ-β′ = Fᴾ-β
-
+  --! ]
   Fᴾ-unique′ : ∀ {T U} {G : Ty FO 1}
     {h : (G [ T ]) `× U →ᴾ T} {p : ind G `× U →ᴾ T} →
     C p (map-× (con {G = G}) id) ≈ C h (foldArgsᴾ G p) →
     p ≈ Fᴾ h
+  --! [
   Fᴾ-unique′ = Fᴾ-unique
+  --! ]
+  --! }
 
 module _ where
-  open F
-  open FEq
+  --! CorePRFOParamorphismFoldLawsF {
+  open import Core.Equations.PRFOFold
 
   Pᶠ-β′ : ∀ {T U} {G : Ty FO 1}
     {h : (G [ T `× ind G ]) `× U →ᶠ T} →
     C (Pᶠ h) (map-× (con {G = G}) id) ≈ C h (paraArgsᶠ G (Pᶠ h))
+  --! [
   Pᶠ-β′ = Pᶠ-β
-
+  --! ]
   Pᶠ-unique′ : ∀ {T U} {G : Ty FO 1}
     {h : (G [ T `× ind G ]) `× U →ᶠ T} {p : ind G `× U →ᶠ T} →
     C p (map-× (con {G = G}) id) ≈ C h (paraArgsᶠ G p) →
     p ≈ Pᶠ h
+  --! [
   Pᶠ-unique′ = Pᶠ-unique
---! }
+  --! ]
+  --! }
 
---! CorePRFOParamorphismFoldEquivalence {
-toP-preserves′ : ∀ {T U} {f g : T F.→ᶠ U} →
-  f FEq.≈ g → toP f PEq.≈ toP g
-toP-preserves′ = toP-preserves
+module _ where
+  --! CorePRFOParamorphismFoldEquivalence {
+  open import Core.Equations.PRFO as PEq
+  open import Core.Equations.PRFOFold as FEq
 
-toF-preserves′ : ∀ {T U} {f g : T P.→ᴾ U} →
-  f PEq.≈ g → toF f FEq.≈ toF g
-toF-preserves′ = toF-preserves
-
-toP-toF′ : ∀ {T U} (f : T P.→ᴾ U) → toP (toF f) PEq.≈ f
-toP-toF′ = toP-toF
-
-toF-toP′ : ∀ {T U} (f : T F.→ᶠ U) → toF (toP f) FEq.≈ f
-toF-toP′ = toF-toP
---! }
+  toP-preserves′ : ∀ {T U} {f g : T F.→ᶠ U} →
+    f FEq.≈ g → toP f PEq.≈ toP g
+  --! [
+  toP-preserves′ = toP-preserves
+  --! ]
+  toF-preserves′ : ∀ {T U} {f g : T P.→ᴾ U} →
+    f PEq.≈ g → toF f FEq.≈ toF g
+  --! [
+  toF-preserves′ = toF-preserves
+  --! ]
+  toP-toF′ : ∀ {T U} (f : T P.→ᴾ U) → toP (toF f) PEq.≈ f
+  --! [
+  toP-toF′ = toP-toF
+  --! ]
+  toF-toP′ : ∀ {T U} (f : T F.→ᶠ U) → toF (toP f) FEq.≈ f
+  --! [
+  toF-toP′ = toF-toP
+  --! ]
+  --! }

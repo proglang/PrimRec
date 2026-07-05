@@ -63,6 +63,33 @@ folds or primitive paramorphisms.  Mixed-variance bifunctors would then
 be one richer way to instantiate that interface, not something the core
 P/F proof should depend on directly.
 
+# Future Work: Algebraic Interfaces for Syntax and Models
+
+The current raw calculi are inductive datatypes, which is useful for
+initial syntax: translations, recursion over programs, and generated
+equational theories can pattern match directly on constructors.  A
+complementary interface would package the same constructors as records
+of operations and laws.  For example, one could define a reusable
+signature for PR-FO or PR-HO arrows over an abstract hom-family, with
+fields for identities, composition, products, sums, exponentials where
+available, functorial action, strength, constructors, and the chosen
+recursion principle.
+
+The inductive syntax would then be the initial instance of this
+signature, while models and translations would be homomorphisms out of
+that initial instance.  This could make the model infrastructure more
+uniform without replacing the raw syntax by a tagless-final
+presentation.  Law records could be factored along the categorical
+structure they express: cartesian structure, cocartesian structure,
+closed structure, functor/strength laws, and fold/paramorphism laws.
+
+This direction fits the simply typed CwF and bifunctorial future-work
+threads.  A CwF-style interface would organize contextual syntax, while
+the algebraic operation records would organize the point-free target
+categories and their models.  A mixed-variance type-operator interface
+could later instantiate the same record structure for a richer notion of
+functorial action.
+
 # Future Work: PREC Completeness
 
 The current Nat-instance development constructs the forward comparison:
