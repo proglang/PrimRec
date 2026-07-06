@@ -308,15 +308,18 @@ embedding.}
 Before turning to the Agda artifact, we spell out the mathematical
 pattern that the artifact abstracts.  The starting point is the familiar
 class of primitive recursive functions on natural numbers.  In the usual
-presentation~\cite{martin2019logik,wiki:Primitive_recursive_function},
+presentations~\cite{boolos07:_comput_logic,wiki:Primitive_recursive_function},
+% [Chapter 6] in Boolos et al
 an \(n\)-ary program denotes a function
 \(\mathbb{N}^n \to \mathbb{N}\).  The basic programs are zero,
 successor, and projections; larger programs are built by composition and
-by a primitive-recursion constructor.
+by a primitive-recursion constructor. But most textbook presentations
+mingle syntax and semantics and avoid terms denoting functional objects.
 
-The source language \AgdaFile{PR-Nat} formalizes this grammar as an
-Agda datatype \(\AgdaDatatype{PR}\ n\), where \(n\) is the arity of the
-program.  Its constructor \(P(g,h)\) builds a program of arity \(1+n\).
+The source language \AgdaFile{PR-Nat} addresses these issues and
+formalizes a grammar for primitive recursive terms of arity $n$ as an
+Agda datatype \(\AgdaDatatype{PR}\ n\).  Its constructor \(P(g,h)\)
+builds a program of arity \(1+n\). 
 The first input is the induction argument; \(g\) handles the zero case
 using the remaining \(n\) parameters, and \(h\) handles the successor
 case using the value obtained for the predecessor, the predecessor
@@ -325,7 +328,7 @@ is specified by induction on the first argument,
 \[
   \begin{array}{rcl}
   \mathsf{add}(0,y) &=& y,\\
-  \mathsf{add}(x+1,y) &=& \mathsf{suc}(\mathsf{add}(x,y)).
+  \mathsf{add}(1+x,y) &=& 1 + \mathsf{add}(x,y).
   \end{array}
 \]
 In the syntax of \AgdaFile{PR-Nat}, the corresponding program is
@@ -334,14 +337,14 @@ the predecessor value in the step case:
 \[
   \mathsf{add}
   =
-  P(\pi_0,\; \mathsf{suc} \circ \pi_0)
+  P(\pi^1_0,\; \mathsf{suc} \circ \pi^3_0)
   \quad:\quad \mathbb{N}^2 \to \mathbb{N}.
 \]
-Here the first \(\pi_0\) selects the remaining argument \(y\) in the
-zero case, while the second \(\pi_0\) selects the value already obtained
-for \(x\) in the successor case.  The notation is already point-free:
-variables are represented only through projections, tupling, and
-composition.  This is the first categorical reading of ordinary
+Here the first \(\pi^1_0\) selects the remaining argument \(y\) in the
+zero case, while the second \(\pi^3_0\) selects the value already obtained
+for \(x\) in the successor case.  The notation is point-free:
+variables are represented through projections and
+composition.  Thus, we obtain a categorical reading of ordinary
 primitive recursion.  Types are objects, programs are arrows, products
 account for multiple arguments, and the primitive-recursion constructor
 is an arrow former with a computation law.
@@ -353,7 +356,7 @@ The natural numbers are the initial algebra of the polynomial functor
 \]
 where the left summand represents zero and the right summand represents
 successor.  The same pattern applies to any strictly positive polynomial
-functor.  A list of letters from a finite alphabet \(A\), for instance,
+functor.  A word over a finite alphabet \(A\), for instance,
 is the initial algebra of
 \[
   F(X) = 1 + A \times X.
@@ -375,7 +378,7 @@ letter.
 
 Ranked trees give the next example.  A signature with constructor set
 \(\Sigma\) and arity function
-\(\mathsf{ar} : \Sigma \to \mathbb{N}\) determines the polynomial
+\(\mathsf{ar} : \Sigma \to \mathbb{N}\) determines the polynomial functor
 \[
   F(X) = \sum_{c \in \Sigma} X^{\mathsf{ar}(c)}.
 \]
@@ -388,7 +391,8 @@ The many-sorted version replaces \(X\) by a family of carrier sets
 indexed by sorts and replaces a single arity with a vector of input sorts
 for each constructor.
 
-The first-order core, \PRFO{}, abstracts over these examples.  Its types
+The first-order core, \PRFO{}, that we present abstracts over these
+examples.  Its types 
 include finite products and coproducts together with inductive types
 \(\mu F\) for polynomial functors \(F\).  Its arrows are categorical
 combinators plus functorial action, strength, and either a primitive
@@ -531,7 +535,7 @@ substituting \AgdaBound{T} for the bound type variable in
 }
 
 The type of \AgdaInductiveConstructor{P} is the categorical version of
-primitive induction.  Given an input of type \AgdaDatatype{ind}
+primitive recursion.  Given an input of type \AgdaDatatype{ind}
 \AgdaBound{G} and parameters \AgdaBound{U}, the step arrow receives the
 one-layer unconstructing of the inductive value where recursive positions
 carry both the already computed result of type \AgdaBound{T} and the
