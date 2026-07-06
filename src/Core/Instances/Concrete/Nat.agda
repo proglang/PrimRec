@@ -45,9 +45,9 @@ supported-pHandler g h =
             (s-C (supported h) supported-assoc))
     s-dist
 
-supported-fHandler : ∀ {n} (g : Source.PR n) (h : Source.PR (1 Data.Nat.+ n)) →
+supported-ctHandler : ∀ {n} (g : Source.PR n) (h : Source.PR (1 Data.Nat.+ n)) →
   Supported (fHandler g h)
-supported-fHandler g h =
+supported-ctHandler g h =
   s-C
     (s-case (s-C (supported g) s-π₂)
             (s-C (supported h) (s-# (s-C s-π₁ s-π₁) s-π₂)))
@@ -57,8 +57,8 @@ supported Source.Z = s-C (s-con flatNatF) s-ι₁
 supported Source.σ = s-C (s-C (s-con flatNatF) s-ι₂) s-π₁
 supported (Source.π i) = supported-lookup i
 supported (Source.C f fs) = s-C (supported f) (supported* fs)
-supported (Source.P g h) = s-P NatF flatNatF (supported-pHandler g h)
-supported (Source.F g h) = s-P NatF flatNatF (supported-fHandler g h)
+supported (Source.Pr g h) = s-Pr NatF flatNatF (supported-pHandler g h)
+supported (Source.Ct g h) = s-Pr NatF flatNatF (supported-ctHandler g h)
 
 supported* [] = s-⊤
 supported* (p ∷ ps) = s-# (supported p) (supported* ps)
@@ -104,7 +104,7 @@ correct Source.Z related-[] = related-zero
 correct Source.σ (related-∷ rx related-[]) = related-suc rx
 correct (Source.π i) related = lookup-related i related
 correct (Source.C f fs) related = correct f (correct* fs related)
-correct {n = suc n} (Source.P g h) {values = tree , values} {xs = x ∷ xs}
+correct {n = suc n} (Source.Pr g h) {values = tree , values} {xs = x ∷ xs}
   (related-∷ first parameters) = go first
   where
   go : ∀ {tree′ x′} → Related tree′ x′ →
@@ -113,20 +113,20 @@ correct {n = suc n} (Source.P g h) {values = tree , values} {xs = x ∷ xs}
         (paraAlgebra {G = NatF} {T = Nat} {U = vec Nat n}
           flatNatF (eval (supported-pHandler g h)) values)
         tree′ (λ ()))
-            (Source.eval (Source.P g h) (x′ ∷ xs))
+            (Source.eval (Source.Pr g h) (x′ ∷ xs))
   go related-zero = correct g parameters
   go (related-suc child) =
     correct h (related-∷ (go child) (related-∷ child parameters))
-correct {n = suc n} (Source.F g h) {values = tree , values} {xs = x ∷ xs}
+correct {n = suc n} (Source.Ct g h) {values = tree , values} {xs = x ∷ xs}
   (related-∷ first parameters) = go first
   where
   go : ∀ {tree′ x′} → Related tree′ x′ →
     Related
       (paraGo
         (paraAlgebra {G = NatF} {T = Nat} {U = vec Nat n}
-          flatNatF (eval (supported-fHandler g h)) values)
+          flatNatF (eval (supported-ctHandler g h)) values)
         tree′ (λ ()))
-            (Source.eval (Source.F g h) (x′ ∷ xs))
+            (Source.eval (Source.Ct g h) (x′ ∷ xs))
   go related-zero = correct g parameters
   go (related-suc child) = correct h (related-∷ (go child) parameters)
 

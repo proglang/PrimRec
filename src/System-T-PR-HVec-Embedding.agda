@@ -22,7 +22,7 @@ open import Agda.Builtin.Equality.Rewrite
 -- open System-T0.Exp
 open import Utils
 open import HVec
-open import EvalPConstructor using (para)
+open import EvalPrConstructor using (para)
 open import VecProperties
 open import FinProperties
 

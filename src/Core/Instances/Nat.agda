@@ -42,12 +42,12 @@ compile Source.Z = C con ι₁
 compile Source.σ = C (C con ι₂) π₁
 compile (Source.π i) = lookupᴾ i
 compile (Source.C f fs) = C (compile f) (compile* fs)
-compile (Source.P g h) =
-  P (C (`case (C (compile g) π₂)
+compile (Source.Pr g h) =
+  Pr (C (`case (C (compile g) π₂)
               (C (compile h) assoc-×))
        dist-+-×)
-compile (Source.F g h) =
-  P (C (`case (C (compile g) π₂)
+compile (Source.Ct g h) =
+  Pr (C (`case (C (compile g) π₂)
               (C (compile h) (`# (C π₁ π₁) π₂)))
        dist-+-×)
 
@@ -80,12 +80,12 @@ module Semantics {ℓ : Level} (M : Model.Model ℓ) where
   denote Source.σ = Cᴹ (Cᴹ conᴹ ι₂ᴹ) π₁ᴹ
   denote (Source.π i) = Model.interpret structure (lookupᴾ i)
   denote (Source.C f fs) = Cᴹ (denote f) (denote* fs)
-  denote (Source.P g h) =
-    Pᴹ (Cᴹ (caseᴹ (Cᴹ (denote g) π₂ᴹ)
+  denote (Source.Pr g h) =
+    Prᴹ (Cᴹ (caseᴹ (Cᴹ (denote g) π₂ᴹ)
                        (Cᴹ (denote h) assocᴹ))
           distᴹ)
-  denote (Source.F g h) =
-    Pᴹ (Cᴹ (caseᴹ (Cᴹ (denote g) π₂ᴹ)
+  denote (Source.Ct g h) =
+    Prᴹ (Cᴹ (caseᴹ (Cᴹ (denote g) π₂ᴹ)
                        (Cᴹ (denote h) (pairᴹ (Cᴹ π₁ᴹ π₁ᴹ) π₂ᴹ)))
           distᴹ)
 
@@ -101,14 +101,14 @@ module Semantics {ℓ : Level} (M : Model.Model ℓ) where
   preserves Source.σ = ≈-reflᴹ
   preserves (Source.π i) = ≈-reflᴹ
   preserves (Source.C f fs) = C-congᴹ (preserves f) (preserves* fs)
-  preserves (Source.P g h) =
-    P-congᴹ
+  preserves (Source.Pr g h) =
+    Pr-congᴹ
       (C-congᴹ
         (case-congᴹ (C-congᴹ (preserves g) ≈-reflᴹ)
           (C-congᴹ (preserves h) ≈-reflᴹ))
         ≈-reflᴹ)
-  preserves (Source.F g h) =
-    P-congᴹ
+  preserves (Source.Ct g h) =
+    Pr-congᴹ
       (C-congᴹ
         (case-congᴹ (C-congᴹ (preserves g) ≈-reflᴹ)
           (C-congᴹ (preserves h) ≈-reflᴹ))

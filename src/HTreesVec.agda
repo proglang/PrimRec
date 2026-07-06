@@ -44,7 +44,7 @@ data PR {r} (hr : HRank S A r) : {m n : ℕ} → Vec S m × Vec S n → Set wher
     → (g : PR hr ⟨ ssm , sso ⟩)
     → PR hr ⟨ ssm , ssn ⟩
 
-  P  : ∀ {s₀}{ssm : Vec S m}
+  Pr  : ∀ {s₀}{ssm : Vec S m}
     → (res : S → Vec S n)
     → (h : (s : S) (a : A) → head (proj₂ (hr a)) ≡ s
                    → PR hr ⟨ (concat (map res (proj₁ (hr a))) ++ proj₁ (hr a)) ++ ssm , res s ⟩)
@@ -100,4 +100,4 @@ eval {hr = hr} (σ a) v* = subst (Alg* hr) eq v
     v = con a v* ∷* []*
 eval (π i) v* = alookup v* i ∷* []*
 eval (C f g) v* = eval f (eval g v*)
-eval (P {s₀ = s₀} res h) (con a x* ∷* v*) = eval (h s₀ a refl) ((concatMapᴬ (λ _ x → eval (P res h) (x ∷* v*)) x* ++ᴬ x*) ++ᴬ v*)
+eval (Pr {s₀ = s₀} res h) (con a x* ∷* v*) = eval (h s₀ a refl) ((concatMapᴬ (λ _ x → eval (Pr res h) (x ∷* v*)) x* ++ᴬ x*) ++ᴬ v*)

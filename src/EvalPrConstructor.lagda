@@ -1,7 +1,7 @@
 \begin{code}[hide]
 {-# OPTIONS --rewriting  #-}
 
-module EvalPConstructor where
+module EvalPrConstructor where
 
 
 open import Data.Fin using (Fin; suc; zero; fromℕ; opposite)
@@ -46,7 +46,7 @@ paraNat g h (zero ∷ args) = g args
 paraNat g h (suc x ∷ args) = h (paraNat g h (x ∷ args) ∷ (x ∷ args))
 
 
-paraNatPR : ∀ {n : ℕ} (g : PR n) (h : PR (suc (suc n))) (vs : Vec ℕ (suc n) ) → eval (P g h) vs ≡ paraNat (eval g) (eval h) vs
+paraNatPR : ∀ {n : ℕ} (g : PR n) (h : PR (suc (suc n))) (vs : Vec ℕ (suc n) ) → eval (Pr g h) vs ≡ paraNat (eval g) (eval h) vs
 paraNatPR g h (zero ∷ vs) = refl
 paraNatPR g h (suc x ∷ vs) rewrite paraNatPR  g h (x ∷ vs)  = refl 
 
@@ -55,8 +55,8 @@ paraNatEq g h (zero ∷ args) = refl
 paraNatEq g h (suc x ∷ args) rewrite paraNatEq  g h (x ∷ args)  = refl
 
 
-evalP≡paraNat' : ∀ {n : ℕ} (g : PR n) (h : PR (suc (suc n))) (vs : Vec ℕ (suc n) ) → eval (P g h) vs ≡ paraNat' (eval g) (eval h) vs  -- para (eval g vs) (?) vs 
-evalP≡paraNat' g h vs =  (eval (P g h) vs) 
+evalPr≡paraNat' : ∀ {n : ℕ} (g : PR n) (h : PR (suc (suc n))) (vs : Vec ℕ (suc n) ) → eval (Pr g h) vs ≡ paraNat' (eval g) (eval h) vs  -- para (eval g vs) (?) vs 
+evalPr≡paraNat' g h vs =  (eval (Pr g h) vs) 
                               ≡⟨ paraNatPR g h vs ⟩ 
                          (paraNat (eval g) (eval h) vs 
                               ≡⟨ paraNatEq (eval g) (eval h) vs ⟩ 

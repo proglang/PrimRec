@@ -83,8 +83,8 @@ eraseProgram (Legacy.σ a) = LegacyTrees.σ a
 eraseProgram (Legacy.π i) = LegacyTrees.π i
 eraseProgram (Legacy.C f fs) =
   LegacyTrees.C (eraseProgram f) (erasePrograms fs)
-eraseProgram (Legacy.P res steps) =
-  LegacyTrees.P (λ a → eraseProgram (steps a))
+eraseProgram (Legacy.Pr res steps) =
+  LegacyTrees.Pr (λ a → eraseProgram (steps a))
 
 erasePrograms Legacy.[] = []
 erasePrograms (p Legacy.∷ ps) = eraseProgram p ∷ erasePrograms ps
@@ -131,7 +131,7 @@ programs : ∀ {S n m} {Sig : Source.Signature S}
 program (Source.σ a) = Legacy.σ a
 program (Source.π i) = Legacy.π i
 program (Source.C f fs) = Legacy.C (program f) (programs fs)
-program (Source.P res steps) = Legacy.P res (λ a → program (steps a))
+program (Source.Pr res steps) = Legacy.Pr res (λ a → program (steps a))
 
 programs Source.[] = Legacy.[]
 programs (p Source.∷ ps) = program p Legacy.∷ programs ps
@@ -191,21 +191,21 @@ sound (Source.π i) xs = term-lookup xs i
 sound (Source.C f fs) xs =
   trans (sound f (Source.eval* fs xs))
         (cong (Legacy.eval (program f)) (sound* fs xs))
-sound {n = suc n} {Sig = Sig} {ss = s₀ ∷ ss} (Source.P res steps)
+sound {n = suc n} {Sig = Sig} {ss = s₀ ∷ ss} (Source.Pr res steps)
   (tree Source.∷ parameters) = go tree
   where
   legacyP : ∀ {s} →
     Legacy.PR (signature Sig) (s ∷ ss , res s)
-  legacyP = Legacy.P res (λ a → program (steps a))
+  legacyP = Legacy.Pr res (λ a → program (steps a))
 
   go : ∀ {s₀} (tree : Source.Term Sig s₀) →
-    term (Source.eval (Source.P res steps) (tree Source.∷ parameters)) ≡
+    term (Source.eval (Source.Pr res steps) (tree Source.∷ parameters)) ≡
     Legacy.eval legacyP (term tree Legacy.∷ environment parameters)
   go (Source.con a children) =
     begin
-      term (Source.eval (Source.P res steps)
+      term (Source.eval (Source.Pr res steps)
         (Source.con a children Source.∷ parameters))
-    ≡⟨ cong term (Source.eval-P-con res steps a children parameters) ⟩
+    ≡⟨ cong term (Source.eval-Pr-con res steps a children parameters) ⟩
       term (Source.eval (steps a) sourceArguments)
     ≡⟨ sound (steps a) sourceArguments ⟩
       Legacy.eval (program (steps a)) (environment sourceArguments)
@@ -217,7 +217,7 @@ sound {n = suc n} {Sig = Sig} {ss = s₀ ∷ ss} (Source.P res steps)
     inputSorts = Source.inputs Sig a
 
     sourceResults = Source.tabulateMapEnv res inputSorts
-      (λ i → Source.eval (Source.P res steps)
+      (λ i → Source.eval (Source.Pr res steps)
         (children i Source.∷ parameters))
     sourceOriginals = Source.tabulateEnv children
     sourceArguments = Source.appendEnv
@@ -236,7 +236,7 @@ sound {n = suc n} {Sig = Sig} {ss = s₀ ∷ ss} (Source.P res steps)
         (cs : (i : Fin k) → Source.Term Sig (lookup ss i)) →
         environment
           (Source.tabulateMapEnv res ss
-            (λ i → Source.eval (Source.P res steps)
+            (λ i → Source.eval (Source.Pr res steps)
               (cs i Source.∷ parameters))) ≡
         Legacy.mapᴬ
           (λ _ child → Legacy.eval legacyP

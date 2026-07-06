@@ -12,7 +12,7 @@ import System-T0 as T0
 -- open System-T0.Exp
 open import PR-Nat hiding (para)
 open import Utils
-open import EvalPConstructor using (para)
+open import EvalPrConstructor using (para)
 open import System-T
 -- -- ------------------------------------------------------------------------------
 -- -- -- embedding
@@ -75,7 +75,7 @@ convVarSound (x₁ ∷ ctx) zero = refl
 convVarSound (x₁ ∷ ctx) (suc x) = convVarSound ctx x
 
 para-agree : ∀ {A : Set} (f : A → ℕ → A) (z : A) (n : ℕ)
-  → EvalPConstructor.para f z n ≡ System-T.para f z n
+  → EvalPrConstructor.para f z n ≡ System-T.para f z n
 para-agree f z zero = refl
 para-agree f z (suc n) rewrite para-agree f z n = refl
 

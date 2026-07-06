@@ -162,8 +162,8 @@ data Exp : ∀ {n : ℕ} → Ctx n → TY → Set where
   `case : ∀ {n : ℕ} {ctx : Ctx n} {tyA tyB tyC : TY} →  Exp ctx (tyA `+ tyB) → Exp (tyA ∷ ctx) (tyC) → Exp (tyB ∷ ctx) (tyC) → Exp (ctx) (tyC)
 
   con : ∀ {n : ℕ} {ctx : Ctx n} {G} → Exp ctx (sub₀ (ind G) G) → Exp ctx (ind G)
-  -- P : (h : sub₀ (T `× ind G) G `× U →ᴾ T) → (ind G `× U →ᴾ T)
-  P : ∀ {n : ℕ} {ctx : Ctx n} {G} {P} → Exp ctx ((sub₀ P G) ⇒ P) → Exp ctx (ind G) → Exp ctx P
+  -- Pr : (h : sub₀ (T `× ind G) G `× U →ᴾ T) → (ind G `× U →ᴾ T)
+  Pr : ∀ {n : ℕ} {ctx : Ctx n} {G} {R} → Exp ctx ((sub₀ R G) ⇒ R) → Exp ctx (ind G) → Exp ctx R
 ⟦_⟧ᵀ : TY → Set
 
 
@@ -180,7 +180,7 @@ data Alg (G : Ty 1) : Set where
 
 
 postulate
-  evalP : ∀ {G P} → (⟦ sub₀ P G ⟧ᵀ → ⟦ P ⟧ᵀ) → Alg G → ⟦ P ⟧ᵀ
+  evalPr : ∀ {G R} → (⟦ sub₀ R G ⟧ᵀ → ⟦ R ⟧ᵀ) → Alg G → ⟦ R ⟧ᵀ
 
 eval : ∀ {n : ℕ} {ctx : Ctx n} {ty} → Exp ctx ty →  HVec (λ x → ⟦ x ⟧ᵀ) ctx → ⟦ ty ⟧ᵀ
 eval `0 ctx = tt
@@ -197,7 +197,7 @@ eval (`case exp l r) ctx with eval exp ctx
 ... | inj₁ res = eval l (res ∷ᴴ ctx)
 ... | inj₂ res = eval r (res ∷ᴴ ctx)
 eval (con exp) ctx = con (eval exp ctx)
-eval (P algebra tree) ctx = evalP (eval algebra ctx) (eval tree ctx)
+eval (Pr algebra tree) ctx = evalPr (eval algebra ctx) (eval tree ctx)
 
 
 embedd-Ty : ∀ {n} → PF.Ty n → Ty n
@@ -224,7 +224,7 @@ weaken ctx (ι₁ exp) = ι₁ (weaken ctx exp)
 weaken ctx (ι₂ exp) = ι₂ (weaken ctx exp)
 weaken ctx (`case c l r) = `case (weaken ctx c) (weaken ctx l) (weaken ctx r) 
 weaken ctx (con exp) = con (weaken ctx exp)
-weaken ctx (P e1 e2) = P (weaken ctx e1) (weaken ctx e2)
+weaken ctx (Pr e1 e2) = Pr (weaken ctx e1) (weaken ctx e2)
 
 postulate
   weaken-Eq : ∀ {n m : ℕ} {ctx : Ctx n} {ctx' : Ctx m} {tyA}
@@ -252,8 +252,8 @@ PF→NPF {(U PF.`+ V)}  (PF.`case f g) = Lam (`case (Var zero)
           (App (weaken (embedd-Ty V ∷ embedd-Ty U `+ embedd-Ty V ∷ []) (PF→NPF g)) (Var zero))) 
 PF→NPF PF.dist-+-x = PF→NPF-hard PF.dist-+-x
 PF→NPF PF.con = PF→NPF-hard PF.con
-PF→NPF (PF.P exp) = PF→NPF-hard (PF.P exp)
-PF→NPF (PF.F exp) = PF→NPF-hard (PF.F exp)
+PF→NPF (PF.Pr exp) = PF→NPF-hard (PF.Pr exp)
+PF→NPF (PF.Ct exp) = PF→NPF-hard (PF.Ct exp)
 
 postulate
   ty-eq-ind : ∀ ty → PF.⟦ PF.ind ty ⟧ᵀ ≡ ⟦ embedd-Ty (PF.ind ty) ⟧ᵀ
@@ -290,8 +290,8 @@ PF→NPF-sound {U PF.`+ V} (PF.`case f g) (inj₁ x) rewrite weaken-Eq {ctx = []
 PF→NPF-sound {U PF.`+ V} (PF.`case f g) (inj₂ y) rewrite weaken-Eq {ctx = []} {ctx' = embedd-Ty V ∷ embedd-Ty U `+ embedd-Ty V ∷ [] }  []ᴴ (y ∷ᴴ (inj₂ y ∷ᴴ []ᴴ)) (PF→NPF g) = PF→NPF-sound g y
 PF→NPF-sound PF.dist-+-x arg = PF→NPF-sound-hard PF.dist-+-x arg
 PF→NPF-sound PF.con args = PF→NPF-sound-hard PF.con args
-PF→NPF-sound (PF.P f) args = PF→NPF-sound-hard (PF.P f) args
-PF→NPF-sound (PF.F f) args = PF→NPF-sound-hard (PF.F f) args
+PF→NPF-sound (PF.Pr f) args = PF→NPF-sound-hard (PF.Pr f) args
+PF→NPF-sound (PF.Ct f) args = PF→NPF-sound-hard (PF.Ct f) args
 
 
 -- NPF→PF : ∀ {n : ℕ} {ctx : Ctx n}{tyA tyB : PF.TY} → Exp ctx (embedd-Ty tyA ⇒ embedd-Ty tyB ) → HVec (λ x → ⟦ x ⟧ᵀ) ctx → tyA PF.→ᴾ tyB 

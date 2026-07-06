@@ -31,7 +31,7 @@ recursiveResults : ∀ {S n m r} {Sig : Source.Signature S}
   Source.PR* Sig (us , map res input-sorts)
 recursiveResults res steps Source.[] parameters = Source.[]
 recursiveResults res steps (child Source.∷ children) parameters =
-  Source.C (Source.P res steps) (child Source.∷ parameters) Source.∷
+  Source.C (Source.Pr res steps) (child Source.∷ parameters) Source.∷
   recursiveResults res steps children parameters
 
 infix 4 _≈ₛ_ _≈ₛ*_
@@ -51,14 +51,14 @@ mutual
       {f g : Source.PR Sig (us , s)}
       {fs gs : Source.PR* Sig (ss , us)} →
       f ≈ₛ g → fs ≈ₛ* gs → Source.C f fs ≈ₛ Source.C g gs
-    P-congₛ : ∀ {n s₀} {ss : Vec S n} (res : S → S)
+    Pr-congₛ : ∀ {n s₀} {ss : Vec S n} (res : S → S)
       {hs ks : (a : Fin (Source.count Sig)) →
         Source.PR Sig
           ((map res (Source.inputs Sig a) ++ Source.inputs Sig a) ++ ss ,
            res (Source.output Sig a))} →
       ((a : Fin (Source.count Sig)) → hs a ≈ₛ ks a) →
-      Source.P {s₀ = s₀} res hs ≈ₛ Source.P res ks
-    P-βₛ : ∀ {n m} {ss : Vec S n} {us : Vec S m}
+      Source.Pr {s₀ = s₀} res hs ≈ₛ Source.Pr res ks
+    Pr-βₛ : ∀ {n m} {ss : Vec S n} {us : Vec S m}
       (res : S → S)
       (steps : (a : Fin (Source.count Sig)) →
         Source.PR Sig
@@ -67,7 +67,7 @@ mutual
       (a : Fin (Source.count Sig))
       (children : Source.PR* Sig (us , Source.inputs Sig a))
       (parameters : Source.PR* Sig (us , ss)) →
-      Source.C (Source.P {s₀ = Source.output Sig a} res steps)
+      Source.C (Source.Pr {s₀ = Source.output Sig a} res steps)
         (Source.C (Source.σ a) children Source.∷ parameters) ≈ₛ
       Source.C (steps a)
         (append* (append* (recursiveResults res steps children parameters) children)
@@ -104,7 +104,7 @@ erase-results : ∀ {S n m r} {Sig : Source.Signature S}
   erase* (recursiveResults res steps children parameters) ≡
   map
     (λ child →
-      TreeSource.C (TreeSource.P (λ a → erase (steps a)))
+      TreeSource.C (TreeSource.Pr (λ a → erase (steps a)))
         (child ∷ erase* parameters))
     (erase* children)
 erase-results res steps Source.[] parameters = refl
@@ -125,15 +125,15 @@ erase-preserves (transₛ first second) =
   TreeEq.transₛ (erase-preserves first) (erase-preserves second)
 erase-preserves (C-congₛ f fs) =
   TreeEq.C-congₛ (erase-preserves f) (erase-preserves* fs)
-erase-preserves (P-congₛ res pointwise) =
-  TreeEq.P-congₛ (λ a → erase-preserves (pointwise a))
-erase-preserves (P-βₛ res steps a children parameters)
+erase-preserves (Pr-congₛ res pointwise) =
+  TreeEq.Pr-congₛ (λ a → erase-preserves (pointwise a))
+erase-preserves (Pr-βₛ res steps a children parameters)
   rewrite erase-append
             (append* (recursiveResults res steps children parameters) children)
             parameters
         | erase-append (recursiveResults res steps children parameters) children
         | erase-results res steps children parameters =
-  TreeEq.P-βₛ (λ i → erase (steps i)) a (erase* children) (erase* parameters)
+  TreeEq.Pr-βₛ (λ i → erase (steps i)) a (erase* children) (erase* parameters)
 
 erase-preserves* []ₛ = TreeEq.[]ₛ
 erase-preserves* (p ∷ₛ ps) =

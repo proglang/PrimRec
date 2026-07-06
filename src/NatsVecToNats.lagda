@@ -27,7 +27,7 @@ import PR-NatsVec as NatsVec
 -- not clear how to handle the pr case
 ----------------------------------------------------------------------
 helper : Vec (Nats.PR m) 1 → Vec (Nats.PR (suc (suc m))) 1 → Vec (Nats.PR ((suc m))) 1
-helper g h = [ Nats.P (head g) (head h) ]  -- [ Nats.P g h ]
+helper g h = [ Nats.Pr (head g) (head h) ]  -- [ Nats.Pr g h ]
 
 encode : Vec (Nats.PR m) n → Nats.PR m
 encode [] = Nats.C Nats.Z []
@@ -42,18 +42,18 @@ decode (suc n) f =
 tail-projections : ∀ m → Vec (Nats.PR (suc (suc m))) (suc m)
 tail-projections m = map Nats.π (map suc (Nats.allFin (suc m)))
 
-compile-P-step : ∀ {m n}
+compile-Pr-step : ∀ {m n}
   → Vec (Nats.PR (n + suc m)) n
   → Nats.PR (suc (suc m))
-compile-P-step {m} {n} h =
+compile-Pr-step {m} {n} h =
   encode (map (λ f → Nats.C f
     (decode n (Nats.π zero) ++ tail-projections m)) h)
 
-compile-P : ∀ {m n}
+compile-Pr : ∀ {m n}
   → Vec (Nats.PR m) n
   → Vec (Nats.PR (n + suc m)) n
   → Vec (Nats.PR (suc m)) n
-compile-P {n = n} g h = decode n (Nats.P (encode g) (compile-P-step h))
+compile-Pr {n = n} g h = decode n (Nats.Pr (encode g) (compile-Pr-step h))
 
 ⟦_⟧ : NatsVec.PR m n → Vec (Nats.PR m) n
 ⟦ NatsVec.`0 ⟧ = []
@@ -62,22 +62,22 @@ compile-P {n = n} g h = decode n (Nats.P (encode g) (compile-P-step h))
 ⟦ NatsVec.π i ⟧ = [ Nats.π i ]
 ⟦ NatsVec.C f g ⟧ = map (λ f′ → Nats.C f′ ⟦ g ⟧) ⟦ f ⟧
 ⟦ NatsVec.♯ f g ⟧ = ⟦ f ⟧ ++ ⟦ g ⟧
-⟦ NatsVec.P g h ⟧ = compile-P ⟦ g ⟧ ⟦ h ⟧
-⟦ NatsVec.P' g h ⟧ = helper ⟦ g ⟧ ⟦ h ⟧ 
+⟦ NatsVec.Pr g h ⟧ = compile-Pr ⟦ g ⟧ ⟦ h ⟧
+⟦ NatsVec.Pr' g h ⟧ = helper ⟦ g ⟧ ⟦ h ⟧
 
 \end{code}
 
 \begin{code}[hide]
 
-sound-natVecToNats-Helper  : ∀  {m n o} →  (g : Vec (Nats.PR o ) n) (h : Vec (Nats.PR m ) o ) ( args : Vec ℕ m) → 
+sound-natVecToNats-Helper  : ∀  {m n o} →  (g : Vec (Nats.PR o ) n) (h : Vec (Nats.PR m ) o ) ( args : Vec ℕ m) →
       Nats.eval* (map (λ f′ → Nats.C f′ h) g) args ≡
       Nats.eval* g (Nats.eval* h args)
 sound-natVecToNats-Helper [] h args = refl
 sound-natVecToNats-Helper (g ∷ gs) h args = cong (λ v → Nats.eval g (Nats.eval* h args) ∷ v) (sound-natVecToNats-Helper gs h args)
 
-helper-PR-Z : ∀ (g : NatsVec.PR n 1) (h : NatsVec.PR (2 + n ) 1 ) (args : Vec ℕ ( n)) → Nats.eval* (⟦ NatsVec.P' g h ⟧ ) (0 ∷ args) ≡
+helper-PR-Z : ∀ (g : NatsVec.PR n 1) (h : NatsVec.PR (2 + n ) 1 ) (args : Vec ℕ ( n)) → Nats.eval* (⟦ NatsVec.Pr' g h ⟧ ) (0 ∷ args) ≡
       Nats.eval* ⟦ g ⟧ args
-helper-PR-Z g h args  with ⟦ g ⟧  
+helper-PR-Z g h args  with ⟦ g ⟧
 ... | [ g' ] = refl
 
 sound-natVecToNats : ∀ {n m} (prs : NatsVec.PR m n) (args : Vec ℕ m) → Nats.eval* (⟦ prs ⟧) args  ≡ NatsVec.eval prs args
@@ -129,25 +129,25 @@ eval-tail-projections m acc counter args
         | ∘-map (lookup (acc ∷ counter ∷ args)) suc (Nats.allFin (suc m))
         | Nats.lookup-allFin (counter ∷ args) = refl
 
-eval-compile-P-inputs : ∀ {m n} (xs : Vec ℕ n) (counter : ℕ)
+eval-compile-Pr-inputs : ∀ {m n} (xs : Vec ℕ n) (counter : ℕ)
   (args : Vec ℕ m) →
   Nats.eval* (decode n (Nats.π zero) ++ tail-projections m)
     (encode-value xs ∷ counter ∷ args) ≡ xs ++ counter ∷ args
-eval-compile-P-inputs {m} {n} xs counter args
+eval-compile-Pr-inputs {m} {n} xs counter args
   rewrite eval*-++ (decode n (Nats.π zero)) (tail-projections m)
     (encode-value xs ∷ counter ∷ args)
         | eval-decode n (Nats.π zero) (encode-value xs ∷ counter ∷ args)
         | decode-encode-value xs
         | eval-tail-projections m (encode-value xs) counter args = refl
 
-eval-compile-P-step : ∀ {m n}
+eval-compile-Pr-step : ∀ {m n}
   (h : Vec (Nats.PR (n + suc m)) n) (xs : Vec ℕ n)
   (counter : ℕ) (args : Vec ℕ m) →
-  Nats.eval (compile-P-step h) (encode-value xs ∷ counter ∷ args) ≡
+  Nats.eval (compile-Pr-step h) (encode-value xs ∷ counter ∷ args) ≡
   encode-value (Nats.eval* h (xs ++ counter ∷ args))
-eval-compile-P-step {m} {n} h xs counter args =
+eval-compile-Pr-step {m} {n} h xs counter args =
   begin
-    Nats.eval (compile-P-step h) (encode-value xs ∷ counter ∷ args)
+    Nats.eval (compile-Pr-step h) (encode-value xs ∷ counter ∷ args)
   ≡⟨ eval-encode
        (map (λ f → Nats.C f
          (decode n (Nats.π zero) ++ tail-projections m)) h)
@@ -166,69 +166,69 @@ eval-compile-P-step {m} {n} h xs counter args =
         (Nats.eval* (decode n (Nats.π zero) ++ tail-projections m)
           (encode-value xs ∷ counter ∷ args)))
   ≡⟨ cong (encode-value ∘ Nats.eval* h)
-       (eval-compile-P-inputs xs counter args) ⟩
+       (eval-compile-Pr-inputs xs counter args) ⟩
     encode-value (Nats.eval* h (xs ++ counter ∷ args))
   ∎
 
-sound-compile-P-scalar : ∀ {m n} (x : ℕ) (args : Vec ℕ m)
+sound-compile-Pr-scalar : ∀ {m n} (x : ℕ) (args : Vec ℕ m)
   (g : NatsVec.PR m n) (h : NatsVec.PR (n + suc m) n) →
-  Nats.eval (Nats.P (encode ⟦ g ⟧) (compile-P-step ⟦ h ⟧)) (x ∷ args) ≡
-  encode-value (NatsVec.eval (NatsVec.P g h) (x ∷ args))
-sound-compile-P-scalar zero args g h =
+  Nats.eval (Nats.Pr (encode ⟦ g ⟧) (compile-Pr-step ⟦ h ⟧)) (x ∷ args) ≡
+  encode-value (NatsVec.eval (NatsVec.Pr g h) (x ∷ args))
+sound-compile-Pr-scalar zero args g h =
   trans (eval-encode ⟦ g ⟧ args)
         (cong encode-value (sound-natVecToNats g args))
-sound-compile-P-scalar (suc x) args g h =
+sound-compile-Pr-scalar (suc x) args g h =
   begin
-    Nats.eval (Nats.P (encode ⟦ g ⟧) (compile-P-step ⟦ h ⟧))
+    Nats.eval (Nats.Pr (encode ⟦ g ⟧) (compile-Pr-step ⟦ h ⟧))
       (suc x ∷ args)
   ≡⟨⟩
-    Nats.eval (compile-P-step ⟦ h ⟧)
-      (Nats.eval (Nats.P (encode ⟦ g ⟧) (compile-P-step ⟦ h ⟧))
+    Nats.eval (compile-Pr-step ⟦ h ⟧)
+      (Nats.eval (Nats.Pr (encode ⟦ g ⟧) (compile-Pr-step ⟦ h ⟧))
         (x ∷ args) ∷ x ∷ args)
-  ≡⟨ cong (λ acc → Nats.eval (compile-P-step ⟦ h ⟧)
-       (acc ∷ x ∷ args)) (sound-compile-P-scalar x args g h) ⟩
-    Nats.eval (compile-P-step ⟦ h ⟧)
-      (encode-value (NatsVec.eval (NatsVec.P g h) (x ∷ args)) ∷ x ∷ args)
-  ≡⟨ eval-compile-P-step ⟦ h ⟧
-       (NatsVec.eval (NatsVec.P g h) (x ∷ args)) x args ⟩
+  ≡⟨ cong (λ acc → Nats.eval (compile-Pr-step ⟦ h ⟧)
+       (acc ∷ x ∷ args)) (sound-compile-Pr-scalar x args g h) ⟩
+    Nats.eval (compile-Pr-step ⟦ h ⟧)
+      (encode-value (NatsVec.eval (NatsVec.Pr g h) (x ∷ args)) ∷ x ∷ args)
+  ≡⟨ eval-compile-Pr-step ⟦ h ⟧
+       (NatsVec.eval (NatsVec.Pr g h) (x ∷ args)) x args ⟩
     encode-value
       (Nats.eval* ⟦ h ⟧
-        (NatsVec.eval (NatsVec.P g h) (x ∷ args) ++ x ∷ args))
+        (NatsVec.eval (NatsVec.Pr g h) (x ∷ args) ++ x ∷ args))
   ≡⟨ cong encode-value
        (sound-natVecToNats h
-         (NatsVec.eval (NatsVec.P g h) (x ∷ args) ++ x ∷ args)) ⟩
+         (NatsVec.eval (NatsVec.Pr g h) (x ∷ args) ++ x ∷ args)) ⟩
     encode-value
       (NatsVec.eval h
-        (NatsVec.eval (NatsVec.P g h) (x ∷ args) ++ x ∷ args))
+        (NatsVec.eval (NatsVec.Pr g h) (x ∷ args) ++ x ∷ args))
   ≡⟨⟩
-    encode-value (NatsVec.eval (NatsVec.P g h) (suc x ∷ args))
+    encode-value (NatsVec.eval (NatsVec.Pr g h) (suc x ∷ args))
   ∎
 
-sound-general-P : ∀ {m n} (g : NatsVec.PR m n)
+sound-general-Pr : ∀ {m n} (g : NatsVec.PR m n)
   (h : NatsVec.PR (n + suc m) n) (args : Vec ℕ (suc m)) →
-  Nats.eval* (compile-P ⟦ g ⟧ ⟦ h ⟧) args ≡ NatsVec.eval (NatsVec.P g h) args
-sound-general-P {n = n} g h (x ∷ args) =
+  Nats.eval* (compile-Pr ⟦ g ⟧ ⟦ h ⟧) args ≡ NatsVec.eval (NatsVec.Pr g h) args
+sound-general-Pr {n = n} g h (x ∷ args) =
   begin
-    Nats.eval* (compile-P ⟦ g ⟧ ⟦ h ⟧) (x ∷ args)
+    Nats.eval* (compile-Pr ⟦ g ⟧ ⟦ h ⟧) (x ∷ args)
   ≡⟨ eval-decode n
-       (Nats.P (encode ⟦ g ⟧) (compile-P-step ⟦ h ⟧)) (x ∷ args) ⟩
+       (Nats.Pr (encode ⟦ g ⟧) (compile-Pr-step ⟦ h ⟧)) (x ∷ args) ⟩
     decode-value n
-      (Nats.eval (Nats.P (encode ⟦ g ⟧) (compile-P-step ⟦ h ⟧))
+      (Nats.eval (Nats.Pr (encode ⟦ g ⟧) (compile-Pr-step ⟦ h ⟧))
         (x ∷ args))
-  ≡⟨ cong (decode-value n) (sound-compile-P-scalar x args g h) ⟩
-    decode-value n (encode-value (NatsVec.eval (NatsVec.P g h) (x ∷ args)))
-  ≡⟨ decode-encode-value (NatsVec.eval (NatsVec.P g h) (x ∷ args)) ⟩
-    NatsVec.eval (NatsVec.P g h) (x ∷ args)
+  ≡⟨ cong (decode-value n) (sound-compile-Pr-scalar x args g h) ⟩
+    decode-value n (encode-value (NatsVec.eval (NatsVec.Pr g h) (x ∷ args)))
+  ≡⟨ decode-encode-value (NatsVec.eval (NatsVec.Pr g h) (x ∷ args)) ⟩
+    NatsVec.eval (NatsVec.Pr g h) (x ∷ args)
   ∎
 
 
-sound-P : ∀ (x : ℕ)(args  : Vec ℕ m)(g : NatsVec.PR m 1) (h : NatsVec.PR (suc (suc m)) 1) → 
-  Nats.eval* (helper ⟦ g ⟧ ⟦ h ⟧) (x ∷ args) ≡ NatsVec.eval (NatsVec.P' g h) (x ∷ args)
-sound-P zero args g h rewrite sym( sound-natVecToNats g args) = helper-PR-Z g h args
-sound-P (suc x) args g h 
-  rewrite  sym (sound-natVecToNats h (NatsVec.eval (NatsVec.P' g h) (x ∷ args) ++ x ∷ args) ) 
-  | sym (sound-P x args g h)  with ⟦ h ⟧
-... | [ h' ] 
+sound-Pr : ∀ (x : ℕ)(args  : Vec ℕ m)(g : NatsVec.PR m 1) (h : NatsVec.PR (suc (suc m)) 1) →
+  Nats.eval* (helper ⟦ g ⟧ ⟦ h ⟧) (x ∷ args) ≡ NatsVec.eval (NatsVec.Pr' g h) (x ∷ args)
+sound-Pr zero args g h rewrite sym( sound-natVecToNats g args) = helper-PR-Z g h args
+sound-Pr (suc x) args g h
+  rewrite  sym (sound-natVecToNats h (NatsVec.eval (NatsVec.Pr' g h) (x ∷ args) ++ x ∷ args) )
+  | sym (sound-Pr x args g h)  with ⟦ h ⟧
+... | [ h' ]
 
   = cong (_∷ []) (cong (Nats.eval h')  refl )
 
@@ -237,13 +237,13 @@ sound-natVecToNats NatsVec.Z [] = refl
 sound-natVecToNats NatsVec.σ [ x ] = refl
 sound-natVecToNats (NatsVec.π i) args = refl
 sound-natVecToNats (NatsVec.C g h) args  rewrite sym (sound-natVecToNats h args) | sym (sound-natVecToNats g (Nats.eval* ⟦ h ⟧ args) ) = sound-natVecToNats-Helper ⟦ g ⟧  ⟦ h ⟧  args
-sound-natVecToNats (NatsVec.♯ g h) args rewrite 
-  sym (sound-natVecToNats h args) | 
-  sym(sound-natVecToNats g args) | 
-  Nats.eval*≡map-eval  ⟦ g ⟧ args | 
+sound-natVecToNats (NatsVec.♯ g h) args rewrite
+  sym (sound-natVecToNats h args) |
+  sym(sound-natVecToNats g args) |
+  Nats.eval*≡map-eval  ⟦ g ⟧ args |
   Nats.eval*≡map-eval  ⟦ h ⟧ args |
   Nats.eval*≡map-eval  (⟦ g ⟧ ++ ⟦ h ⟧) args |
   ++-map (λ p → Nats.eval p args) ⟦ g ⟧ ⟦ h ⟧ = refl
-sound-natVecToNats (NatsVec.P g h) args = sound-general-P g h args
-sound-natVecToNats (NatsVec.P' g h) (x ∷ args) =   sound-P x args g h
+sound-natVecToNats (NatsVec.Pr g h) args = sound-general-Pr g h args
+sound-natVecToNats (NatsVec.Pr' g h) (x ∷ args) =   sound-Pr x args g h
 \end{code}

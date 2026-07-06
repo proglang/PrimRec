@@ -21,33 +21,33 @@ mutual
     C-congₛ : ∀ {m n} {f g : Source.PR m}
       {fs gs : Vec (Source.PR n) m} →
       f ≈ₛ g → fs ≈ₛ* gs → Source.C f fs ≈ₛ Source.C g gs
-    P-congₛ : ∀ {n} {g g′ : Source.PR n}
+    Pr-congₛ : ∀ {n} {g g′ : Source.PR n}
       {h h′ : Source.PR (2 + n)} →
-      g ≈ₛ g′ → h ≈ₛ h′ → Source.P g h ≈ₛ Source.P g′ h′
-    F-congₛ : ∀ {n} {g g′ : Source.PR n}
+      g ≈ₛ g′ → h ≈ₛ h′ → Source.Pr g h ≈ₛ Source.Pr g′ h′
+    Ct-congₛ : ∀ {n} {g g′ : Source.PR n}
       {h h′ : Source.PR (1 + n)} →
-      g ≈ₛ g′ → h ≈ₛ h′ → Source.F g h ≈ₛ Source.F g′ h′
-    P-β-zeroₛ : ∀ {m n} (g : Source.PR n) (h : Source.PR (2 + n))
+      g ≈ₛ g′ → h ≈ₛ h′ → Source.Ct g h ≈ₛ Source.Ct g′ h′
+    Pr-β-zeroₛ : ∀ {m n} (g : Source.PR n) (h : Source.PR (2 + n))
       (parameters : Vec (Source.PR m) n) →
-      Source.C (Source.P g h) (Source.C Source.Z [] ∷ parameters) ≈ₛ
+      Source.C (Source.Pr g h) (Source.C Source.Z [] ∷ parameters) ≈ₛ
       Source.C g parameters
-    P-β-sucₛ : ∀ {m n} (g : Source.PR n) (h : Source.PR (2 + n))
+    Pr-β-sucₛ : ∀ {m n} (g : Source.PR n) (h : Source.PR (2 + n))
       (counter : Source.PR m) (parameters : Vec (Source.PR m) n) →
-      Source.C (Source.P g h)
+      Source.C (Source.Pr g h)
         (Source.C Source.σ (counter ∷ []) ∷ parameters) ≈ₛ
       Source.C h
-        (Source.C (Source.P g h) (counter ∷ parameters) ∷
+        (Source.C (Source.Pr g h) (counter ∷ parameters) ∷
          counter ∷ parameters)
-    F-β-zeroₛ : ∀ {m n} (g : Source.PR n) (h : Source.PR (1 + n))
+    Ct-β-zeroₛ : ∀ {m n} (g : Source.PR n) (h : Source.PR (1 + n))
       (parameters : Vec (Source.PR m) n) →
-      Source.C (Source.F g h) (Source.C Source.Z [] ∷ parameters) ≈ₛ
+      Source.C (Source.Ct g h) (Source.C Source.Z [] ∷ parameters) ≈ₛ
       Source.C g parameters
-    F-β-sucₛ : ∀ {m n} (g : Source.PR n) (h : Source.PR (1 + n))
+    Ct-β-sucₛ : ∀ {m n} (g : Source.PR n) (h : Source.PR (1 + n))
       (counter : Source.PR m) (parameters : Vec (Source.PR m) n) →
-      Source.C (Source.F g h)
+      Source.C (Source.Ct g h)
         (Source.C Source.σ (counter ∷ []) ∷ parameters) ≈ₛ
       Source.C h
-        (Source.C (Source.F g h) (counter ∷ parameters) ∷ parameters)
+        (Source.C (Source.Ct g h) (counter ∷ parameters) ∷ parameters)
 
   data _≈ₛ*_ : ∀ {m n} →
     Vec (Source.PR n) m → Vec (Source.PR n) m → Set where
@@ -72,33 +72,33 @@ preserves (symₛ equation) = TargetEq.symᴵ (preserves equation)
 preserves (transₛ first second) =
   TargetEq.transᴵ (preserves first) (preserves second)
 preserves (C-congₛ f fs) = TargetEq.C-congᴵ (preserves f) (preserves* fs)
-preserves (P-congₛ g h) =
-  TargetEq.P-congᴵ
+preserves (Pr-congₛ g h) =
+  TargetEq.Pr-congᴵ
     (TargetEq.C-congᴵ
       (TargetEq.`case-congᴵ
         (TargetEq.C-congᴵ (preserves g) (TargetEq.core CoreEq.≈-refl))
         (TargetEq.C-congᴵ (preserves h) (TargetEq.core CoreEq.≈-refl)))
       (TargetEq.core CoreEq.≈-refl))
-preserves (F-congₛ g h) =
-  TargetEq.P-congᴵ
+preserves (Ct-congₛ g h) =
+  TargetEq.Pr-congᴵ
     (TargetEq.C-congᴵ
       (TargetEq.`case-congᴵ
         (TargetEq.C-congᴵ (preserves g) (TargetEq.core CoreEq.≈-refl))
         (TargetEq.C-congᴵ (preserves h) (TargetEq.core CoreEq.≈-refl)))
       (TargetEq.core CoreEq.≈-refl))
-preserves (P-β-zeroₛ g h parameters) =
+preserves (Pr-β-zeroₛ g h parameters) =
   TargetEq.transᴵ
     (TargetEq.C-congᴵ (TargetEq.core CoreEq.≈-refl)
       (TargetEq.`#-congᴵ (TargetEq.core CoreEq.≈-refl)
         (compile*-tuple parameters)))
     (TargetEq.transᴵ
-      (TargetEq.P-β-zero (compile g) (compile h) (map compile parameters))
+      (TargetEq.Pr-β-zero (compile g) (compile h) (map compile parameters))
       (TargetEq.C-congᴵ (TargetEq.core CoreEq.≈-refl)
         (TargetEq.symᴵ (compile*-tuple parameters))))
-preserves (P-β-sucₛ g h counter parameters) =
+preserves (Pr-β-sucₛ g h counter parameters) =
   TargetEq.transᴵ lhs-to-schema
     (TargetEq.transᴵ
-      (TargetEq.P-β-suc (compile g) (compile h) (compile counter)
+      (TargetEq.Pr-β-suc (compile g) (compile h) (compile counter)
         (map compile parameters))
       (TargetEq.C-congᴵ (TargetEq.core CoreEq.≈-refl)
         (TargetEq.symᴵ arguments-to-schema)))
@@ -119,19 +119,19 @@ preserves (P-β-sucₛ g h counter parameters) =
     TargetEq.`#-congᴵ result-equation
       (TargetEq.`#-congᴵ (TargetEq.core CoreEq.≈-refl)
         parameter-equation)
-preserves (F-β-zeroₛ g h parameters) =
+preserves (Ct-β-zeroₛ g h parameters) =
   TargetEq.transᴵ
     (TargetEq.C-congᴵ (TargetEq.core CoreEq.≈-refl)
       (TargetEq.`#-congᴵ (TargetEq.core CoreEq.≈-refl)
         (compile*-tuple parameters)))
     (TargetEq.transᴵ
-      (TargetEq.F-β-zero (compile g) (compile h) (map compile parameters))
+      (TargetEq.Ct-β-zero (compile g) (compile h) (map compile parameters))
       (TargetEq.C-congᴵ (TargetEq.core CoreEq.≈-refl)
         (TargetEq.symᴵ (compile*-tuple parameters))))
-preserves (F-β-sucₛ g h counter parameters) =
+preserves (Ct-β-sucₛ g h counter parameters) =
   TargetEq.transᴵ lhs-to-schema
     (TargetEq.transᴵ
-      (TargetEq.F-β-suc (compile g) (compile h) (compile counter)
+      (TargetEq.Ct-β-suc (compile g) (compile h) (compile counter)
         (map compile parameters))
       (TargetEq.C-congᴵ (TargetEq.core CoreEq.≈-refl)
         (TargetEq.symᴵ arguments-to-schema)))

@@ -15,7 +15,7 @@ import System-T0 as T0 --using (Exp; evalST; evalSTClosed; ext2)
 -- open System-T0.Exp
 open import Utils
 open import HVec
-open import EvalPConstructor
+open import EvalPrConstructor
 import System-T as T
 
 
@@ -27,7 +27,7 @@ data PR : ∀ {n : ℕ} -> T.Ctx n → T.Ty → Set where
         C : ∀ {n m : ℕ} {argsGS : T.Ctx n}{resGi : T.Ctx m}{tyF}(f : PR resGi tyF)      -- composition
             → (g* : HVec (λ t → PR argsGS t) resGi)
             → PR argsGS tyF
-        P :  ∀ {n : ℕ} {argsG : T.Ctx n}{tyG} (g : PR argsG tyG)                        -- primitive recursion
+        Pr :  ∀ {n : ℕ} {argsG : T.Ctx n}{tyG} (g : PR argsG tyG)                        -- primitive recursion
             → (h : PR  (tyG ∷ (T.TyNat ∷ argsG)) tyG)
             → PR (T.TyNat ∷ argsG) tyG
 
@@ -38,7 +38,7 @@ eval Z hvs = 0
 eval σ (x ∷ᴴ []ᴴ) = x + 1
 eval (π i) hvs = hlookup  hvs i
 eval (C f g*) hvs = eval f (eval* g* hvs)
-eval (P g h) (x ∷ᴴ hvs) = para  (λ acc' counter' → eval h (acc' ∷ᴴ (counter' ∷ᴴ hvs))) (eval g hvs) x 
+eval (Pr g h) (x ∷ᴴ hvs) = para  (λ acc' counter' → eval h (acc' ∷ᴴ (counter' ∷ᴴ hvs))) (eval g hvs) x
 
 eval* []ᴴ hs = []ᴴ
 eval* (g ∷ᴴ gs) hs = eval g hs ∷ᴴ eval* gs hs
@@ -49,7 +49,7 @@ id≡id x = refl
 
 mapId : ∀ {A : Set} {n : ℕ} (xs : Vec A n) → map id xs ≡ xs
 mapId [] = refl
-mapId (x ∷ xs) rewrite mapId xs = refl 
+mapId (x ∷ xs) rewrite mapId xs = refl
 
 {-# REWRITE  mapId #-}
 

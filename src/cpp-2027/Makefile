@@ -4,12 +4,12 @@ AGDATEX=/Users/thiemann/git/agdatex/agdatex.py
 AGDATEX_SRCS=\
 	$(ROOT)/Core/Types.agda \
 	$(ROOT)/Core/PRFO.agda \
-	$(ROOT)/Core/PRFOFold.agda \
+	$(ROOT)/Core/PRFOCatamorphism.agda \
 	$(ROOT)/Core/PRHO.agda \
 	$(ROOT)/Core/Equations/PRFO.agda \
 	$(ROOT)/Core/Models/PRHO.agda \
 	$(ROOT)/Core/Models/Setoids/PRFO.agda \
-	$(ROOT)/Core/Translations/PRFOParamorphismFold.agda
+	$(ROOT)/Core/Translations/PRFOParamorphismCatamorphism.agda
 
 .PHONY: all agda-snippets clean
 

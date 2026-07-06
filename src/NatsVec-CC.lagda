@@ -60,8 +60,8 @@ T⟦ NV.σ ⟧ = `# (C σ π₁) `0
 T⟦ NV.π i ⟧ = `# (ilookup i) `0
 T⟦ NV.C f g ⟧ = C T⟦ f ⟧ T⟦ g ⟧
 T⟦ NV.♯ f g ⟧ = C (iso-+ _ _) (`# T⟦ f ⟧ T⟦ g ⟧)
-T⟦ NV.P g h ⟧ = P T⟦ g ⟧ (C (C T⟦ h ⟧ (iso-+ _ _)) assocˡ)
-T⟦ NV.P' g h ⟧ = P T⟦ g ⟧ (C (C T⟦ h ⟧ (iso-+ _ _)) assocˡ)
+T⟦ NV.Pr g h ⟧ = Pr T⟦ g ⟧ (C (C T⟦ h ⟧ (iso-+ _ _)) assocˡ)
+T⟦ NV.Pr' g h ⟧ = Pr T⟦ g ⟧ (C (C T⟦ h ⟧ (iso-+ _ _)) assocˡ)
 
 lemma-lookup : (v : Vec ℕ m) (i : Fin m) → lookup v i ≡  ⟦ ilookup i ⟧ᴱ T⟦ v ⟧ⱽ
 lemma-lookup (x ∷ _) zero = refl
@@ -79,19 +79,19 @@ sound NV.σ [ x ] = refl
 sound (NV.π i) v rewrite lemma-lookup v i = refl
 sound (NV.C f g) v rewrite sound f (NV.eval g v) | sound g v = refl
 sound (NV.♯ f g) v rewrite sym (sound f v) | sym (sound g v) = lemma-iso-+ (NV.eval f v) (NV.eval g v)
-sound (NV.P g h) (zero ∷ v) = sound g v
-sound (NV.P g h) (suc i ∷ v)
+sound (NV.Pr g h) (zero ∷ v) = sound g v
+sound (NV.Pr g h) (suc i ∷ v)
   rewrite
-  sound h (NV.eval (NV.P g h) (i ∷ v) ++ i ∷ v)
-  = cong ⟦ T⟦ h ⟧ ⟧ᴱ (trans (lemma-iso-+ (NV.eval (NV.P g h) (i ∷ v)) (i ∷ v))
+  sound h (NV.eval (NV.Pr g h) (i ∷ v) ++ i ∷ v)
+  = cong ⟦ T⟦ h ⟧ ⟧ᴱ (trans (lemma-iso-+ (NV.eval (NV.Pr g h) (i ∷ v)) (i ∷ v))
                            (cong (λ ih → ⟦ iso-+ _ _ ⟧ᴱ ⟨ ih , ⟨ i , T⟦ v ⟧ⱽ ⟩ ⟩)
-                                 (sound (NV.P g h) (i ∷ v))))
-sound (NV.P' g h) (zero ∷ v) = sound g v
-sound (NV.P' g h) (suc i ∷ v) 
+                                 (sound (NV.Pr g h) (i ∷ v))))
+sound (NV.Pr' g h) (zero ∷ v) = sound g v
+sound (NV.Pr' g h) (suc i ∷ v)
   rewrite
-  sound h (NV.eval (NV.P' g h) (i ∷ v) ++ i ∷ v)
-  = cong ⟦ T⟦ h ⟧ ⟧ᴱ (trans (lemma-iso-+ (NV.eval (NV.P' g h) (i ∷ v)) (i ∷ v))
+  sound h (NV.eval (NV.Pr' g h) (i ∷ v) ++ i ∷ v)
+  = cong ⟦ T⟦ h ⟧ ⟧ᴱ (trans (lemma-iso-+ (NV.eval (NV.Pr' g h) (i ∷ v)) (i ∷ v))
                            (cong (λ ih → ⟦ iso-+ _ _ ⟧ᴱ ⟨ ih , ⟨ i , T⟦ v ⟧ⱽ ⟩ ⟩)
-                                 (sound (NV.P' g h) (i ∷ v))))
+                                 (sound (NV.Pr' g h) (i ∷ v))))
 
 \end{code}

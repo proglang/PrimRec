@@ -6,7 +6,7 @@ open import Data.Vec using (Vec; []; _∷_; _++_; lookup; map; toList; head)
 
 open import Utils
 
-data HList (F : S → Set) : List S → Set where
+data HList (Ct : S → Set) : List S → Set where
   []ᴴ  : HList F []ᴸ
   _∷ᴴ_ : ∀ {s ss} → F s → HList F ss → HList F (s ∷ᴸ ss)
 

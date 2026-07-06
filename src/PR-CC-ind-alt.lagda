@@ -100,12 +100,12 @@ data _→ᴾ_ : TY → TY → Set where
   `case : (f : U →ᴾ T) → (g : V →ᴾ T) → U `+ V →ᴾ T
   --
   con : sub₀ (ind G) G →ᴾ ind G
-  P :  ∀ {T U} {G}  (h : sub₀ (T `× ind G) G `× U →ᴾ T) → (ind G `× U →ᴾ T)
+  Pr :  ∀ {T U} {G}  (h : sub₀ (T `× ind G) G `× U →ᴾ T) → (ind G `× U →ᴾ T)
 \end{code}
 }
 
 \begin{code}[hide]
-  F : ∀ {T U} {G}  (h : sub₀ T G `× U →ᴾ T) → (ind G `× U →ᴾ T)
+  Ct : ∀ {T U} {G}  (h : sub₀ T G `× U →ᴾ T) → (ind G `× U →ᴾ T)
 
 -- interpretation
 \end{code}
@@ -141,16 +141,16 @@ helper2 G = helper G (ind G)
 
 \begin{code}[hide]
 -- https://www.cse.chalmers.se/~ulfn/papers/afp08/tutorial.pdf
-mapFold : forall {X} F G -> (⟦ G ⟧ₚ X -> X) -> ⟦ F ⟧ₚ (Alg G) -> ⟦ F ⟧ₚ X
-mapFold `𝟙 G φ x = tt
-mapFold (F1 `× F2) G φ (x , y) = (mapFold F1 G φ x) , mapFold F2 G φ y
-mapFold (F1 `+ F2) G φ (inj₁ x) = inj₁ (mapFold F1 G φ x)
-mapFold (F1 `+ F2) G φ (inj₂ y) = inj₂ ((mapFold F2 G φ y))
-mapFold `t G φ (con x) = φ (mapFold G G φ x) 
+mapCatamorphism : forall {X} F G -> (⟦ G ⟧ₚ X -> X) -> ⟦ F ⟧ₚ (Alg G) -> ⟦ F ⟧ₚ X
+mapCatamorphism `𝟙 G φ x = tt
+mapCatamorphism (F1 `× F2) G φ (x , y) = (mapCatamorphism F1 G φ x) , mapCatamorphism F2 G φ y
+mapCatamorphism (F1 `+ F2) G φ (inj₁ x) = inj₁ (mapCatamorphism F1 G φ x)
+mapCatamorphism (F1 `+ F2) G φ (inj₂ y) = inj₂ ((mapCatamorphism F2 G φ y))
+mapCatamorphism `t G φ (con x) = φ (mapCatamorphism G G φ x) 
 
 
-foldF : {F : PolyTyOp}{A : Set} -> (⟦ F ⟧ₚ A -> A) -> Alg F -> A
-foldF {pto} φ (con x) = φ (mapFold pto pto φ x) 
+catamorphismF : {F : PolyTyOp}{A : Set} -> (⟦ F ⟧ₚ A -> A) -> Alg F -> A
+catamorphismF {pto} φ (con x) = φ (mapCatamorphism pto pto φ x) 
 \end{code}
 
 
@@ -187,11 +187,11 @@ eval ι₁       = inj₁
 eval ι₂       = inj₂
 eval (`case f g) = λ{ (inj₁ x) → eval f x ; (inj₂ y) → eval g y}
 eval con  =  con
-eval (P {G = G} h) =   λ {(x , u) → foldF (λ gu → eval h (fmap (λ u' → u' , x) G gu , u)) x} --   λ{ (con x , u) → eval h ((fmap (λ v → (eval (P h) (v , u)) , v) G x) , u)}
+eval (Pr {G = G} h) =   λ {(x , u) → catamorphismF (λ gu → eval h (fmap (λ u' → u' , x) G gu , u)) x} --   λ{ (con x , u) → eval h ((fmap (λ v → (eval (Pr h) (v , u)) , v) G x) , u)}
 \end{code}
 }
 \begin{code}[hide]
-eval (F {G = G} h) =  λ{ (x , u) → foldF (λ gu → eval h (gu , u)) x } --  λ{ (con x , u) → eval h ((fmap (λ v → eval (F h) (v , u)) G x) , u) }
+eval (Ct {G = G} h) =  λ{ (x , u) → catamorphismF (λ gu → eval h (gu , u)) x } --  λ{ (con x , u) → eval h ((fmap (λ v → eval (Ct h) (v , u)) G x) , u) }
 \end{code}
 
 \begin{code}[hide]
@@ -259,8 +259,8 @@ module FromNats where
   ⟦ Nats.σ ⟧      = C (C con ι₂) π₁
   ⟦ Nats.π i ⟧    = lookup i
   ⟦ Nats.C f g* ⟧ = C ⟦ f ⟧ ⟦ g* ⟧*
-  ⟦ Nats.P g h ⟧  = P (C (`case (C ⟦ g ⟧ π₂) (C ⟦ h ⟧ assoc-×)) dist-+-x)
-  ⟦ Nats.F g h ⟧  = F (C (`case (C ⟦ g ⟧ π₂) ⟦ h ⟧) dist-+-x)
+  ⟦ Nats.Pr g h ⟧  = Pr (C (`case (C ⟦ g ⟧ π₂) (C ⟦ h ⟧ assoc-×)) dist-+-x)
+  ⟦ Nats.Ct g h ⟧  = Ct (C (`case (C ⟦ g ⟧ π₂) ⟦ h ⟧) dist-+-x)
 
   ⟦ [] ⟧*         = `0
   ⟦ p ∷ p* ⟧*     = `# ⟦ p ⟧ ⟦ p* ⟧*
@@ -294,7 +294,7 @@ module FromWords where
   ⟦ Words.σ a ⟧ = C (C con (C ι₂ (`# (C ⟦ a ⟧ᴬ `0) id))) π₁
   ⟦ Words.π i ⟧ = lookup i
   ⟦ Words.C f g* ⟧ = C ⟦ f ⟧ ⟦ g* ⟧*
-  ⟦ Words.P g h ⟧ = P (C (`case (C ⟦ g ⟧ π₂) (C (C (C (`case (C ⟦ h (inj₁ tt) ⟧ assoc-×) (C ⟦ h (inj₂ tt) ⟧ assoc-×)) dist-+-x) (`# (C (`case (C ι₁ π₂) (C ι₂ π₂)) π₁) π₂)) (`# (C dist-+-x π₁) π₂))) dist-+-x)
+  ⟦ Words.Pr g h ⟧ = Pr (C (`case (C ⟦ g ⟧ π₂) (C (C (C (`case (C ⟦ h (inj₁ tt) ⟧ assoc-×) (C ⟦ h (inj₂ tt) ⟧ assoc-×)) dist-+-x) (`# (C (`case (C ι₁ π₂) (C ι₂ π₂)) π₁) π₂)) (`# (C dist-+-x π₁) π₂))) dist-+-x)
 
   ⟦ [] ⟧*         = `0
   ⟦ p ∷ p* ⟧*     = `# ⟦ p ⟧ ⟦ p* ⟧*
@@ -340,7 +340,7 @@ module FromTrees where
   ⟦ Trees.σ (inj₂ (tt , tt)) ⟧ = C con (C ι₂ (`# π₁ (C π₁ π₂)))
   ⟦ Trees.π i ⟧ = lookup i
   ⟦ Trees.C f g* ⟧ = C ⟦ f ⟧ ⟦ g* ⟧*
-  ⟦ Trees.P h ⟧ = P (C (`case (C ⟦ h (inj₁ tt) ⟧ π₂)
+  ⟦ Trees.Pr h ⟧ = Pr (C (`case (C ⟦ h (inj₁ tt) ⟧ π₂)
                               (C ⟦ h (inj₂ (tt , tt)) ⟧ (`# (C π₁ (C π₁ π₁)) (`# (C π₂ (C π₁ π₁)) (`# (C π₁ (C π₂ π₁)) (`# (C π₂ (C π₂ π₁)) π₂))))))
                        dist-+-x)
   

@@ -38,7 +38,7 @@ record Structure (ℓ : Level) : Set (suc ℓ) where
     strengthᴹ : ∀ {T U} (G : Ty HO 1) → (G [ T ]) `× U ⇒ᴹ G [ T `× U ]
 
     conᴹ : ∀ {G : Ty HO 1} → G [ ind G ] ⇒ᴹ ind G
-    Pᴹ : ∀ {T U} {G : Ty HO 1}
+    Prᴹ : ∀ {T U} {G : Ty HO 1}
       → ((G [ T `× ind G ]) `× U ⇒ᴹ T)
       → (ind G `× U ⇒ᴹ T)
 
@@ -123,10 +123,10 @@ record Model (ℓ : Level) : Set (suc ℓ) where
     lam-congᴹ : ∀ {A B D} {f f′ : A `× B ⇒ᴹ D} → f ≈ᴹ f′ → lamᴹ f ≈ᴹ lamᴹ f′
     fmap-congᴹ : ∀ {A B} (G : Ty HO 1) {f f′ : A ⇒ᴹ B}
       → f ≈ᴹ f′ → fmapᴹ G f ≈ᴹ fmapᴹ G f′
-    P-congᴹ : ∀ {A B} {G : Ty HO 1}
+    Pr-congᴹ : ∀ {A B} {G : Ty HO 1}
       {h h′ : (G [ A `× ind G ]) `× B ⇒ᴹ A}
       → h ≈ᴹ h′
-      → Pᴹ {T = A} {U = B} {G = G} h ≈ᴹ Pᴹ {T = A} {U = B} {G = G} h′
+      → Prᴹ {T = A} {U = B} {G = G} h ≈ᴹ Prᴹ {T = A} {U = B} {G = G} h′
 
     C-idˡᴹ : ∀ {A B} {f : A ⇒ᴹ B} → Cᴹ idᴹ f ≈ᴹ f
     C-idʳᴹ : ∀ {A B} {f : A ⇒ᴹ B} → Cᴹ f idᴹ ≈ᴹ f
@@ -167,13 +167,13 @@ record Model (ℓ : Level) : Set (suc ℓ) where
     ⇒-βᴹ : ∀ {A B D} {f : A `× B ⇒ᴹ D} → thetaᴹ structure (lamᴹ f) ≈ᴹ f
     ⇒-ηᴹ : ∀ {A B D} {f : A ⇒ᴹ B `⇒ D} → lamᴹ (thetaᴹ structure f) ≈ᴹ f
 
-    P-βᴹ : ∀ {A B} {G : Ty HO 1} {h : (G [ A `× ind G ]) `× B ⇒ᴹ A}
-      → Cᴹ (Pᴹ {T = A} {U = B} {G = G} h) (map-×ᴹ structure (conᴹ {G = G}) (idᴹ {T = B}))
-        ≈ᴹ Cᴹ h (paraArgsᴹ structure G (Pᴹ {T = A} {U = B} {G = G} h))
-    P-uniqueᴹ : ∀ {A B} {G : Ty HO 1} {h : (G [ A `× ind G ]) `× B ⇒ᴹ A}
+    Pr-βᴹ : ∀ {A B} {G : Ty HO 1} {h : (G [ A `× ind G ]) `× B ⇒ᴹ A}
+      → Cᴹ (Prᴹ {T = A} {U = B} {G = G} h) (map-×ᴹ structure (conᴹ {G = G}) (idᴹ {T = B}))
+        ≈ᴹ Cᴹ h (paraArgsᴹ structure G (Prᴹ {T = A} {U = B} {G = G} h))
+    Pr-uniqueᴹ : ∀ {A B} {G : Ty HO 1} {h : (G [ A `× ind G ]) `× B ⇒ᴹ A}
       {p : ind G `× B ⇒ᴹ A}
       → Cᴹ p (map-×ᴹ structure (conᴹ {G = G}) (idᴹ {T = B})) ≈ᴹ Cᴹ h (paraArgsᴹ structure G p)
-      → p ≈ᴹ Pᴹ {T = A} {U = B} {G = G} h
+      → p ≈ᴹ Prᴹ {T = A} {U = B} {G = G} h
 
 ----------------------------------------------------------------------
 -- Interpretation and soundness
@@ -198,7 +198,7 @@ module _ {ℓ} (S : Structure ℓ) where
   interpret (Syn.fmap G f) = fmapᴹ G (interpret f)
   interpret (Syn.strength G) = strengthᴹ G
   interpret Syn.con = conᴹ
-  interpret (Syn.P h) = Pᴹ (interpret h)
+  interpret (Syn.Pr h) = Prᴹ (interpret h)
 
   interpret-fmapᶜ : ∀ {A B G} (R : StructuralFunctor G)
     (f : A Syn.→ᴾ B) →
@@ -240,7 +240,7 @@ module _ {ℓ} (M : Model ℓ) where
   sound (Eq.`case-cong p q) = case-congᴹ (sound p) (sound q)
   sound (Eq.lam-cong p) = lam-congᴹ (sound p)
   sound (Eq.fmap-cong G p) = fmap-congᴹ G (sound p)
-  sound (Eq.P-cong {A = A} {B = B} {H = H} p) = P-congᴹ {A = A} {B = B} {G = H} (sound p)
+  sound (Eq.Pr-cong {A = A} {B = B} {H = H} p) = Pr-congᴹ {A = A} {B = B} {G = H} (sound p)
   sound Eq.C-idˡ = C-idˡᴹ
   sound Eq.C-idʳ = C-idʳᴹ
   sound Eq.C-assoc = C-assocᴹ
@@ -264,8 +264,8 @@ module _ {ℓ} (M : Model ℓ) where
   sound Eq.+-η = +-ηᴹ
   sound Eq.⇒-β = ⇒-βᴹ
   sound Eq.⇒-η = ⇒-ηᴹ
-  sound Eq.P-β = P-βᴹ
-  sound (Eq.P-unique p) = P-uniqueᴹ (sound p)
+  sound Eq.Pr-β = Pr-βᴹ
+  sound (Eq.Pr-unique p) = Pr-uniqueᴹ (sound p)
 
   --------------------------------------------------------------------
   -- Derived distributivity in every PR-HO model

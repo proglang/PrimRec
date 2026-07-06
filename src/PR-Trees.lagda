@@ -26,7 +26,7 @@ module obsolete where
     σ : (a : A) → PRR r (r a)
     π : (i : Fin n) → PRR r n
     C : (f : PRR r m) → (g : Vec (PRR r n) m) → PRR r n
-    P : (h : (a : A) → PRR r (r a + r a + n)) → PRR r (suc n)
+    Pr : (h : (a : A) → PRR r (r a + r a + n)) → PRR r (suc n)
 
   data Alg (r : Rank A) : Set where
     con : (a : A) → Vec (Alg r) (r a) → Alg r
@@ -38,7 +38,7 @@ module obsolete where
   eval (σ a) v* = con a v*
   eval (π i) v* = lookup v* i
   eval (C f g*) v* = eval f (eval* g* v*)
-  eval {r = r} (P h) (con a xs ∷ v*) = eval (h a) ((map (λ x → eval (P h) (x ∷ v*)) xs ++ xs) ++ v* )
+  eval {r = r} (Pr h) (con a xs ∷ v*) = eval (h a) ((map (λ x → eval (Pr h) (x ∷ v*)) xs ++ xs) ++ v* )
 
   eval* [] v* = []
   eval* (x ∷ p*) v* = (eval x v*) ∷ (eval* p* v*)
@@ -67,7 +67,7 @@ data PR R : ℕ → Set where
   σ : (a : symbols R) → PR R (rank R a)
   π : (i : Fin n) → PR R n
   C : (f : PR R m) → (g* : Vec (PR R n) m) → PR R n
-  P : (h : (a : symbols R) → PR R (rank R a + rank R a + n)) → PR R (suc n)
+  Pr : (h : (a : symbols R) → PR R (rank R a + rank R a + n)) → PR R (suc n)
 \end{code}
 }
 \begin{code}[hide]
@@ -83,7 +83,7 @@ eval  : PR R n → Vec (Term R) n → Term R
 eval (σ a) v* = con a v*
 eval (π i) v* = lookup v* i
 eval (C f g*) v* = eval f (eval* g* v*)
-eval (P h) (con a xs ∷ v*) = eval (h a) (((map (λ x → eval (P h) (x ∷ v*)) xs) ++ xs) ++ v*)
+eval (Pr h) (con a xs ∷ v*) = eval (h a) (((map (λ x → eval (Pr h) (x ∷ v*)) xs) ++ xs) ++ v*)
 \end{code}
 }
 \begin{code}[hide]
@@ -92,8 +92,8 @@ eval* (p ∷ p*) v* = eval p v* ∷ eval* p* v*
 \end{code}
 \begin{code}[hide]
 data PR′ R : ℕ → Set where
-  P′ : (h : (a : symbols R) → PR′ R (rank R a * 2 + n)) → PR′ R (suc n)
+  Pr′ : (h : (a : symbols R) → PR′ R (rank R a * 2 + n)) → PR′ R (suc n)
 {-# TERMINATING #-}
 eval′ : PR′ R n → Vec (Term R) n → Term R
-eval′ (P′ h) (con a xs ∷ v*) = eval′ (h a) ((concat (map (λ x → [ eval′ (P′ h) (x ∷ v*) , x ]) xs)) ++ v*)
+eval′ (Pr′ h) (con a xs ∷ v*) = eval′ (h a) ((concat (map (λ x → [ eval′ (Pr′ h) (x ∷ v*) , x ]) xs)) ++ v*)
 \end{code}

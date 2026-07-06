@@ -141,7 +141,7 @@ $h := C (h,(g_1,\dots, g_m)) \colon \mathbb{N}^n \rightarrow \mathbb{N} $ define
 
 \item[Primitive recursion] 
 If $g$ and $h$ are primitive recursive functions with aritys $n$ and
-$n+2$ then $f := P (g,h)$ is a primitive recursive function of arity $n+1$ that is defined as follows.
+$n+2$ then $f := Pr (g,h)$ is a primitive recursive function of arity $n+1$ that is defined as follows.
 \begin{align*}
 	f&\colon \mathbb{N}^{n+1} \rightarrow \mathbb{N} \\
 	f  (0,\xn)  &= g (\xn) \\
@@ -366,7 +366,7 @@ The fourth compartment has arrows to introduce and eliminate sum types, which ar
 the respective arrows involving products.
 The fifth compartment specifies a distributive law of sum types over product types.
 The final compartment
-defines arrows to introduce {\Afold} and eliminate inductive types
+defines arrows to introduce {\Acon} and eliminate inductive types
 {\AP}. This treatment is still 100\% first order, without higher-order
 functions.
 
@@ -381,7 +381,7 @@ closed category with coproducts is also distributive (folklore
 according to \cite{https://doi.org/10.48550/arxiv.1406.0961}).
 
 Considering the arrows dealing with inductive types, 
-in the definition of {\Afold} and {\AP}, we find that $G :$~\ATy1, a type with a
+in the definition of {\Acon} and {\AP}, we find that $G :$~\ATy1, a type with a
 single type variable. It will be convenient to view $G$ as a functor
 that acts on types $T:$~{\ATY} by substitution, i.e., $T \mapsto (G
 \Leftarrow T)$. 
@@ -399,7 +399,7 @@ unfolded and applied to a pair of $T$, the result of the inductive
 evaluation, and \Aind~$G$, the inductive subterm.
 
 Alternatively, we can equip inductive types with the standard
-catamorphism (aka fold operator) at this type:
+catamorphism (aka catamorphism operator) at this type:
 \ccDataPRF
 We omit the details.
 
@@ -416,7 +416,7 @@ function is straightforward.
 \ccFunEval
 The only interesting case is the one for primitive recursion. It is
 interpreted by a function taking a pair of \Aind~$G$ and some $U$. The
-first component of the argument must evaluate to some \Afold~$x$, so the $x$ corresponds
+first component of the argument must evaluate to some \Acon~$x$, so the $x$ corresponds
 to the constructor arguments, and the second component $u:U$ is the
 extra argument. Now we run the function $h$ essentially on
 $x :{} G \Leftarrow \Aind~G$ and $u$, but 
@@ -445,7 +445,7 @@ distributivity. To start with, it requires an
 encoding of vectors and vector lookup.
 \ccFunMkvec
 \ccDefNatToInd
-The encodings of the constructors apply {\Afold} to the left and right
+The encodings of the constructors apply {\Acon} to the left and right
 injection, respectively. Projection and composition are as before. For
 the encoding of primitive recursion, we need two helper arrows. One
 arrow that implements associativity of the product and another that
@@ -486,7 +486,7 @@ number of arguments. All variables and arguments will have type \ANat.
 To evaluate the iterator of this language we define paramorphisms for
 natural numbers \cite{DBLP:conf/fpca/MeijerFP91}. 
 
-\input{latex/EvalPConstructor}
+\input{latex/EvalPrConstructor}
 \para
 \evalST
 

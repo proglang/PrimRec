@@ -120,8 +120,8 @@ compile Source.Z = emptyCon
 compile (Source.σ a) = letterCon a
 compile (Source.π i) = lookupᴾ i
 compile (Source.C f fs) = C (compile f) (compile* fs)
-compile {k} {suc n} (Source.P g h) =
-  P (wordParaHandler g h)
+compile {k} {suc n} (Source.Pr g h) =
+  Pr (wordParaHandler g h)
 
 compile* []       = `⊤
 compile* (p ∷ ps) = `# (compile p) (compile* ps)
@@ -154,7 +154,7 @@ module For {A : Set} (finiteA : Finite A) where
   compileFinite (Source.σ a) = letterCon (encode finiteA a)
   compileFinite (Source.π i) = lookupᴾ i
   compileFinite (Source.C f fs) = C (compileFinite f) (compileFinite* fs)
-  compileFinite (Source.P g h) = P (finiteHandler g h)
+  compileFinite (Source.Pr g h) = Pr (finiteHandler g h)
 
   compileFinite* [] = `⊤
   compileFinite* (p ∷ ps) = `# (compileFinite p) (compileFinite* ps)
@@ -180,8 +180,8 @@ module For {A : Set} (finiteA : Finite A) where
       Model.interpret structure (compileFinite (Source.σ a))
     denote (Source.π i) = Model.interpret structure (lookupᴾ i)
     denote (Source.C f fs) = Cᴹ (denote f) (denote* fs)
-    denote (Source.P g h) =
-      Pᴹ (Model.interpret structure (finiteHandler g h))
+    denote (Source.Pr g h) =
+      Prᴹ (Model.interpret structure (finiteHandler g h))
 
     denote* [] = ⊤ᴹ
     denote* (p ∷ ps) = pairᴹ (denote p) (denote* ps)
@@ -195,7 +195,7 @@ module For {A : Set} (finiteA : Finite A) where
     preserves (Source.σ a) = ≈-reflᴹ
     preserves (Source.π i) = ≈-reflᴹ
     preserves (Source.C f fs) = C-congᴹ (preserves f) (preserves* fs)
-    preserves (Source.P g h) = P-congᴹ ≈-reflᴹ
+    preserves (Source.Pr g h) = Pr-congᴹ ≈-reflᴹ
 
     preserves* [] = ≈-reflᴹ
     preserves* (p ∷ ps) = pair-congᴹ (preserves p) (preserves* ps)
@@ -217,8 +217,8 @@ module Semantics {ℓ : Level} (M : Model.Model ℓ) where
   denote (Source.σ a) = Model.interpret structure (compile (Source.σ a))
   denote (Source.π i) = Model.interpret structure (lookupᴾ i)
   denote (Source.C f fs) = Cᴹ (denote f) (denote* fs)
-  denote {k} {suc n} (Source.P g h) =
-    Pᴹ (Model.interpret structure (wordParaHandler g h))
+  denote {k} {suc n} (Source.Pr g h) =
+    Prᴹ (Model.interpret structure (wordParaHandler g h))
 
   denote* []       = ⊤ᴹ
   denote* (p ∷ ps) = pairᴹ (denote p) (denote* ps)
@@ -232,7 +232,7 @@ module Semantics {ℓ : Level} (M : Model.Model ℓ) where
   preserves (Source.σ a) = ≈-reflᴹ
   preserves (Source.π i) = ≈-reflᴹ
   preserves (Source.C f fs) = C-congᴹ (preserves f) (preserves* fs)
-  preserves {k} {suc n} (Source.P g h) = P-congᴹ ≈-reflᴹ
+  preserves {k} {suc n} (Source.Pr g h) = Pr-congᴹ ≈-reflᴹ
 
   preserves* [] = ≈-reflᴹ
   preserves* (p ∷ ps) = pair-congᴹ (preserves p) (preserves* ps)

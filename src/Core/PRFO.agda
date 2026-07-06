@@ -42,7 +42,7 @@ data _→ᴾ_ : TY FO → TY FO → Set where
 
   -- inductive types and primitive recursion
   con       : G [ ind G ] →ᴾ ind G
-  P         : (G [ T `× ind G ]) `× U →ᴾ T → ind G `× U →ᴾ T
+  Pr        : (G [ T `× ind G ]) `× U →ᴾ T → ind G `× U →ᴾ T
 --! }
 
 --! CorePRFODerivedOperations {

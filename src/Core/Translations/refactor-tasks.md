@@ -1,13 +1,13 @@
-# Later tasks: generic P/F interdefinability refactor
+# Later tasks: generic Pr/Ct interdefinability refactor
 
-The first-order and higher-order P/F interdefinability proofs are currently
+The first-order and higher-order Pr/Ct interdefinability proofs are currently
 separate, intentionally mechanical developments.  This file tracks the
 medium-term cleanup that should replace the duplication once both versions are
 stable.
 
 ## Goal
 
-Factor the common proof that paramorphism-primitive and fold-primitive
+Factor the common proof that paramorphism-primitive and catamorphism-primitive
 presentations are equivalent.  The proof should be parameterized by the
 categorical and inductive-type structure it actually uses, with exponentials
 treated as an optional extension rather than baked into the argument.
@@ -16,15 +16,15 @@ treated as an optional extension rather than baked into the argument.
 
 1. Define a small record for the shared syntax surface:
    category operations, terminal/initial objects, products, sums, functorial
-   action, strength, `con`, and either primitive `P` or primitive `F`.
+   action, strength, `con`, and either primitive `Pr` or primitive `Ct`.
 2. Define a corresponding record of equations:
    congruence, category/product/sum laws, functoriality, strength naturality,
-   `strength-π₁`, and the primitive recursion or fold computation/uniqueness
+   `strength-π₁`, and the primitive recursion or catamorphism computation/uniqueness
    laws.
 3. Move the common derived lemmas from
-   `Core.Translations.PRFOParamorphismFold` and
-   `Core.Translations.PRHOParamorphismFold` into one parameterized module:
-   derived `F` from `P`, derived `P` from `F`, β-laws, uniqueness laws, equation
+   `Core.Translations.PRFOParamorphismCatamorphism` and
+   `Core.Translations.PRHOParamorphismCatamorphism` into one parameterized module:
+   derived `Ct` from `Pr`, derived `Pr` from `Ct`, β-laws, uniqueness laws, equation
    preservation, and round-trip proofs.
 4. Instantiate the generic module for FO.
 5. Instantiate the generic module for HO, adding only the structural
@@ -42,14 +42,14 @@ treated as an optional extension rather than baked into the argument.
   positions and one for covariant positions.  This could allow function
   domains to mention type variables while preserving a principled functorial
   action, but it would likely require replacing the present unary `fmap` and
-  `strength` interface with a bifunctorial action and rechecking the P/F
+  `strength` interface with a bifunctorial action and rechecking the Pr/Ct
   equivalence proofs against that more general structure.
 
 ## Guardrails
 
 - Keep the current first-order and higher-order modules typechecking during the
   refactor.
-- Do not abstract over more than the P/F proof needs.  In particular,
-  exponentials are not part of the core P/F argument.
-- Preserve the names of the public theorems (`toP-preserves`, `toF-preserves`,
-  `toP-toF`, `toF-toP`) or re-export them under the existing names.
+- Do not abstract over more than the Pr/Ct proof needs.  In particular,
+  exponentials are not part of the core Pr/Ct argument.
+- Preserve the names of the public theorems (`toPr-preserves`, `toCt-preserves`,
+  `toPr-toCt`, `toCt-toPr`) or re-export them under the existing names.

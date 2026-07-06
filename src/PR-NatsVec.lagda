@@ -19,8 +19,8 @@ data PR : ℕ → ℕ → Set where
   π : (i : Fin m) → PR m 1
   C : (g : PR m n) → (f : PR o m) → PR o n
   ♯ : (g : PR m n) → (f : PR m o) → PR m (n + o)
-  P : (g : PR m n) → (h : PR (n + (suc m)) n) → PR (suc m) n
-  P' : (g : PR m 1) → (h : PR (suc(suc m)) 1) → PR (suc m) 1
+  Pr : (g : PR m n) → (h : PR (n + (suc m)) n) → PR (suc m) n
+  Pr' : (g : PR m 1) → (h : PR (suc(suc m)) 1) → PR (suc m) 1
 
 eval : PR m n → Vec ℕ m → Vec ℕ n
 eval `0 v* = []
@@ -29,8 +29,8 @@ eval σ (x ∷ []) = suc x ∷ []
 eval (π i) v* = lookup v* i ∷ []
 eval (C g f) v* = eval g (eval f v*)
 eval (♯ g f) v* = eval g v* ++ eval f v*
-eval (P g h) (zero ∷ v*) = eval g v*
-eval (P g h) (suc x ∷ v*) = eval h (eval (P g h) (x ∷ v*) ++ x ∷ v*)
-eval (P' g h) (zero ∷ v*) = eval g v*
-eval (P' g h) (suc x ∷ v*) = eval h (eval (P' g h) (x ∷ v*) ++ (x ∷ v*))
+eval (Pr g h) (zero ∷ v*) = eval g v*
+eval (Pr g h) (suc x ∷ v*) = eval h (eval (Pr g h) (x ∷ v*) ++ x ∷ v*)
+eval (Pr' g h) (zero ∷ v*) = eval g v*
+eval (Pr' g h) (suc x ∷ v*) = eval h (eval (Pr' g h) (x ∷ v*) ++ (x ∷ v*))
 \end{code}

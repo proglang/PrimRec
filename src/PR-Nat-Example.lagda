@@ -28,7 +28,7 @@ open import PR-Nat
 \newcommand\PRNatExampleAdd{
 \begin{code}
 addP : PR 2
-addP = P (π zero) (C σ [ π zero ])
+addP = Pr (π zero) (C σ [ π zero ])
 
 addP=+ : ∀ m n → eval addP [ m , n ] ≡ m + n
 addP=+ zero n = refl
@@ -40,7 +40,7 @@ addP=+ (suc m) n rewrite addP=+ m n = refl
 -- multiplication
 
 mulP : PR 2
-mulP = P (C Z []) (C addP [ π (suc (suc zero)) , π zero ])
+mulP = Pr (C Z []) (C addP [ π (suc (suc zero)) , π zero ])
 
 mulP=* : ∀ m n → eval mulP [ m , n ] ≡ m * n
 mulP=* zero n = refl
@@ -52,7 +52,7 @@ mulP=* (suc m) n
 -- exponentiation
 
 expP : PR 2
-expP = C (P (C σ [ C Z [] ]) (C mulP [ π (suc (suc zero)) , π zero ])) [ π (suc zero) , π zero ]
+expP = C (Pr (C σ [ C Z [] ]) (C mulP [ π (suc (suc zero)) , π zero ])) [ π (suc zero) , π zero ]
 
 expP=^ : ∀ m n → eval expP [ m , n ] ≡ m ^ n
 expP=^ m zero = refl
@@ -64,7 +64,7 @@ expP=^ m (suc n)
 -- predecessor
 
 predP : PR 1
-predP = P Z (π (suc zero))
+predP = Pr Z (π (suc zero))
 
 predP=∸1 : ∀ m → eval predP [ m ] ≡ pred m
 predP=∸1 zero = refl
@@ -74,7 +74,7 @@ predP=∸1 (suc m) = refl
 -- subtraction (monus)
 
 subP : PR 2
-subP = C (P (π zero) (C predP [ π zero ])) [ π (suc zero) , π zero ]
+subP = C (Pr (π zero) (C predP [ π zero ])) [ π (suc zero) , π zero ]
 
 m∸n∸1≡m∸sucn : ∀ m n → m ∸ n ∸ 1 ≡ m ∸ suc n
 m∸n∸1≡m∸sucn zero zero = refl
@@ -92,7 +92,7 @@ subP=∸ m (suc n)
 -- factorial
 
 facP : PR 1
-facP = P (C σ [ Z ]) (C mulP [ π zero , C σ [ π (suc zero) ] ])
+facP = Pr (C σ [ Z ]) (C mulP [ π zero , C σ [ π (suc zero) ] ])
 
 fac : ℕ → ℕ
 fac zero = 1
@@ -111,7 +111,7 @@ TRUE  = 1
 FALSE = 0
 
 isZeroP : PR 1
-isZeroP = P (C σ [ C Z [] ]) (C Z [])
+isZeroP = Pr (C σ [ C Z [] ]) (C Z [])
 
 isZero : ℕ → ℕ
 isZero zero = TRUE
@@ -124,7 +124,7 @@ isZeroP=isZero (suc m) = refl
 --------------------
 
 ifElseP : PR 3
-ifElseP = P (π (suc zero)) (π (suc (suc zero)))
+ifElseP = Pr (π (suc zero)) (π (suc (suc zero)))
 
 ifElse : ℕ → ℕ → ℕ → ℕ
 ifElse zero n o = o
@@ -140,7 +140,7 @@ notP : PR 1
 notP = isZeroP
 
 toBoolP : PR 1
-toBoolP = P Z (C σ [ C Z [] ])
+toBoolP = Pr Z (C σ [ C Z [] ])
 
 data _~_ : ℕ → ℕ → Set where
   FF : zero ~ zero
@@ -186,7 +186,7 @@ remGP = C ifElseP [ C smallerP [ π (suc (suc zero)) , C σ [ π zero ] ]
                   , C Z [] ]
 
 remP : PR 2
-remP = P (C Z []) remGP
+remP = Pr (C Z []) remGP
 
 -- inefficent, but unclear how to handle Nat.DivMod._%_
 rem : ℕ → ℕ → ℕ
@@ -213,7 +213,7 @@ triangle zero = 0
 triangle (suc n) = suc n + triangle n
 
 triangleP : PR 1
-triangleP = P Z (C addP [ C σ [ π (suc zero) ] , π zero ])
+triangleP = Pr Z (C addP [ C σ [ π (suc zero) ] , π zero ])
 
 triangleP=triangle : ∀ n → eval triangleP [ n ] ≡ triangle n
 triangleP=triangle zero = refl
@@ -359,7 +359,7 @@ module untriangle-tests where
   _ = refl
 
 untriangleP : PR 1
-untriangleP = P Z (C addP [ C equalP [ (C triangleP [ (C σ [ π zero ]) ]) , C σ [ π (suc zero) ] ] , π zero ])
+untriangleP = Pr Z (C addP [ C equalP [ (C triangleP [ (C σ [ π zero ]) ]) , C σ [ π (suc zero) ] ] , π zero ])
 
 untriangleP=untriangle : ∀ n → eval untriangleP [ n ] ≡ untriangle n
 untriangleP=untriangle zero = refl

@@ -13,7 +13,7 @@ open Eq.≡-Reasoning using (begin_; step-≡-∣; step-≡-⟩; _∎)
 open import Agda.Builtin.Equality.Rewrite
 open import FinProperties using (inject+0)
 open import VecProperties using (_++r_; fastReverse; _ᴿ; lookupOpRev; lkupfromN)
-open import EvalPConstructor using (para)
+open import EvalPrConstructor using (para)
 
 
 open import Utils

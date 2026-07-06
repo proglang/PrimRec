@@ -4,7 +4,7 @@ This directory formalizes several presentations of primitive recursion over natu
 
 ## File guide
 
-### [`EvalPConstructor.lagda`](EvalPConstructor.lagda)
+### [`EvalPrConstructor.lagda`](EvalPrConstructor.lagda)
 
 Defines the generic primitive-recursion operator `para` and specializes it to vector-argument natural-number functions. It proves equivalence with the `PR-Nat` primitive-recursion constructor and develops an alternative bounded-iteration implementation.
 
@@ -46,7 +46,7 @@ Defines a contextual lambda calculus with sums, products, function types, and in
 
 ### [`PR-CC-ind-alt.lagda`](PR-CC-ind-alt.lagda)
 
-Provides an alternative categorical primitive-recursion calculus in which polynomial type operators are separated from closed types. It interprets inductive fixed points using folds and functor maps and includes translations of natural, word, and tree recursion.
+Provides an alternative categorical primitive-recursion calculus in which polynomial type operators are separated from closed types. It interprets inductive fixed points using catamorphisms and functor maps and includes translations of natural, word, and tree recursion.
 
 ### [`PR-CC-ind-multi.lagda`](PR-CC-ind-multi.lagda)
 
@@ -54,7 +54,7 @@ Explores a version of the inductive categorical calculus with a richer, potentia
 
 ### [`PR-CC-ind.lagda`](PR-CC-ind.lagda)
 
-Defines the main point-free categorical calculus with sums, products, polynomial inductive types, folds, and primitive recursion. It develops a substantial renaming/substitution metatheory, semantic interpretation, categorical structural maps, and embeddings of natural, word, and ranked-tree primitive recursion.
+Defines the main point-free categorical calculus with sums, products, polynomial inductive types, catamorphisms, and primitive recursion. It develops a substantial renaming/substitution metatheory, semantic interpretation, categorical structural maps, and embeddings of natural, word, and ranked-tree primitive recursion.
 
 ### [`PR-CC.lagda`](PR-CC.lagda)
 
@@ -70,7 +70,7 @@ Translates types and arrows from `PR-CC-ind` into `PR-CCC-ind` and proves compat
 
 ### [`PR-Functional.lagda`](PR-Functional.lagda)
 
-Defines a typed, point-free calculus of primitive-recursive functionals using the `S` and `K` combinators, application, recursion, and fold. Typed bracket abstraction compiles first-order projections, composition, primitive-recursion steps, and fold steps from `PR-Nat` into this functional calculus.
+Defines a typed, point-free calculus of primitive-recursive functionals using the `S` and `K` combinators, application, recursion, and catamorphism. Typed bracket abstraction compiles first-order projections, composition, primitive-recursion steps, and catamorphism steps from `PR-Nat` into this functional calculus.
 
 ### [`PR-HTrees.lagda`](PR-HTrees.lagda)
 
@@ -82,7 +82,7 @@ Builds standard primitive-recursive arithmetic programs for addition, multiplica
 
 ### [`PR-Nat.lagda`](PR-Nat.lagda)
 
-Defines the core first-order primitive-recursive language over natural numbers and its vector-based evaluator. It includes primitive recursion, fold, the reduction of fold to primitive recursion, projection utilities, and their soundness lemmas.
+Defines the core first-order primitive-recursive language over natural numbers and its vector-based evaluator. It includes primitive recursion, catamorphism, the reduction of catamorphism to primitive recursion, projection utilities, and their soundness lemmas.
 
 ### [`PR-NatsVec.lagda`](PR-NatsVec.lagda)
 

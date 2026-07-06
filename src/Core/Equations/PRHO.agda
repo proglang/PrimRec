@@ -33,10 +33,10 @@ data _≈_ : T →ᴾ U → T →ᴾ U → Set where
     → f ≈ f′ → lam f ≈ lam f′
   fmap-cong : ∀ {A B : TY HO} (H : Ty HO 1)
     {f f′ : A →ᴾ B} → f ≈ f′ → fmap H f ≈ fmap H f′
-  P-cong : ∀ {A B : TY HO} {H : Ty HO 1}
+  Pr-cong : ∀ {A B : TY HO} {H : Ty HO 1}
     {h h′ : (H [ A `× ind H ]) `× B →ᴾ A}
     → h ≈ h′
-    → P {G = H} {T = A} {U = B} h ≈ P {G = H} {T = A} {U = B} h′
+    → Pr {G = H} {T = A} {U = B} h ≈ Pr {G = H} {T = A} {U = B} h′
 
   C-idˡ : {f : A →ᴾ B}
     → C id f ≈ f
@@ -94,17 +94,17 @@ data _≈_ : T →ᴾ U → T →ᴾ U → Set where
   ⇒-η : {f : A →ᴾ B `⇒ D}
     → lam (theta f) ≈ f
 
-  P-β : ∀ {A B : TY HO} {H : Ty HO 1}
+  Pr-β : ∀ {A B : TY HO} {H : Ty HO 1}
     {h : (H [ A `× ind H ]) `× B →ᴾ A}
-    → C (P {G = H} {T = A} {U = B} h)
+    → C (Pr {G = H} {T = A} {U = B} h)
           (map-× (con {G = H}) (id {T = B}))
-      ≈ C h (paraArgs H (P {G = H} {T = A} {U = B} h))
+      ≈ C h (paraArgs H (Pr {G = H} {T = A} {U = B} h))
 
-  P-unique : ∀ {A B : TY HO} {H : Ty HO 1}
+  Pr-unique : ∀ {A B : TY HO} {H : Ty HO 1}
     {h : (H [ A `× ind H ]) `× B →ᴾ A}
     {p : ind H `× B →ᴾ A}
     → C p (map-× (con {G = H}) (id {T = B})) ≈ C h (paraArgs H p)
-    → p ≈ P {G = H} {T = A} {U = B} h
+    → p ≈ Pr {G = H} {T = A} {U = B} h
 
 ----------------------------------------------------------------------
 -- Derived categorical infrastructure
@@ -404,29 +404,29 @@ undist-dist =
           (≈-trans (C-cong π₂-undist ≈-refl) project₂-after-dist)))
       pair-id)
 
-P-βᶜ :
+Pr-βᶜ :
   ∀ {A B X : TY HO} {H : Ty HO 1}
   (S : StructuralFunctor H)
   {h : (H [ A `× ind H ]) `× B →ᴾ A}
   {x : X →ᴾ H [ ind H ]}
   {u : X →ᴾ B} →
-  C (P {G = H} {T = A} {U = B} h) (`# (C con x) u)
+  C (Pr {G = H} {T = A} {U = B} h) (`# (C con x) u)
     ≈
   C h
     (`#
-      (C (fmapᶜ S (`# (P {G = H} {T = A} {U = B} h) π₁))
+      (C (fmapᶜ S (`# (Pr {G = H} {T = A} {U = B} h) π₁))
         (C (strengthᶜ S) (`# x u)))
       u)
-P-βᶜ {A = A} {B = B} {H = H} S {h = h} {x = x} {u = u} =
+Pr-βᶜ {A = A} {B = B} {H = H} S {h = h} {x = x} {u = u} =
   ≈-trans
     (C-cong ≈-refl constructor-input)
     (≈-trans C-assoc
-      (≈-trans (C-cong P-β ≈-refl)
+      (≈-trans (C-cong Pr-β ≈-refl)
         (≈-trans (≈-sym C-assoc)
           (C-cong ≈-refl para-input))))
   where
   p : ind H `× B →ᴾ A
-  p = P {G = H} {T = A} {U = B} h
+  p = Pr {G = H} {T = A} {U = B} h
 
   layer : _ →ᴾ H [ ind H ]
   layer = x
@@ -521,20 +521,20 @@ map-×-parameter-square {k = k} =
     (≈-sym
       (≈-trans map-×-C (map-×-cong C-idʳ C-idˡ)))
 
-P-parameterʳ :
+Pr-parameterʳ :
   ∀ {A B D : TY HO} {G : Ty HO 1}
   {h : (G [ A `× ind G ]) `× B →ᴾ A}
   {k : D →ᴾ B} →
-  P {G = G} {T = A} {U = D}
+  Pr {G = G} {T = A} {U = D}
     (C h (map-× (id {T = G [ A `× ind G ]}) k))
     ≈
-  C (P {G = G} {T = A} {U = B} h)
+  C (Pr {G = G} {T = A} {U = B} h)
     (map-× (id {T = ind G}) k)
-P-parameterʳ {A = A} {B = B} {D = D} {G = G} {h = h} {k = k} =
-  ≈-sym (P-unique premise)
+Pr-parameterʳ {A = A} {B = B} {D = D} {G = G} {h = h} {k = k} =
+  ≈-sym (Pr-unique premise)
   where
   p : ind G `× D →ᴾ A
-  p = C (P {G = G} {T = A} {U = B} h)
+  p = C (Pr {G = G} {T = A} {U = B} h)
         (map-× (id {T = ind G}) k)
 
   h′ : (G [ A `× ind G ]) `× D →ᴾ A
@@ -549,7 +549,7 @@ P-parameterʳ {A = A} {B = B} {D = D} {G = G} {h = h} {k = k} =
         (C-cong ≈-refl map-×-parameter-square)
         (≈-trans C-assoc
           (≈-trans
-            (C-cong P-β ≈-refl)
+            (C-cong Pr-β ≈-refl)
             (≈-trans (≈-sym C-assoc)
               (≈-trans
                 (C-cong ≈-refl (paraArgs-naturalʳ G))

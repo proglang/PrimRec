@@ -21,8 +21,8 @@ open Eq.≡-Reasoning using (begin_; step-≡-∣; step-≡-⟩; _∎)
 open import Utils
 open import HVec
 open import Agda.Builtin.Equality.Rewrite
-open import PR-CC-ind-alt using (Ty;PolyTyOp;sub₀;⟦_⟧ₚ;⟦_⟧ᵀ;con;fmap;foldF;helper;Alg )
-open import EvalPConstructor using (para)
+open import PR-CC-ind-alt using (Ty;PolyTyOp;sub₀;⟦_⟧ₚ;⟦_⟧ᵀ;con;fmap;catamorphismF;helper;Alg )
+open import EvalPrConstructor using (para)
 import System-T as ST
 
 
@@ -64,9 +64,9 @@ data Exp : ∀ {n : ℕ} → Ctx n → TY → Set where
   `case : ∀ {n : ℕ} {ctx : Ctx n} {tyA tyB tyC : TY} →  Exp ctx (tyA `+ tyB) → Exp (tyA ∷ ctx) (tyC) → Exp (tyB ∷ ctx) (tyC) → Exp (ctx) (tyC)
 
   con : ∀ {n : ℕ} {ctx : Ctx n} {G} → Exp ctx (sub₀ (ind G) G) → Exp ctx (ind G)
-  -- P : (h : sub₀ (T `× ind G) G `× U →ᴾ T) → (ind G `× U →ᴾ T)
-  -- P : ∀ {n : ℕ} {ctx : Ctx n} {G}{P} →  Exp ctx ((sub₀ P G) ⇒ P) → Exp ctx (ind G) → Exp ctx P
-  P : ∀ {n : ℕ} {ctx : Ctx n} {G}{P} →  Exp ctx ((sub₀ P G) ⇒ P) → Exp ctx (ind G ⇒  P)
+  -- Pr : (h : sub₀ (T `× ind G) G `× U →ᴾ T) → (ind G `× U →ᴾ T)
+  -- Pr : ∀ {n : ℕ} {ctx : Ctx n} {G}{R} →  Exp ctx ((sub₀ R G) ⇒ R) → Exp ctx (ind G) → Exp ctx R
+  Pr : ∀ {n : ℕ} {ctx : Ctx n} {G}{R} →  Exp ctx ((sub₀ R G) ⇒ R) → Exp ctx (ind G ⇒ R)
 
 
 
@@ -85,7 +85,7 @@ eval (`case exp l r) ctx with eval exp ctx
 ... | inj₁ res = eval l (res ∷ᴴ ctx)
 ... | inj₂ res = eval r (res ∷ᴴ ctx)
 eval (con exp) ctx = con (eval exp ctx)
-eval   (P {G = G}{P = p} (e1')) ctx = foldF (eval e1' ctx)
+eval   (Pr {G = G}{R = p} (e1')) ctx = catamorphismF (eval e1' ctx)
 
 
 
@@ -139,7 +139,7 @@ weakenGen ctxA ctxB ctxC (ι₁ exp) = ι₁ (weakenGen ctxA ctxB ctxC exp)
 weakenGen ctxA ctxB ctxC (ι₂ exp) = ι₂ (weakenGen ctxA ctxB ctxC exp)
 weakenGen ctxA ctxB ctxC (`case {tyA = tyA}  {tyB = tyB} c l r) = `case (weakenGen ctxA ctxB ctxC c) (weakenGen (tyA ∷ ctxA) ctxB ctxC l) ((weakenGen (tyB ∷ ctxA) ctxB ctxC r))
 weakenGen ctxA ctxB ctxC (con exp) = con (weakenGen ctxA ctxB ctxC exp)
-weakenGen ctxA ctxB ctxC (P exp) = P (weakenGen ctxA ctxB ctxC exp)
+weakenGen ctxA ctxB ctxC (Pr exp) = Pr (weakenGen ctxA ctxB ctxC exp)
 
 
 
@@ -160,7 +160,7 @@ weakenGenEq {n}{m}{o} {ctxA}{ctxB} {ctxC} valsA valsB valsC  (`case {tyA = tyA} 
 ... | inj₁ x  = weakenGenEq (x ∷ᴴ valsA) valsB valsC l
 ... | inj₂ y = weakenGenEq (y ∷ᴴ valsA) valsB valsC r
 weakenGenEq valsA valsB valsC (con exp) = cong con (weakenGenEq valsA valsB valsC exp)
-weakenGenEq {n} {m} {o} {ctxA} {ctxB} {ctxC} valsA valsB valsC (P {G = G}{P = ty} exp) rewrite  sym ( weakenGenEq valsA valsB valsC exp)  = refl -- extensionality λ {(con x) → refl }
+weakenGenEq {n} {m} {o} {ctxA} {ctxB} {ctxC} valsA valsB valsC (Pr {G = G}{R = ty} exp) rewrite  sym ( weakenGenEq valsA valsB valsC exp)  = refl -- extensionality λ {(con x) → refl }
 
 
 weaken : ∀ {n m : ℕ} {ctx : Ctx n} {tyA } (ctx' : Ctx m)  →  Exp ctx tyA → Exp (ctx ++ ctx') tyA
@@ -197,8 +197,8 @@ PF→NPF {(U PF.`+ V)}  (PF.`case f g) = Lam (`case (Var zero)
           (App (weaken (( U) ∷ ( U `+  V ) ∷ [])  (PF→NPF f)) (Var zero))
           (App (weaken ( V ∷  U `+  V ∷ []) (PF→NPF g)) (Var zero)))
 PF→NPF PF.con = Lam (con (Var zero))
-PF→NPF (PF.P h) = PF→NPF-hard (PF.P h)
-PF→NPF (PF.F {T} {U} {G} exp) = Lam (App (P (Lam (App (weaken (sub₀ T G ∷ ind G `× U ∷ []) (PF→NPF exp)) (`# (Var zero) (π₂ (Var (suc zero))))))) (π₁ (Var zero)))
+PF→NPF (PF.Pr h) = PF→NPF-hard (PF.Pr h)
+PF→NPF (PF.Ct {T} {U} {G} exp) = Lam (App (Pr (Lam (App (weaken (sub₀ T G ∷ ind G `× U ∷ []) (PF→NPF exp)) (`# (Var zero) (π₂ (Var (suc zero))))))) (π₁ (Var zero)))
 
 
 PF→NPF-sound-Helper : ∀ {T} {U} {G} (f : sub₀ T G `× U PR-CC-ind-alt.→ᴾ T) (x : ⟦ sub₀ T G ⟧ᵀ ) (fst : Alg G) (snd : ⟦ U ⟧ᵀ) → eval (weaken  (sub₀ T G ∷ ind G `× U ∷ []) (PF→NPF f)) (x ∷ᴴ ((⟨ fst , snd ⟩) ∷ᴴ []ᴴ)) (⟨ x , snd ⟩) ≡ PR-CC-ind-alt.eval f (⟨ x , snd ⟩)
@@ -224,8 +224,8 @@ PF→NPF-sound PF.ι₂ args = refl
 PF→NPF-sound {U PF.`+ V} (PF.`case f g) (inj₁ x) rewrite weaken-Eq {ctx = []} {ctx' =  U ∷  U `+  V ∷ [] }  []ᴴ (x ∷ᴴ ((inj₁ x) ∷ᴴ []ᴴ))   (PF→NPF f)  = PF→NPF-sound f x
 PF→NPF-sound {U PF.`+ V} (PF.`case f g) (inj₂ y) rewrite weaken-Eq {ctx = []} {ctx' =  V ∷  U `+  V ∷ [] }  []ᴴ (y ∷ᴴ (inj₂ y ∷ᴴ []ᴴ)) (PF→NPF g) = PF→NPF-sound g y
 PF→NPF-sound PF.con args = refl
-PF→NPF-sound (PF.P f) arg = PF→NPF-sound-hard (PF.P f) arg
-PF→NPF-sound (PR-CC-ind-alt.F  {T} {U} {G} f) (⟨ fst , snd ⟩)   = cong₂ foldF {u = fst} {v = fst} (extensionality (λ x →  ( PF→NPF-sound-Helper f x fst snd))) refl
+PF→NPF-sound (PF.Pr f) arg = PF→NPF-sound-hard (PF.Pr f) arg
+PF→NPF-sound (PR-CC-ind-alt.Ct  {T} {U} {G} f) (⟨ fst , snd ⟩)   = cong₂ catamorphismF {u = fst} {v = fst} (extensionality (λ x →  ( PF→NPF-sound-Helper f x fst snd))) refl
 
 PF→NPF-sound-Helper f x fst snd rewrite weaken-Eq []ᴴ (x ∷ᴴ ((⟨ fst , snd ⟩) ∷ᴴ []ᴴ))  (PF→NPF f) | PF→NPF-sound f (⟨ x , snd ⟩) = refl
 
@@ -270,8 +270,8 @@ embedd-ST : ∀ {n}  {ctx : ST.Ctx n} {ty} → ST.Exp ctx ty → Exp (map embedd
 
 {-# REWRITE   lookupMap #-}
 
-embedd-ST-P :  ∀ {n}  {ctx : ST.Ctx n} {ty} → (h  : ST.Exp ctx (ty ST.⇒ (ST.TyNat ST.⇒ ty))) → (acc : ST.Exp ctx ty) → (counter : ST.Exp ctx ST.TyNat) → Exp (map embedd-ST-Ty ctx) (embedd-ST-Ty ty)
-embedd-ST-P {n} {ctx} {ty} h acc counter =
+embedd-ST-Pr :  ∀ {n}  {ctx : ST.Ctx n} {ty} → (h  : ST.Exp ctx (ty ST.⇒ (ST.TyNat ST.⇒ ty))) → (acc : ST.Exp ctx ty) → (counter : ST.Exp ctx ST.TyNat) → Exp (map embedd-ST-Ty ctx) (embedd-ST-Ty ty)
+embedd-ST-Pr {n} {ctx} {ty} h acc counter =
           let h' =  (embedd-ST h)
               acc' = embedd-ST acc
               counter' = embedd-ST counter
@@ -281,14 +281,14 @@ embedd-ST-P {n} {ctx} {ty} h acc counter =
                   (`#
                       (App (App (weaken' (embedd-ST-Ty ty `× Nat ∷ `𝟙 `+ (embedd-ST-Ty ty `× Nat) ∷ []) h') (π₁ (Var zero))) (π₂ (Var zero)))
                       (con (ι₂(π₂ (Var zero))))))
-              x = (P {n} {map embedd-ST-Ty ctx}  {G-Nat } {(embedd-ST-Ty ty) `×  Nat} h'') in
+              x = (Pr {n} {map embedd-ST-Ty ctx}  {G-Nat } {(embedd-ST-Ty ty) `×  Nat} h'') in
          π₁(App x (  counter'  ))
 embedd-ST {n} {ctx} (ST.Var f)  = Var f
 embedd-ST (ST.Lam exp) = Lam (embedd-ST exp)
 embedd-ST ST.CZero = con (ι₁ `0)
 embedd-ST ST.Suc = Lam (con (ι₂ (Var zero)))
 embedd-ST (ST.App f x) = App (embedd-ST f) (embedd-ST x)
-embedd-ST {n} {ctx} {ty} (ST.PrecT h acc counter) = embedd-ST-P {n} {ctx} {ty} h acc counter
+embedd-ST {n} {ctx} {ty} (ST.PrecT h acc counter) = embedd-ST-Pr {n} {ctx} {ty} h acc counter
 embedd-ST (ST.Nat n) = ℕ→ExpNat n
 
 
@@ -342,7 +342,7 @@ cong-app2 refl x y = refl
 
 
 helper1Gen : {F : PolyTyOp}{A : Set} →  (φ : ⟦ F ⟧ₚ A →  A) →  (c : Alg F) →
-   (foldF φ c) ≡  PR-CC-ind-alt.mapFold `t F φ c
+   (catamorphismF φ c) ≡  PR-CC-ind-alt.mapCatamorphism `t F φ c
 
 helper1Gen φ (con x) = refl
 
@@ -351,7 +351,7 @@ helper2Gen : ∀ {n}  {ctx : ST.Ctx n} {ty} {zeroL : Exp
         (`𝟙 ∷
          `𝟙 `+ (embedd-ST-Ty ty `× ind (`𝟙 `+ `t)) ∷ map embedd-ST-Ty ctx)
         (embedd-ST-Ty ty)} {succL}  → (ctx' : HVec ST.evalTy ctx) → (c : Alg G-Nat)  →  c ≡  proj₂
-       (PR-CC-ind-alt.mapFold `t (`𝟙 `+ `t)
+       (PR-CC-ind-alt.mapCatamorphism `t (`𝟙 `+ `t)
         (λ x →
            eval
            (`case (Var zero)
@@ -376,7 +376,7 @@ helper3 : ∀ {n}  {ctx : ST.Ctx n} {ty} → (ctx' : HVec ST.evalTy ctx) → (h 
       (para (ST.eval h ctx') (ST.eval acc ctx') c)
       ≡
       proj₁
-      (foldF
+      (catamorphismF
        (λ x →
           eval
           (`case (Var zero)
@@ -399,7 +399,7 @@ helper3 : ∀ {n}  {ctx : ST.Ctx n} {ty} → (ctx' : HVec ST.evalTy ctx) → (h 
        (ℕ→Nat c))
 helper3 ctx' h acc  zero rewrite embedd-ST-sound ctx' acc = sym (weaken'-Eq (tt ∷ᴴ (inj₁ tt ∷ᴴ  []ᴴ)) (mapᴴ' embeddSTVals ctx') (embedd-ST acc))
 helper3 {n} {ctx} {ty} ctx' h acc  (suc c) rewrite weaken'-Eq {ctxB = [ embedd-ST-Ty ty `× ind (`𝟙 `+ `t) ,
-       `𝟙 `+ (embedd-ST-Ty ty `× ind (`𝟙 `+ `t)) ] }{ctxC = map embedd-ST-Ty ctx}  ( PR-CC-ind-alt.mapFold `t (`𝟙 `+ `t)
+       `𝟙 `+ (embedd-ST-Ty ty `× ind (`𝟙 `+ `t)) ] }{ctxC = map embedd-ST-Ty ctx}  ( PR-CC-ind-alt.mapCatamorphism `t (`𝟙 `+ `t)
        (λ x →
           eval
           (`case (Var zero)
@@ -422,7 +422,7 @@ helper3 {n} {ctx} {ty} ctx' h acc  (suc c) rewrite weaken'-Eq {ctxB = [ embedd-S
        (ℕ→Nat c) ∷ᴴ
 
        (inj₂
-        (PR-CC-ind-alt.mapFold `t (`𝟙 `+ `t)
+        (PR-CC-ind-alt.mapCatamorphism `t (`𝟙 `+ `t)
          (λ x →
             eval
             (`case (Var zero)
@@ -452,7 +452,7 @@ helper3 {n} {ctx} {ty} ctx' h acc  (suc c) rewrite weaken'-Eq {ctxB = [ embedd-S
               ≡⟨ cong₂ (eval (embedd-ST h) (mapᴴ' embeddSTVals ctx')) {u = (ℕ→Nat c)} {v = (ℕ→Nat c)}  (helper3 ctx' h acc c) refl  ⟩
           eval (embedd-ST h) (mapᴴ' embeddSTVals ctx')
       (proj₁
-       (foldF
+       (catamorphismF
         (λ x →
            eval
            (`case (Var zero)
@@ -494,7 +494,7 @@ helper3 {n} {ctx} {ty} ctx' h acc  (suc c) rewrite weaken'-Eq {ctxB = [ embedd-S
 
       (eval (embedd-ST h) (mapᴴ' embeddSTVals ctx')
       (proj₁
-       (PR-CC-ind-alt.mapFold `t (`𝟙 `+ `t)
+       (PR-CC-ind-alt.mapCatamorphism `t (`𝟙 `+ `t)
         (λ x →
            eval
            (`case (Var zero)
@@ -516,7 +516,7 @@ helper3 {n} {ctx} {ty} ctx' h acc  (suc c) rewrite weaken'-Eq {ctxB = [ embedd-S
            )
         (ℕ→Nat c)))
       (proj₂
-       (PR-CC-ind-alt.mapFold `t (`𝟙 `+ `t)
+       (PR-CC-ind-alt.mapCatamorphism `t (`𝟙 `+ `t)
         (λ x →
            eval
            (`case (Var zero)

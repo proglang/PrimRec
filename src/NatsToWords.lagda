@@ -31,8 +31,8 @@ import PR-Words as Words
 ⟦ Nats.σ ⟧      = Words.σ tt
 ⟦ Nats.π i ⟧    = Words.π i
 ⟦ Nats.C f g* ⟧ = Words.C ⟦ f ⟧ (map ⟦_⟧ g*)
-⟦ Nats.P g h ⟧  = Words.P ⟦ g ⟧ (λ{ tt → ⟦ h ⟧})
-⟦ Nats.F g h ⟧  = ⟦ Nats.F⇒P g h ⟧
+⟦ Nats.Pr g h ⟧  = Words.Pr ⟦ g ⟧ (λ{ tt → ⟦ h ⟧})
+⟦ Nats.Ct g h ⟧  = ⟦ Nats.Ct⇒Pr g h ⟧
 \end{code}
 }
 \newcommand\PRNatsToWordsEncoding{
@@ -59,12 +59,12 @@ sound Nats.Z [] = refl
 sound Nats.σ [ x ] = refl
 sound (Nats.π i) v* = sym (lookup-map i ⟦_⟧ⱽ v*)
 sound (Nats.C f g*) v* rewrite sound f (Nats.eval* g* v*) | sound* g* v* = refl
-sound (Nats.P g h) (zero ∷ v*) = sound g v*
-sound (Nats.P g h) (suc x ∷ v*) = trans (sound h (Nats.eval (Nats.P g h) (x ∷ v*) ∷ x ∷ v*))
+sound (Nats.Pr g h) (zero ∷ v*) = sound g v*
+sound (Nats.Pr g h) (suc x ∷ v*) = trans (sound h (Nats.eval (Nats.Pr g h) (x ∷ v*) ∷ x ∷ v*))
                                         (cong (Words.eval ⟦ h ⟧) 
                                               (cong (_∷ ⟦ x ⟧ⱽ ∷ map ⟦_⟧ⱽ v*)
-                                                    (sound (Nats.P g h) (x ∷ v*))))
-sound (Nats.F g h) v* = trans (cong ⟦_⟧ⱽ (Nats.F⇒P-sound g h v*)) (sound (Nats.F⇒P g h) v*)
+                                                    (sound (Nats.Pr g h) (x ∷ v*))))
+sound (Nats.Ct g h) v* = trans (cong ⟦_⟧ⱽ (Nats.Ct⇒Pr-sound g h v*)) (sound (Nats.Ct⇒Pr g h) v*)
 
 sound* [] v* = refl
 sound* (p ∷ p*) v* rewrite sound p v* | sound* p* v* = refl
@@ -78,7 +78,7 @@ sound* (p ∷ p*) v* rewrite sound p v* | sound* p* v* = refl
 ⟦ Words.σ tt ⟧ᴿ = Nats.σ
 ⟦ Words.π i ⟧ᴿ = Nats.π i
 ⟦ Words.C p g* ⟧ᴿ = Nats.C ⟦ p ⟧ᴿ (map ⟦_⟧ᴿ g*)
-⟦ Words.P p h ⟧ᴿ = Nats.P ⟦ p ⟧ᴿ ⟦ h tt ⟧ᴿ
+⟦ Words.Pr p h ⟧ᴿ = Nats.Pr ⟦ p ⟧ᴿ ⟦ h tt ⟧ᴿ
 
 ⟦_⟧ᴿⱽ : List ⊤ → ℕ
 ⟦ []ᴸ ⟧ᴿⱽ = zero
@@ -94,10 +94,10 @@ soundᴿ Words.Z [] = refl
 soundᴿ (Words.σ a) [ v ] = refl
 soundᴿ (Words.π i) v* = sym (lookup-map i ⟦_⟧ᴿⱽ v*)
 soundᴿ (Words.C f g*) v* rewrite soundᴿ f (Words.eval* g* v*) | soundᴿ* g* v* = refl
-soundᴿ (Words.P p h) ([]ᴸ ∷ v*) = soundᴿ p v*
-soundᴿ (Words.P p h) ((tt ∷ᴸ xs) ∷ v*)
-  rewrite soundᴿ (h tt) (Words.eval (Words.P p h) (xs ∷ v*) ∷ xs ∷ v*)
-        | soundᴿ (Words.P p h) (xs ∷ v*) = refl
+soundᴿ (Words.Pr p h) ([]ᴸ ∷ v*) = soundᴿ p v*
+soundᴿ (Words.Pr p h) ((tt ∷ᴸ xs) ∷ v*)
+  rewrite soundᴿ (h tt) (Words.eval (Words.Pr p h) (xs ∷ v*) ∷ xs ∷ v*)
+        | soundᴿ (Words.Pr p h) (xs ∷ v*) = refl
 
 soundᴿ* [] v* = refl
 soundᴿ* (p ∷ p*) v* rewrite soundᴿ p v* | soundᴿ* p* v* = refl

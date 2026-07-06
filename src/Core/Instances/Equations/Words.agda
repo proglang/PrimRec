@@ -32,23 +32,23 @@ mutual
     C-congₛ : ∀ {k m n} {f g : Source.PR (Fin k) m}
       {fs gs : Vec (Source.PR (Fin k) n) m} →
       f ≈ₛ g → fs ≈ₛ* gs → Source.C f fs ≈ₛ Source.C g gs
-    P-congₛ : ∀ {k n} {g g′ : Source.PR (Fin k) n}
+    Pr-congₛ : ∀ {k n} {g g′ : Source.PR (Fin k) n}
       {h h′ : Fin k → Source.PR (Fin k) (2 + n)} →
       g ≈ₛ g′ → ((a : Fin k) → h a ≈ₛ h′ a) →
-      Source.P g h ≈ₛ Source.P g′ h′
-    P-β-emptyₛ : ∀ {k m n} (g : Source.PR (Fin k) n)
+      Source.Pr g h ≈ₛ Source.Pr g′ h′
+    Pr-β-emptyₛ : ∀ {k m n} (g : Source.PR (Fin k) n)
       (h : Fin k → Source.PR (Fin k) (2 + n))
       (parameters : Vec (Source.PR (Fin k) m) n) →
-      Source.C (Source.P g h) (Source.C Source.Z [] ∷ parameters) ≈ₛ
+      Source.C (Source.Pr g h) (Source.C Source.Z [] ∷ parameters) ≈ₛ
       Source.C g parameters
-    P-β-letterₛ : ∀ {k m n} (g : Source.PR (Fin k) n)
+    Pr-β-letterₛ : ∀ {k m n} (g : Source.PR (Fin k) n)
       (h : Fin k → Source.PR (Fin k) (2 + n))
       (a : Fin k) (tail : Source.PR (Fin k) m)
       (parameters : Vec (Source.PR (Fin k) m) n) →
-      Source.C (Source.P g h)
+      Source.C (Source.Pr g h)
         (Source.C (Source.σ a) (tail ∷ []) ∷ parameters) ≈ₛ
       Source.C (h a)
-        (Source.C (Source.P g h) (tail ∷ parameters) ∷
+        (Source.C (Source.Pr g h) (tail ∷ parameters) ∷
          tail ∷ parameters)
 
   data _≈ₛ*_ : ∀ {k m n} →
@@ -74,15 +74,15 @@ data _≈ᵂ_ : ∀ {T U} → T →ᴾ U → T →ᴾ U → Set where
     f ≈ᵂ g → p ≈ᵂ q → `# f p ≈ᵂ `# g q
   `case-congᵂ : ∀ {T U V} {f g : T →ᴾ V} {p q : U →ᴾ V} →
     f ≈ᵂ g → p ≈ᵂ q → `case f p ≈ᵂ `case g q
-  P-congᵂ : ∀ {G T U} {f g : (G [ T `× ind G ]) `× U →ᴾ T} →
+  Pr-congᵂ : ∀ {G T U} {f g : (G [ T `× ind G ]) `× U →ᴾ T} →
     f ≈ᵂ g →
-    P {G = G} {T = T} {U = U} f ≈ᵂ P {G = G} {T = T} {U = U} g
+    Pr {G = G} {T = T} {U = U} f ≈ᵂ Pr {G = G} {T = T} {U = U} g
 
   word-β-emptyᵂ : ∀ {k m n}
     (g : vec (Word k) n →ᴾ Word k)
     (h : Fin k → vec (Word k) (2 + n) →ᴾ Word k)
     (parameters : Vec (vec (Word k) m →ᴾ Word k) n) →
-    C (P {G = WordF k} {T = Word k} {U = vec (Word k) n}
+    C (Pr {G = WordF k} {T = Word k} {U = vec (Word k) n}
          (wordParaHandlerᴾ {k = k} g h))
       (`# (C (emptyCon {k}) `⊤) (TargetEq.tupleᴾ parameters)) ≈ᵂ
     C g (TargetEq.tupleᴾ parameters)
@@ -92,12 +92,12 @@ data _≈ᵂ_ : ∀ {T U} → T →ᴾ U → T →ᴾ U → Set where
     (h : Fin k → vec (Word k) (2 + n) →ᴾ Word k)
     (a : Fin k) (tail : vec (Word k) m →ᴾ Word k)
     (parameters : Vec (vec (Word k) m →ᴾ Word k) n) →
-    C (P {G = WordF k} {T = Word k} {U = vec (Word k) n}
+    C (Pr {G = WordF k} {T = Word k} {U = vec (Word k) n}
          (wordParaHandlerᴾ {k = k} g h))
       (`# (C (letterCon {k = k} a) (`# tail `⊤))
           (TargetEq.tupleᴾ parameters)) ≈ᵂ
     C (h a)
-      (`# (C (P {G = WordF k} {T = Word k} {U = vec (Word k) n}
+      (`# (C (Pr {G = WordF k} {T = Word k} {U = vec (Word k) n}
                   (wordParaHandlerᴾ {k = k} g h))
              (`# tail (TargetEq.tupleᴾ parameters)))
           (`# tail (TargetEq.tupleᴾ parameters)))
@@ -147,17 +147,17 @@ preserves reflₛ = reflᵂ
 preserves (symₛ equation) = symᵂ (preserves equation)
 preserves (transₛ first second) = transᵂ (preserves first) (preserves second)
 preserves (C-congₛ f fs) = C-congᵂ (preserves f) (preserves* fs)
-preserves (P-congₛ g≈g′ h≈h′) =
-  P-congᵂ (wordParaHandler-congᵂ (preserves g≈g′)
+preserves (Pr-congₛ g≈g′ h≈h′) =
+  Pr-congᵂ (wordParaHandler-congᵂ (preserves g≈g′)
     (λ a → preserves (h≈h′ a)))
-preserves (P-β-emptyₛ g h parameters) =
+preserves (Pr-β-emptyₛ g h parameters) =
   transᵂ
     (C-congᵂ reflᵂ (`#-congᵂ reflᵂ (compile*-tuple parameters)))
     (transᵂ
       (word-β-emptyᵂ (compile g) (λ a → compile (h a))
         (map compile parameters))
       (C-congᵂ reflᵂ (symᵂ (compile*-tuple parameters))))
-preserves (P-β-letterₛ g h a tail parameters) =
+preserves (Pr-β-letterₛ g h a tail parameters) =
   transᵂ lhs-to-schema
     (transᵂ
       (word-β-letterᵂ (compile g) (λ i → compile (h i)) a
@@ -195,23 +195,23 @@ module ForFinite {A : Set} (finiteA : Finite.Finite A) where
       C-congF : ∀ {m n} {f g : Source.PR A m}
         {fs gs : Vec (Source.PR A n) m} →
         f ≈F g → fs ≈F* gs → Source.C f fs ≈F Source.C g gs
-      P-congF : ∀ {n} {g g′ : Source.PR A n}
+      Pr-congF : ∀ {n} {g g′ : Source.PR A n}
         {h h′ : A → Source.PR A (2 + n)} →
         g ≈F g′ → ((a : A) → h a ≈F h′ a) →
-        Source.P g h ≈F Source.P g′ h′
-      P-β-emptyF : ∀ {m n} (g : Source.PR A n)
+        Source.Pr g h ≈F Source.Pr g′ h′
+      Pr-β-emptyF : ∀ {m n} (g : Source.PR A n)
         (h : A → Source.PR A (2 + n))
         (parameters : Vec (Source.PR A m) n) →
-        Source.C (Source.P g h) (Source.C Source.Z [] ∷ parameters) ≈F
+        Source.C (Source.Pr g h) (Source.C Source.Z [] ∷ parameters) ≈F
         Source.C g parameters
-      P-β-letterF : ∀ {m n} (g : Source.PR A n)
+      Pr-β-letterF : ∀ {m n} (g : Source.PR A n)
         (h : A → Source.PR A (2 + n))
         (a : A) (tail : Source.PR A m)
         (parameters : Vec (Source.PR A m) n) →
-        Source.C (Source.P g h)
+        Source.C (Source.Pr g h)
           (Source.C (Source.σ a) (tail ∷ []) ∷ parameters) ≈F
         Source.C (h a)
-          (Source.C (Source.P g h) (tail ∷ parameters) ∷
+          (Source.C (Source.Pr g h) (tail ∷ parameters) ∷
            tail ∷ parameters)
 
     data _≈F*_ : ∀ {m n} →
@@ -250,11 +250,11 @@ module ForFinite {A : Set} (finiteA : Finite.Finite A) where
     transᵂ (preservesFinite first) (preservesFinite second)
   preservesFinite (C-congF f fs) =
     C-congᵂ (preservesFinite f) (preservesFinite* fs)
-  preservesFinite (P-congF g≈g′ h≈h′) =
-    P-congᵂ
+  preservesFinite (Pr-congF g≈g′ h≈h′) =
+    Pr-congᵂ
       (wordParaHandler-congᵂ (preservesFinite g≈g′)
         (λ i → preservesFinite (h≈h′ (Finite.decode finiteA i))))
-  preservesFinite (P-β-emptyF g h parameters) =
+  preservesFinite (Pr-β-emptyF g h parameters) =
     transᵂ
       (C-congᵂ reflᵂ
         (`#-congᵂ reflᵂ (compileFinite*-tuple parameters)))
@@ -263,7 +263,7 @@ module ForFinite {A : Set} (finiteA : Finite.Finite A) where
           (λ i → W.compileFinite (h (Finite.decode finiteA i)))
           (map W.compileFinite parameters))
         (C-congᵂ reflᵂ (symᵂ (compileFinite*-tuple parameters))))
-  preservesFinite (P-β-letterF g h a tail parameters) =
+  preservesFinite (Pr-β-letterF g h a tail parameters) =
     transᵂ lhs-to-schema
       (transᵂ
         (word-β-letterᵂ (W.compileFinite g)

@@ -54,7 +54,7 @@ data PR (Sig : Sorted S) : Vec S n × S → Set where
     → (f  : PR Sig ⟨ ss′ , s ⟩)
     → (g* : PR* Sig ⟨ ss , ss′ ⟩)
     → PR Sig ⟨ ss , s ⟩
-  P : ∀ {s₀}{ss : Vec S n}
+  Pr : ∀ {s₀}{ss : Vec S n}
     → (res : S → S)
     → (h : (a : symbols Sig)
          → PR Sig ⟨ (map res (sin* Sig a) ++ sin* Sig a) ++ ss , res (sout Sig a) ⟩)
@@ -108,7 +108,7 @@ eval  : ∀ {Sig}{ssin : Vec S n}{sout : S}
 eval (σ a)     v* = con a v*
 eval (π i)     v* = alookup v* i
 eval (C f g*)  v* = eval f (eval* g* v*)
-eval (P res h) (con a x* ∷ v*) = eval (h a) ((mapᴬ (λ _ x → eval (P res h) (x ∷ v*)) x* ++ᴬ x*) ++ᴬ v*)
+eval (Pr res h) (con a x* ∷ v*) = eval (h a) ((mapᴬ (λ _ x → eval (Pr res h) (x ∷ v*)) x* ++ᴬ x*) ++ᴬ v*)
 \end{code}
 }
 \begin{code}[hide]
@@ -117,7 +117,7 @@ eval* (p ∷ p*) v* = eval p v* ∷ eval* p* v*
 \end{code}
 \begin{code}[hide]
 data PR′ (Sig : Sorted S) : Vec S n × S → Set where
-  P′ : ∀ {s₀}{ss : Vec S n}
+  Pr′ : ∀ {s₀}{ss : Vec S n}
     → (res : S → S)
     → (h : (a : symbols Sig) → PR′ Sig ⟨ concat (map (λ s → [ res s , s ]) (sin* Sig a)) ++ ss , res (sout Sig a) ⟩)
     → PR′ Sig ⟨ s₀ ∷ ss , res s₀ ⟩
@@ -131,5 +131,5 @@ concmapᴬ f (v ∷ v*) with f {Fin.zero} v
 
 {-# TERMINATING #-}
 eval′ : ∀ {Sig}{ssin : Vec S n}{sout : S} → PR′ Sig ⟨ ssin , sout ⟩ → Term* Sig ssin → Term Sig sout
-eval′ (P′ res h) (con a xs ∷ v*) = eval′ (h a) (concmapᴬ (λ x → ⟨ (eval′ (P′ res h) (x ∷ v*)) , x ⟩) xs ++ᴬ v*)
+eval′ (Pr′ res h) (con a xs ∷ v*) = eval′ (h a) (concmapᴬ (λ x → ⟨ (eval′ (Pr′ res h) (x ∷ v*)) , x ⟩) xs ++ᴬ v*)
 \end{code}

@@ -243,7 +243,7 @@ $h := C (h,(\many gm)) \colon \mathbb{N}^n \rightarrow \mathbb{N} $ defined by
 
 \item[Primitive recursion] 
 If $g$ and $h$ are primitive recursive functions with arities $n$ and
-$n+2$ then $f := P (g,h)$ is a primitive recursive function of arity $n+1$ that is defined as follows.
+$n+2$ then $f := Pr (g,h)$ is a primitive recursive function of arity $n+1$ that is defined as follows.
 \begin{align*}
 	f&\colon \mathbb{N}^{n+1} \rightarrow \mathbb{N} \\
 	f  (0,\xn)  &= g (\xn) \\
@@ -314,7 +314,7 @@ types. The modeling of inductive
 types is inspired by Harper's textbook \cite{DBLP:books/cu/Ha2016}, but
 with several changes. First, Harper's definition is set in the
 conventional syntax of simply-typed lambda calculus with a
-fold-operator for inductive types,
+catamorphism-operator for inductive types,
 whereas ours comes in pointfree style. Second, his definition builds
 on polynomial type operators, which we generalize to polynomial
 inductive type operators. Third, Harper gives a small-step operational
@@ -363,11 +363,9 @@ The fifth compartment specifies a distributive law of sum types over product typ
 
 The final compartment
 defines arrows to introduce and eliminate inductive types. We call the
-constructor of inductive types  {\Afold} (often called
-\AgdaInductiveConstructor{con} in work on recursive types;
-confusingly, a standard eliminator of inductive types is also called
-fold or catamorphism) and the primitive recursive eliminator {\AP}.
-In the definition of {\Afold} and {\AP}, we find that $G :$~\ATy1, a type with a
+constructor of inductive types  {\Acon}.  The catamorphism eliminator
+is {\ACt}, and the primitive recursive eliminator is {\AP}.
+In the definition of {\Acon}, {\ACt}, and {\AP}, we find that $G :$~\ATy1, a type with a
 single type variable. It will be convenient to view $G$ as a functor
 that acts on types $T:$~{\ATY} by substitution, i.e., $T \mapsto (G
 \Leftarrow T)$ which substitutes the single type variable in $G$ by
@@ -406,14 +404,14 @@ unfolded and applied to a pair of $T$, the result of the inductive
 evaluation, and \Aind~$G$, the inductive subterm.
 
 Alternatively, we can equip inductive types with the standard
-catamorphism (aka the fold elimination operator) at this type:
+catamorphism (aka the catamorphism elimination operator) at this type:
 \ccDataPRF
-The fold operator invokes $h$ on the result of type $T$ of its
+The catamorphism operator invokes $h$ on the result of type $T$ of its
 recursive invocation, whereas primitive recursion also passes the
 ``subterm'' of type \Aind~$G$. The type of the constructed arrow is
 the same in both cases.
 
-In PR-FO, we can easily show that {\AP} and {\AF} are interdefinable.
+In PR-FO, we can easily show that {\AP} and {\ACt} are interdefinable.
 
 \subsection{Semantics}
 \label{sec:semantics}
@@ -432,7 +430,7 @@ function is straightforward. Almost.
 \ccFunEval
 The only interesting case is the one for primitive recursion. It is
 interpreted by a function taking a pair of \Aind~$G$ and some $U$. The
-first component of the argument must evaluate to some \Afold~$x$, so the $x$ corresponds
+first component of the argument must evaluate to some \Acon~$x$, so the $x$ corresponds
 to the constructor arguments, and the second component $u:U$ is the
 extra argument. Now we run the function $h$ essentially on
 $x :{} G \Leftarrow \Aind~G$ and $u$, but 
@@ -467,7 +465,7 @@ tuples, as usual, hence vector lookup compiles to a composition of
 binary projections.
 \ccFunMkvec
 \ccDefNatToInd
-The encodings of the constructors {\ACZ} and {\ACS} compose {\Afold} with the left and right
+The encodings of the constructors {\ACZ} and {\ACS} compose {\Acon} with the left and right
 injection, respectively. Projection is implemented by vector lookup
 and composition by composition. For
 the encoding of primitive recursion, we need two helper arrows. One
@@ -498,11 +496,11 @@ nested inductive types, where functor $G$ has the form $\Aind~H$, defined as fol
 \ccFunFmapInd
 As we are mapping $f$ over the functor $G : \ATy{~1}$, we find an
 inductive component $\Aind~H$ with $H : \ATy{~2}$. Hence, the argument
-must have the form $\Afold\ x$, for some $x : \Aind~H \Leftarrow S$.
+must have the form $\Acon\ x$, for some $x : \Aind~H \Leftarrow S$.
 Our strategy is to unfold $H$ at this point to obtain another functor
 $H' = \Aind~H \Leftarrow H$ of type $\ATy{~1}$. The remaining free variable in $H'$
 corresponds to the variable of the outer inductive type. Hence,
-morally $\Afold~ (\Afmap~H'~f~x)$ should do the job. Unfortunately,
+morally $\Acon~ (\Afmap~H'~f~x)$ should do the job. Unfortunately,
 the types do not work out as $\Afmap~H'~f$ expects an argument of type
 $(\Aind~H \Leftarrow H) \Leftarrow S$. So we have to supply a proof,
 produced by the lemma \Aeq, that these types are indeed equal.

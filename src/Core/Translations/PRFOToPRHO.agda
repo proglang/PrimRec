@@ -152,7 +152,7 @@ strength-π₁-cast :
 strength-π₁-cast G refl refl =
   HOEq.strength-π₁ G
 
-P-β-cast :
+Pr-β-cast :
   ∀ {A B GI GIB GAI : TY HO}
   (G : Ty HO 1)
   (eI : GI ≡ G [ Ty.ind G ])
@@ -160,7 +160,7 @@ P-β-cast :
   (eAI : GAI ≡ G [ A Ty.`× Ty.ind G ])
   {h : GAI Ty.`× B HO.→ᴾ A} →
   let hᴾ = cast (cong₂ Ty._`×_ eAI refl) refl h
-      p = HO.P {G = G} hᴾ in
+      p = HO.Pr {G = G} hᴾ in
   HO.C p (HO.map-× (cast (sym eI) refl HO.con) HO.id)
   HOEq.≈
   HO.C h
@@ -171,9 +171,9 @@ P-β-cast :
         (cast (cong₂ Ty._`×_ (sym eI) refl) (sym eIB)
           (HO.strength G)))
       HO.π₂)
-P-β-cast G refl refl refl = HOEq.P-β
+Pr-β-cast G refl refl refl = HOEq.Pr-β
 
-P-unique-cast :
+Pr-unique-cast :
   ∀ {A B GI GIB GAI : TY HO}
   (G : Ty HO 1)
   (eI : GI ≡ G [ Ty.ind G ])
@@ -193,8 +193,8 @@ P-unique-cast :
           (HO.strength G)))
       HO.π₂)
   →
-  p HOEq.≈ HO.P {G = G} hᴾ
-P-unique-cast G refl refl refl premise = HOEq.P-unique premise
+  p HOEq.≈ HO.Pr {G = G} hᴾ
+Pr-unique-cast G refl refl refl premise = HOEq.Pr-unique premise
 
 ----------------------------------------------------------------------
 -- Structural embedding of PR-FO into PR-HO
@@ -222,8 +222,8 @@ translate (FO.strength {T = T} {U = U} G) =
     (HO.strength (lift G))
 translate (FO.con {G = G}) =
   cast (sym (lift-sub0 G (Ty.ind G))) refl HO.con
-translate {T = Ty.ind G Ty.`× U} {U = T} (FO.P h) =
-  HO.P
+translate {T = Ty.ind G Ty.`× U} {U = T} (FO.Pr h) =
+  HO.Pr
     (cast
       (cong₂ Ty._`×_ (lift-sub0 G (T Ty.`× Ty.ind G)) refl)
       refl
@@ -248,8 +248,8 @@ preserves (FOEq.`case-cong p q) =
 preserves (FOEq.fmap-cong {A = A} {B = B} G p) =
   cast-cong (sym (lift-sub0 G A)) (sym (lift-sub0 G B))
     (HOEq.fmap-cong (lift G) (preserves p))
-preserves (FOEq.P-cong {A = A} {B = B} {G = H} p) =
-  HOEq.P-cong
+preserves (FOEq.Pr-cong {A = A} {B = B} {G = H} p) =
+  HOEq.Pr-cong
     (cast-cong
       (cong₂ Ty._`×_ (lift-sub0 H (A Ty.`× Ty.ind H)) refl)
       refl
@@ -287,14 +287,14 @@ preserves FOEq.+-β₂ = HOEq.+-β₂
 preserves FOEq.+-η = HOEq.+-η
 preserves FOEq.dist-undist = HOEq.dist-undist
 preserves FOEq.undist-dist = HOEq.undist-dist
-preserves (FOEq.P-β {A = A} {B = B} {G = H} {h = h}) =
-  P-β-cast (lift H)
+preserves (FOEq.Pr-β {A = A} {B = B} {G = H} {h = h}) =
+  Pr-β-cast (lift H)
     (lift-sub0 H (Ty.ind H))
     (lift-sub0 H (Ty.ind H Ty.`× B))
     (lift-sub0 H (A Ty.`× Ty.ind H))
     {h = translate h}
-preserves (FOEq.P-unique {A = A} {B = B} {G = H} {h = h} p) =
-  P-unique-cast (lift H)
+preserves (FOEq.Pr-unique {A = A} {B = B} {G = H} {h = h} p) =
+  Pr-unique-cast (lift H)
     (lift-sub0 H (Ty.ind H))
     (lift-sub0 H (Ty.ind H Ty.`× B))
     (lift-sub0 H (A Ty.`× Ty.ind H))

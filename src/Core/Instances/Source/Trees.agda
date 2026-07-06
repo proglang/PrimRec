@@ -22,7 +22,7 @@ data PR (R : Ranked) : ℕ → Set where
   σ : (a : Fin (count R)) → PR R (rank R a)
   π : ∀ {n} → Fin n → PR R n
   C : ∀ {m n} → PR R m → Vec (PR R n) m → PR R n
-  P : ∀ {n} →
+  Pr : ∀ {n} →
       ((a : Fin (count R)) → PR R ((rank R a + rank R a) + n)) →
       PR R (suc n)
 
@@ -41,7 +41,7 @@ eval* : ∀ {R m n} → Vec (PR R n) m → Vec (Term R) n → Vec (Term R) m
 eval (σ a) values = con a (lookup values)
 eval (π i) values = lookup values i
 eval (C f fs) values = eval f (eval* fs values)
-eval {R} {suc n} (P steps) (tree ∷ parameters) =
+eval {R} {suc n} (Pr steps) (tree ∷ parameters) =
   para algebra tree
   where
   algebra : (a : Fin (count R)) →

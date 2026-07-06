@@ -78,8 +78,8 @@ fromLegacyProgram finiteR (Legacy.σ a) =
 fromLegacyProgram finiteR (Legacy.π i) = Source.π i
 fromLegacyProgram finiteR (Legacy.C f fs) =
   Source.C (fromLegacyProgram finiteR f) (fromLegacyPrograms finiteR fs)
-fromLegacyProgram {n = suc n} finiteR (Legacy.P steps) =
-  Source.P λ i →
+fromLegacyProgram {n = suc n} finiteR (Legacy.Pr steps) =
+  Source.Pr λ i →
     Eq.subst (Source.PR (sourceSignature _ finiteR))
       (sym (cong (λ r → (r Data.Nat.+ r) Data.Nat.+ n)
         (source-rank-decode finiteR i)))
@@ -110,7 +110,7 @@ programs : ∀ {R m n} → Vec (Source.PR R n) m →
 program (Source.σ a) = Legacy.σ a
 program (Source.π i) = Legacy.π i
 program (Source.C f fs) = Legacy.C (program f) (programs fs)
-program (Source.P steps) = Legacy.P (λ a → program (steps a))
+program (Source.Pr steps) = Legacy.Pr (λ a → program (steps a))
 
 programs [] = []
 programs (p ∷ ps) = program p ∷ programs ps
@@ -150,20 +150,20 @@ sound (Source.π i) xs = term-lookup i xs
 sound (Source.C f fs) xs =
   trans (sound f (Source.eval* fs xs))
         (cong (Legacy.eval (program f)) (sound* fs xs))
-sound {R} {suc n} (Source.P steps) (tree ∷ parameters) = go tree
+sound {R} {suc n} (Source.Pr steps) (tree ∷ parameters) = go tree
   where
   legacyP : Legacy.PR (signature R) (suc n)
-  legacyP = Legacy.P (λ a → program (steps a))
+  legacyP = Legacy.Pr (λ a → program (steps a))
 
   go : (tree : Source.Term R) →
-    term (Source.eval (Source.P steps) (tree ∷ parameters)) ≡
+    term (Source.eval (Source.Pr steps) (tree ∷ parameters)) ≡
     Legacy.eval legacyP (term tree ∷ terms parameters)
   go (Source.con a children) =
     trans (sound (steps a) sourceArguments)
           (cong (Legacy.eval (program (steps a))) arguments-sound)
     where
     pairs = tabulate
-      (λ i → Source.eval (Source.P steps) (children i ∷ parameters) , children i)
+      (λ i → Source.eval (Source.Pr steps) (children i ∷ parameters) , children i)
 
     sourceArguments =
       (map proj₁ pairs ++ map proj₂ pairs) ++ parameters
@@ -181,10 +181,10 @@ sound {R} {suc n} (Source.P steps) (tree ∷ parameters) = go tree
       ≡⟨ sym (map-∘ term proj₁ pairs) ⟩
         map (term ∘ proj₁) pairs
       ≡⟨ sym (tabulate-∘ (term ∘ proj₁)
-            (λ i → Source.eval (Source.P steps) (children i ∷ parameters) ,
+            (λ i → Source.eval (Source.Pr steps) (children i ∷ parameters) ,
                    children i)) ⟩
         tabulate
-          (λ i → term (Source.eval (Source.P steps)
+          (λ i → term (Source.eval (Source.Pr steps)
                             (children i ∷ parameters)))
       ≡⟨ tabulate-cong (λ i → go (children i)) ⟩
         tabulate
@@ -203,7 +203,7 @@ sound {R} {suc n} (Source.P steps) (tree ∷ parameters) = go tree
       ≡⟨ sym (map-∘ term proj₂ pairs) ⟩
         map (term ∘ proj₂) pairs
       ≡⟨ sym (tabulate-∘ (term ∘ proj₂)
-            (λ i → Source.eval (Source.P steps) (children i ∷ parameters) ,
+            (λ i → Source.eval (Source.Pr steps) (children i ∷ parameters) ,
                    children i)) ⟩
         legacyChildren
       ∎

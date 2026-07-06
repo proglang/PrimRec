@@ -232,14 +232,14 @@ module FromCC where
   E⟦ CC.dist-+-x ⟧ = dist-+-x
   E⟦ CC.con{G = G} ⟧
     rewrite trans-compat-subst0 G (CC.ind G) = con
-  E⟦ CC.P{G = G}{T = T} p ⟧
+  E⟦ CC.Pr{G = G}{T = T} p ⟧
     with E⟦ p ⟧
   ... | Ep
-    rewrite trans-compat-subst0 G (T CC.`× CC.ind G) = P Ep
-  E⟦ CC.F{G = G}{T = T} p ⟧
+    rewrite trans-compat-subst0 G (T CC.`× CC.ind G) = Pr Ep
+  E⟦ CC.Ct{G = G}{T = T} p ⟧
     with E⟦ p ⟧
   ... | Ep
-    rewrite trans-compat-subst0 G T = F Ep
+    rewrite trans-compat-subst0 G T = Ct Ep
 
   -- translation preserves semantics
 
@@ -504,26 +504,26 @@ module FromCC where
     → subst ⟦_⟧ᵀ p x ≡ y → x ≡ subst ⟦_⟧ᵀ (sym p) y
   unsubst p {x} e = trans (sym (subst-cancel p x)) (cong (subst ⟦_⟧ᵀ (sym p)) e)
 
-  eval-E-P : ∀ {G : CC.Ty 1} {T U : CC.TY}
+  eval-E-Pr : ∀ {G : CC.Ty 1} {T U : CC.TY}
     (p : (G CC.⇐ (T CC.`× CC.ind G)) CC.`× U CC.→ᴾ T)
     (x : ⟦ T⟦ G ⟧ ⇐ ind T⟦ G ⟧ ⟧ᵀ) (u : ⟦ T⟦ U ⟧ ⟧ᵀ)
-    → eval E⟦ CC.P {G = G} {T = T} {U = U} p ⟧ (con x , u)
+    → eval E⟦ CC.Pr {G = G} {T = T} {U = U} p ⟧ (con x , u)
       ≡ eval E⟦ p ⟧
           (subst ⟦_⟧ᵀ (sym (trans-compat-subst0 G (T CC.`× CC.ind G)))
             (fmap T⟦ G ⟧
-              (λ v → eval E⟦ CC.P {G = G} {T = T} {U = U} p ⟧ (v , u) , v) x) , u)
-  eval-E-P {G} {T} p x u with E⟦ p ⟧
+              (λ v → eval E⟦ CC.Pr {G = G} {T = T} {U = U} p ⟧ (v , u) , v) x) , u)
+  eval-E-Pr {G} {T} p x u with E⟦ p ⟧
   ... | Ep rewrite trans-compat-subst0 G (T CC.`× CC.ind G) = refl
 
-  eval-E-F : ∀ {G : CC.Ty 1} {T U : CC.TY}
+  eval-E-Ct : ∀ {G : CC.Ty 1} {T U : CC.TY}
     (p : (G CC.⇐ T) CC.`× U CC.→ᴾ T)
     (x : ⟦ T⟦ G ⟧ ⇐ ind T⟦ G ⟧ ⟧ᵀ) (u : ⟦ T⟦ U ⟧ ⟧ᵀ)
-    → eval E⟦ CC.F {G = G} {T = T} {U = U} p ⟧ (con x , u)
+    → eval E⟦ CC.Ct {G = G} {T = T} {U = U} p ⟧ (con x , u)
       ≡ eval E⟦ p ⟧
           (subst ⟦_⟧ᵀ (sym (trans-compat-subst0 G T))
             (fmap T⟦ G ⟧
-              (λ v → eval E⟦ CC.F {G = G} {T = T} {U = U} p ⟧ (v , u)) x) , u)
-  eval-E-F {G} {T} p x u with E⟦ p ⟧
+              (λ v → eval E⟦ CC.Ct {G = G} {T = T} {U = U} p ⟧ (v , u)) x) , u)
+  eval-E-Ct {G} {T} p x u with E⟦ p ⟧
   ... | Ep rewrite trans-compat-subst0 G T = refl
 
   {-# TERMINATING #-}
@@ -550,37 +550,37 @@ module FromCC where
   trans-preserves-hard CC.dist-+-x (inj₂ y , z) = refl
   trans-preserves-hard (CC.con {G = G}) x =
     sym (eval-E-con (from-T (G CC.⇐ CC.ind G) x))
-  trans-preserves-hard (CC.P {G = G} {T = T} {U = U} p) (CC.con x , u)
+  trans-preserves-hard (CC.Pr {G = G} {T = T} {U = U} p) (CC.con x , u)
     = trans
         (trans-preserves-hard p
-          (CC.fmap G (λ v → CC.eval (CC.P {G = G} {T = T} {U = U} p) (v , u) , v) x , u))
+          (CC.fmap G (λ v → CC.eval (CC.Pr {G = G} {T = T} {U = U} p) (v , u) , v) x , u))
         (trans
           (cong (λ z → eval E⟦ p ⟧ (z , from-T U u))
             (unsubst (trans-compat-subst0 G (T CC.`× CC.ind G))
               (from-fmap-natural G
-                {f = λ v → CC.eval (CC.P {G = G} {T = T} {U = U} p) (v , u) , v}
-                {f′ = λ v → eval E⟦ CC.P {G = G} {T = T} {U = U} p ⟧
+                {f = λ v → CC.eval (CC.Pr {G = G} {T = T} {U = U} p) (v , u) , v}
+                {f′ = λ v → eval E⟦ CC.Pr {G = G} {T = T} {U = U} p ⟧
                                   (v , from-T U u) , v}
                 (λ v → cong₂ _,_
-                  (trans-preserves-hard (CC.P {G = G} {T = T} {U = U} p) (v , u)) refl) x)))
-          (sym (eval-E-P {G = G} {T = T} {U = U} p
+                  (trans-preserves-hard (CC.Pr {G = G} {T = T} {U = U} p) (v , u)) refl) x)))
+          (sym (eval-E-Pr {G = G} {T = T} {U = U} p
             (subst ⟦_⟧ᵀ (trans-compat-subst0 G (CC.ind G))
               (from-T (G CC.⇐ CC.ind G) x))
             (from-T U u))))
-  trans-preserves-hard (CC.F {G = G} {T = T} {U = U} p) (CC.con x , u)
+  trans-preserves-hard (CC.Ct {G = G} {T = T} {U = U} p) (CC.con x , u)
     = trans
         (trans-preserves-hard p
-          (CC.fmap G (λ v → CC.eval (CC.F {G = G} {T = T} {U = U} p) (v , u)) x , u))
+          (CC.fmap G (λ v → CC.eval (CC.Ct {G = G} {T = T} {U = U} p) (v , u)) x , u))
         (trans
           (cong (λ z → eval E⟦ p ⟧ (z , from-T U u))
             (unsubst (trans-compat-subst0 G T)
               (from-fmap-natural G
-                {f = λ v → CC.eval (CC.F {G = G} {T = T} {U = U} p) (v , u)}
-                {f′ = λ v → eval E⟦ CC.F {G = G} {T = T} {U = U} p ⟧
+                {f = λ v → CC.eval (CC.Ct {G = G} {T = T} {U = U} p) (v , u)}
+                {f′ = λ v → eval E⟦ CC.Ct {G = G} {T = T} {U = U} p ⟧
                                   (v , from-T U u)}
                 (λ v → trans-preserves-hard
-                  (CC.F {G = G} {T = T} {U = U} p) (v , u)) x)))
-          (sym (eval-E-F {G = G} {T = T} {U = U} p
+                  (CC.Ct {G = G} {T = T} {U = U} p) (v , u)) x)))
+          (sym (eval-E-Ct {G = G} {T = T} {U = U} p
             (subst ⟦_⟧ᵀ (trans-compat-subst0 G (CC.ind G))
               (from-T (G CC.⇐ CC.ind G) x))
             (from-T U u))))
@@ -606,7 +606,7 @@ module FromCC where
   trans-preserves (CC.`case p₁ p₂) (inj₂ y) = trans-preserves p₂ y
   trans-preserves CC.dist-+-x x = trans-preserves-hard CC.dist-+-x x
   trans-preserves CC.con x = trans-preserves-hard CC.con x
-  trans-preserves (CC.P p) x = trans-preserves-hard (CC.P p) x
-  trans-preserves (CC.F p) x = trans-preserves-hard (CC.F p) x
+  trans-preserves (CC.Pr p) x = trans-preserves-hard (CC.Pr p) x
+  trans-preserves (CC.Ct p) x = trans-preserves-hard (CC.Ct p) x
 
 \end{code}

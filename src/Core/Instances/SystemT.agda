@@ -219,7 +219,7 @@ module Semantics {ℓ : Level} (M : Model.Model ℓ) where
     → Γ ⇒ᴹ A
     → Γ ⇒ᴹ Natᴴ
     → Γ ⇒ᴹ A
-  precᴹ h z n = Cᴹ (Pᴹ (stepᴹ h z)) (pairᴹ n idᴹ)
+  precᴹ h z n = Cᴹ (Prᴹ (stepᴹ h z)) (pairᴹ n idᴹ)
 
   denote : ∀ {n : Nat.ℕ} {Γ : Ctx n} {A : STy}
     → Exp Γ A
@@ -263,7 +263,7 @@ module Semantics {ℓ : Level} (M : Model.Model ℓ) where
   preserves (ST.Nat n) = numeral-preserves n
   preserves (ST.PrecT h z n) =
     C-congᴹ
-      (P-congᴹ (step-preserves h z))
+      (Pr-congᴹ (step-preserves h z))
       (pair-congᴹ (preserves n) ≈-reflᴹ)
 
   step-preserves h z =

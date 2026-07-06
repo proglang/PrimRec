@@ -30,8 +30,8 @@ supported-steps steps a = supported (steps a)
 supported {R} (Source.σ a) = supported-con (Source.ranks R) a
 supported (Source.π i) = supported-lookup i
 supported (Source.C f fs) = s-C (supported f) (supported* fs)
-supported {R} (Source.P steps) =
-  s-P (Branches (Source.ranks R)) (flatBranches (Source.ranks R))
+supported {R} (Source.Pr steps) =
+  s-Pr (Branches (Source.ranks R)) (flatBranches (Source.ranks R))
     (supported-paraHandler (Source.ranks R) (supported-steps steps))
 
 supported* [] = s-⊤
@@ -210,7 +210,7 @@ correct {R} (Source.σ a) related =
   tabulate-related (related-∷ x xs) = related-∷ x (tabulate-related xs)
 correct (Source.π i) related = lookup-related i related
 correct (Source.C f fs) related = correct f (correct* fs related)
-correct {R} {suc n} (Source.P steps) {values = tree , values}
+correct {R} {suc n} (Source.Pr steps) {values = tree , values}
   {terms = term ∷ terms} (related-∷ first parameters) = go first
   where
   handler : Supported (paraHandler (Source.ranks R) (λ a → compile (steps a)))
@@ -223,12 +223,12 @@ correct {R} {suc n} (Source.P steps) {values = tree , values}
           {U = vec (Target R) n} (flatBranches (Source.ranks R))
           (eval handler) values)
         tree′ (λ ()))
-      (Source.eval (Source.P steps) (term′ ∷ terms))
+      (Source.eval (Source.Pr steps) (term′ ∷ terms))
   go (related-con {a = a} {children = source-children}
       {values = child-values} child-rel) =
     subst
       (λ target → Related target
-        (Source.eval (Source.P steps) (Source.con a source-children ∷ terms)))
+        (Source.eval (Source.Pr steps) (Source.con a source-children ∷ terms)))
       (sym (para-con (Source.ranks R)
         (λ i → compile (steps i)) (supported-steps steps)
         a child-values values))
@@ -261,7 +261,7 @@ correct {R} {suc n} (Source.P steps) {values = tree , values}
         child (λ ())
 
     source-recur : Source.Term R → Source.Term R
-    source-recur child = Source.eval (Source.P steps) (child ∷ terms)
+    source-recur child = Source.eval (Source.Pr steps) (child ∷ terms)
 
     recurse : ∀ (k : ℕ) (source-children : Fin k → Source.Term R)
       {children : Sem (vec (Target R) k)} →

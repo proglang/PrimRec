@@ -33,7 +33,7 @@ erase* : ∀ {S n m} {Sig : Source.Signature S}
 erase (Source.σ a) = TreeSource.σ a
 erase (Source.π i) = TreeSource.π i
 erase (Source.C f fs) = TreeSource.C (erase f) (erase* fs)
-erase (Source.P res steps) = TreeSource.P (λ a → erase (steps a))
+erase (Source.Pr res steps) = TreeSource.Pr (λ a → erase (steps a))
 
 erase* Source.[] = []
 erase* (p Source.∷ ps) = erase p ∷ erase* ps
@@ -78,8 +78,8 @@ module Semantics {ℓ : Level} (M : Model.Model ℓ) where
     Model.interpret structure (conᴾ (Source.ranks Sig) a)
   denote (Source.π i) = Model.interpret structure (lookupᴾ i)
   denote (Source.C f fs) = Cᴹ (denote f) (denote* fs)
-  denote {n = suc n} {Sig = Sig} (Source.P res steps) =
-    Pᴹ (paraHandlerᴹ (Source.ranks Sig) (λ i → denote (steps i)))
+  denote {n = suc n} {Sig = Sig} (Source.Pr res steps) =
+    Prᴹ (paraHandlerᴹ (Source.ranks Sig) (λ i → denote (steps i)))
 
   denote* Source.[] = ⊤ᴹ
   denote* (p Source.∷ ps) = pairᴹ (denote p) (denote* ps)
@@ -95,8 +95,8 @@ module Semantics {ℓ : Level} (M : Model.Model ℓ) where
   preserves (Source.σ a) = ≈-reflᴹ
   preserves (Source.π i) = ≈-reflᴹ
   preserves (Source.C f fs) = C-congᴹ (preserves f) (preserves* fs)
-  preserves {n = suc n} {Sig = Sig} (Source.P res steps) =
-    P-congᴹ
+  preserves {n = suc n} {Sig = Sig} (Source.Pr res steps) =
+    Pr-congᴹ
       (≈-transᴹ
         (paraHandler-interpret (Source.ranks Sig) (λ i → compile (steps i)))
         (paraHandler-congᴹ (Source.ranks Sig) (λ i → preserves (steps i))))

@@ -6,6 +6,6 @@ module Core.Equations where
 -- infrastructure can be factored into this module when models are added.
 
 import Core.Equations.PRFO as PRFO
-import Core.Equations.PRFOFold as PRFOFold
+import Core.Equations.PRFOCatamorphism as PRFOCatamorphism
 import Core.Equations.PRHO as PRHO
-import Core.Equations.PRHOFold as PRHOFold
+import Core.Equations.PRHOCatamorphism as PRHOCatamorphism

@@ -40,7 +40,7 @@ make-R A = Trees.mkRanked {Maybe A} (maybe (const 1) 0)
 ⟦ Words.σ a ⟧    = Trees.σ (just a)
 ⟦ Words.π i ⟧    = Trees.π i
 ⟦ Words.C f g* ⟧ = Trees.C ⟦ f ⟧ (map ⟦_⟧ g*)
-⟦ Words.P g h ⟧  = Trees.P λ{ nothing → ⟦ g ⟧ ; (just a) → ⟦ h a ⟧}
+⟦ Words.Pr g h ⟧  = Trees.Pr λ{ nothing → ⟦ g ⟧ ; (just a) → ⟦ h a ⟧}
 \end{code}
 }
 \newcommand\PRWordsToTreesEncodingSound{
@@ -57,11 +57,11 @@ sound Words.Z [] = refl
 sound (Words.σ a) [ x ] = refl
 sound (Words.π i) v* = sym (lookup-map i ⟦_⟧ⱽ v*)
 sound (Words.C f g*) v* rewrite sound f (Words.eval* g* v*) | sound* g* v* = refl
-sound (Words.P g h) ([]ᴸ ∷ v*) = sound g v*
-sound (Words.P g h) ((x ∷ᴸ x₁) ∷ v*) = trans (sound (h x) (Words.eval (Words.P g h) (x₁ ∷ v*) ∷ x₁ ∷ v*))
+sound (Words.Pr g h) ([]ᴸ ∷ v*) = sound g v*
+sound (Words.Pr g h) ((x ∷ᴸ x₁) ∷ v*) = trans (sound (h x) (Words.eval (Words.Pr g h) (x₁ ∷ v*) ∷ x₁ ∷ v*))
                                             (cong (Trees.eval ⟦ h x ⟧)
                                                   (cong (_∷ ⟦ x₁ ⟧ⱽ ∷ map ⟦_⟧ⱽ v*)
-                                                        (sound (Words.P g h) (x₁ ∷ v*))))
+                                                        (sound (Words.Pr g h) (x₁ ∷ v*))))
 
 sound* [] v* = refl
 sound* (p ∷ p*) v* rewrite sound p v* | sound* p* v* = refl

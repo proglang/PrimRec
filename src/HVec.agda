@@ -14,7 +14,7 @@ open Vec
 open import Utils
 
 
-data HVec (F : S → Set) : ∀ {n} → Vec S n → Set where
+data HVec (Ct : S → Set) : ∀ {n} → Vec S n → Set where
   []ᴴ  : HVec F []
   _∷ᴴ_ : ∀ {n s ss} → F s → HVec F {n} ss → HVec F (s ∷ ss)
 

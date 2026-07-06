@@ -28,10 +28,10 @@ data _≈_ : T →ᴾ U → T →ᴾ U → Set where
     → f ≈ f′ → g ≈ g′ → `case f g ≈ `case f′ g′
   fmap-cong : (H : Ty FO 1) {f f′ : A →ᴾ B}
     → f ≈ f′ → fmap H f ≈ fmap H f′
-  P-cong : ∀ {A B : TY FO} {G : Ty FO 1}
+  Pr-cong : ∀ {A B : TY FO} {G : Ty FO 1}
     {h h′ : (G [ A `× ind G ]) `× B →ᴾ A}
     → h ≈ h′
-    → P h ≈ P {G = G} h′
+    → Pr h ≈ Pr {G = G} h′
 --! }
 
   C-idˡ : {f : A →ᴾ B}
@@ -85,13 +85,13 @@ data _≈_ : T →ᴾ U → T →ᴾ U → Set where
     C undist-+-× (dist-+-× {U = A} {V = B} {T = D}) ≈ id
 
   --! CorePRFOParaLaws {
-  P-β : ∀ {A B : TY FO} {G : Ty FO 1}
+  Pr-β : ∀ {A B : TY FO} {G : Ty FO 1}
     {h : (G [ A `× ind G ]) `× B →ᴾ A}
-    → C (P h) (map-× (con {G = G}) id)
-      ≈ C h (paraArgs G (P h))
+    → C (Pr h) (map-× (con {G = G}) id)
+      ≈ C h (paraArgs G (Pr h))
 
-  P-unique : ∀ {A B : TY FO} {G : Ty FO 1}
+  Pr-unique : ∀ {A B : TY FO} {G : Ty FO 1}
     {h : (G [ A `× ind G ]) `× B →ᴾ A} {p : ind G `× B →ᴾ A}
     → C p (map-× con id) ≈ C h (paraArgs G p)
-    → p ≈ P h
+    → p ≈ Pr h
   --! }

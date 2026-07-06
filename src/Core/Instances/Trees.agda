@@ -23,8 +23,8 @@ compile* : ∀ {R m n} → Vec (Source.PR R n) m →
 compile {R} (Source.σ a) = conᴾ (Source.ranks R) a
 compile (Source.π i) = lookupᴾ i
 compile (Source.C f fs) = C (compile f) (compile* fs)
-compile {R} {n = _} (Source.P steps) =
-  P (paraHandler (Source.ranks R) (λ i → compile (steps i)))
+compile {R} {n = _} (Source.Pr steps) =
+  Pr (paraHandler (Source.ranks R) (λ i → compile (steps i)))
 
 compile* []       = `⊤
 compile* (p ∷ ps) = `# (compile p) (compile* ps)
@@ -53,8 +53,8 @@ module Semantics {ℓ : Level} (M : Model.Model ℓ) where
   denote {R} (Source.σ a) = Model.interpret structure (conᴾ (Source.ranks R) a)
   denote (Source.π i) = Model.interpret structure (lookupᴾ i)
   denote (Source.C f fs) = Cᴹ (denote f) (denote* fs)
-  denote {R} {suc n} (Source.P steps) =
-    Pᴹ (paraHandlerᴹ (Source.ranks R) (λ i → denote (steps i)))
+  denote {R} {suc n} (Source.Pr steps) =
+    Prᴹ (paraHandlerᴹ (Source.ranks R) (λ i → denote (steps i)))
 
   denote* []       = ⊤ᴹ
   denote* (p ∷ ps) = pairᴹ (denote p) (denote* ps)
@@ -67,8 +67,8 @@ module Semantics {ℓ : Level} (M : Model.Model ℓ) where
   preserves (Source.σ a) = ≈-reflᴹ
   preserves (Source.π i) = ≈-reflᴹ
   preserves (Source.C f fs) = C-congᴹ (preserves f) (preserves* fs)
-  preserves {R} {suc n} (Source.P steps) =
-    P-congᴹ
+  preserves {R} {suc n} (Source.Pr steps) =
+    Pr-congᴹ
       (≈-transᴹ
         (paraHandler-interpret (Source.ranks R) (λ i → compile (steps i)))
         (paraHandler-congᴹ (Source.ranks R) (λ i → preserves (steps i))))

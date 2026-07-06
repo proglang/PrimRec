@@ -26,13 +26,13 @@ data PR : ℕ → Set where
   C : (f : PR m)                -- composition
     → (g* : Vec (PR n) m)
     → PR n
-  P : (g : PR n)                -- primitive recursion
+  Pr : (g : PR n)                -- primitive recursion
     → (h : PR (2 + n))
     → PR (1 + n)
 \end{code}
 }
 \begin{code}[hide]
-  F : (g : PR n)                -- fold over nat, can be simulated with P
+  Ct : (g : PR n)                -- catamorphism over nat, can be simulated with Pr
     → (h : PR (1 + n))
     → PR (1 + n)
 
@@ -47,8 +47,8 @@ allFin (suc n) = zero ∷ map suc (allFin n)
 dropCounter : (n : ℕ) → Vec (PR (2 + n)) (1 + n)
 dropCounter n = π zero ∷ map (λ i → π (suc (suc i))) (allFin n)
 
-F⇒P : PR n → PR (1 + n) → PR (1 + n)
-F⇒P {n} g h = P g (C h (dropCounter n))
+Ct⇒Pr : PR n → PR (1 + n) → PR (1 + n)
+Ct⇒Pr {n} g h = Pr g (C h (dropCounter n))
 \end{code}
 \newcommand\PRNatEval{
 \begin{code}
@@ -62,13 +62,13 @@ eval Z        []           = 0
 eval σ        [ x ]        = suc x
 eval (π i)    v*           = lookup v* i
 eval (C f g*) v*           = eval f (eval* g* v*)
-eval (P g h)  (zero ∷ v*)  = eval g v*
-eval (P g h)  (suc x ∷ v*) = eval h ((eval (P g h) (x ∷ v*)) ∷ (x ∷ v*))
+eval (Pr g h)  (zero ∷ v*)  = eval g v*
+eval (Pr g h)  (suc x ∷ v*) = eval h ((eval (Pr g h) (x ∷ v*)) ∷ (x ∷ v*))
 \end{code}
 }
 \begin{code}[hide]
-eval (F g h)  (zero ∷ v*)  = eval g v*
-eval (F g h)  (suc x ∷ v*) = eval h ((eval (F g h) (x ∷ v*)) ∷ v*)
+eval (Ct g h)  (zero ∷ v*)  = eval g v*
+eval (Ct g h)  (suc x ∷ v*) = eval h ((eval (Ct g h) (x ∷ v*)) ∷ v*)
 
 eval*-projections : ∀ (is : Vec (Fin n) m) (v* : Vec ℕ n)
   → eval* (map π is) v* ≡ map (lookup v*) is
@@ -89,12 +89,12 @@ eval*-dropCounter {n} v* acc counter
         | ∘-map (lookup (acc ∷ counter ∷ v*)) (λ i → suc (suc i)) (allFin n)
         | lookup-allFin v* = refl
 
-F⇒P-sound : ∀ (g : PR n) (h : PR (1 + n)) (v* : Vec ℕ (1 + n))
-  → eval (F g h) v* ≡ eval (F⇒P g h) v*
-F⇒P-sound g h (zero ∷ v*) = refl
-F⇒P-sound {n} g h (suc x ∷ v*)
-  rewrite F⇒P-sound g h (x ∷ v*)
-        | eval*-dropCounter v* (eval (F⇒P g h) (x ∷ v*)) x = refl
+Ct⇒Pr-sound : ∀ (g : PR n) (h : PR (1 + n)) (v* : Vec ℕ (1 + n))
+  → eval (Ct g h) v* ≡ eval (Ct⇒Pr g h) v*
+Ct⇒Pr-sound g h (zero ∷ v*) = refl
+Ct⇒Pr-sound {n} g h (suc x ∷ v*)
+  rewrite Ct⇒Pr-sound g h (x ∷ v*)
+        | eval*-dropCounter v* (eval (Ct⇒Pr g h) (x ∷ v*)) x = refl
 
 eval*≡map-eval : ∀ (p* : Vec (PR n) m) (v* : Vec ℕ n) → eval* p* v* ≡ map (λ p → eval p v*) p*
 eval*≡map-eval [] v* = refl

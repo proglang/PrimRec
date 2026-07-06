@@ -21,7 +21,7 @@ data PR A : ℕ → Set where
   σ : (a : A) → PR A (suc zero)
   π : (i : Fin n) → PR A n
   C : (f : PR A m) → (g* : Vec (PR A n) m) → PR A n
-  P : (g : PR A n) → (h : A → PR A (suc (suc n))) → PR A (suc n)
+  Pr : (g : PR A n) → (h : A → PR A (suc (suc n))) → PR A (suc n)
 \end{code}
 }
 \newcommand\PRWordsEval{
@@ -33,8 +33,8 @@ eval Z        v*               = []ᴸ
 eval (σ x)    [ xs ]           = x ∷ᴸ xs
 eval (π i)    v*               = lookup v* i
 eval (C f g*) v*               = eval f (eval* g* v*)
-eval (P g h)  ([]ᴸ ∷ v*)       = eval g v*
-eval (P g h)  ((x ∷ᴸ xs) ∷ v*) = eval (h x) (eval (P g h) (xs ∷ v*) ∷ xs ∷ v*)
+eval (Pr g h)  ([]ᴸ ∷ v*)       = eval g v*
+eval (Pr g h)  ((x ∷ᴸ xs) ∷ v*) = eval (h x) (eval (Pr g h) (xs ∷ v*) ∷ xs ∷ v*)
 
 eval* []       v*              = []
 eval* (p ∷ p*) v*              = eval p v* ∷ eval* p* v*

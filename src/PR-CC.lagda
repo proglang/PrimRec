@@ -24,7 +24,7 @@ variable
   T U V : Ty
 
 data _→ᴾ_ : Ty → Ty → Set where
-  P : (g : U →ᴾ T)
+  Pr : (g : U →ᴾ T)
     → (h : (T `× `ℕ) `× U →ᴾ T)
     → (`ℕ `× U →ᴾ T)
   C : (f : U →ᴾ V)
@@ -45,8 +45,8 @@ data _→ᴾ_ : Ty → Ty → Set where
 ⟦ T `× U ⟧ᵀ = ⟦ T ⟧ᵀ × ⟦ U ⟧ᵀ
 
 ⟦_⟧ᴱ : (T →ᴾ U) → ⟦ T ⟧ᵀ → ⟦ U ⟧ᵀ
-⟦ P g h ⟧ᴱ (zero , u)  = ⟦ g ⟧ᴱ u
-⟦ P g h ⟧ᴱ (suc n , u) = ⟦ h ⟧ᴱ (((⟦ P g h ⟧ᴱ (n , u)) , n) , u)
+⟦ Pr g h ⟧ᴱ (zero , u)  = ⟦ g ⟧ᴱ u
+⟦ Pr g h ⟧ᴱ (suc n , u) = ⟦ h ⟧ᴱ (((⟦ Pr g h ⟧ᴱ (n , u)) , n) , u)
 ⟦ C f g ⟧ᴱ             = ⟦ f ⟧ᴱ ∘ ⟦ g ⟧ᴱ
 ⟦ σ ⟧ᴱ                 = suc
 ⟦ Z ⟧ᴱ                 = const 0

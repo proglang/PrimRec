@@ -191,7 +191,7 @@ precPF : ∀ {Γ A : PF.TY PF.HO} →
   Γ PF.→ᴾ SystemT.Natᴴ →
   Γ PF.→ᴾ A
 precPF h z n =
-  PF.C (PF.P (stepPF h z)) (PF.`# n PF.id)
+  PF.C (PF.Pr (stepPF h z)) (PF.`# n PF.id)
 
 renVar : ∀ {m} {Δ : Ctx m} {A} →
   Σ (Fin.Fin m) (λ j → lookup Δ j ≡ A) →
@@ -371,10 +371,10 @@ prec-congPF :
   precPF h z n PFEq.≈ precPF h′ z′ n′
 prec-congPF h≈ z≈ n≈ =
   PFEq.C-cong
-    (PFEq.P-cong (step-congPF h≈ z≈))
+    (PFEq.Pr-cong (step-congPF h≈ z≈))
     (PFEq.`#-cong n≈ PFEq.≈-refl)
 
-P-precomp-parameter :
+Pr-precomp-parameter :
   ∀ {Γ Δ A : PF.TY PF.HO}
   {step : (SystemT.NatF PF.[ A PF.`× SystemT.Natᴴ ]) PF.`× Γ PF.→ᴾ A}
   {n : Γ PF.→ᴾ SystemT.Natᴴ}
@@ -382,14 +382,14 @@ P-precomp-parameter :
   {e : Δ PF.→ᴾ Γ} →
   n′ PFEq.≈ PF.C n e →
   PF.C
-    (PF.P (PF.C step (PF.map-× PF.id e)))
+    (PF.Pr (PF.C step (PF.map-× PF.id e)))
     (PF.`# n′ PF.id)
     PFEq.≈
-  PF.C (PF.C (PF.P step) (PF.`# n PF.id)) e
-P-precomp-parameter {step = step} {n = n} {n′ = n′} {e = e} n≈ =
+  PF.C (PF.C (PF.Pr step) (PF.`# n PF.id)) e
+Pr-precomp-parameter {step = step} {n = n} {n′ = n′} {e = e} n≈ =
   PFEq.≈-trans
     (PFEq.C-cong
-      (PFEq.P-parameterʳ {G = SystemT.NatF} {h = step} {k = e})
+      (PFEq.Pr-parameterʳ {G = SystemT.NatF} {h = step} {k = e})
       PFEq.≈-refl)
     (PFEq.≈-trans (PFEq.≈-sym PFEq.C-assoc)
       (PFEq.≈-trans
@@ -406,9 +406,9 @@ P-precomp-parameter {step = step} {n = n} {n′ = n′} {e = e} n≈ =
               (PFEq.≈-sym rhs-to-common))))))
   where
   rhs-to-common :
-    PF.C (PF.C (PF.P step) (PF.`# n PF.id)) e
+    PF.C (PF.C (PF.Pr step) (PF.`# n PF.id)) e
       PFEq.≈
-    PF.C (PF.P step) (PF.`# (PF.C n e) e)
+    PF.C (PF.Pr step) (PF.`# (PF.C n e) e)
   rhs-to-common =
     PFEq.≈-trans (PFEq.≈-sym PFEq.C-assoc)
       (PFEq.≈-trans
@@ -685,9 +685,9 @@ prec-precompPF :
 prec-precompPF {h = h} {z = z} {n = n} {e = e} =
   PFEq.≈-trans
     (PFEq.C-cong
-      (PFEq.P-cong step-naturalPF)
+      (PFEq.Pr-cong step-naturalPF)
       PFEq.≈-refl)
-    (P-precomp-parameter PFEq.≈-refl)
+    (Pr-precomp-parameter PFEq.≈-refl)
 
 rename-preserves :
   ∀ {m n} {Γ : Ctx n} {Δ : Ctx m} {A}
@@ -950,7 +950,7 @@ paraZero-layer :
   {step : (SystemT.NatF PF.[ A PF.`× SystemT.Natᴴ ]) PF.`× Γ PF.→ᴾ A} →
   PF.C
     (PF.fmapᶜ SystemT.NatF-structural
-      (PF.`# (PF.P step) PF.π₁))
+      (PF.`# (PF.Pr step) PF.π₁))
     (PF.C
       (PF.strengthᶜ {T = SystemT.Natᴴ} {U = Γ} SystemT.NatF-structural)
       (PF.`# zeroLayer PF.id))
@@ -989,7 +989,7 @@ prec-zeroPF :
   precPF h z zeroPF PFEq.≈ z
 prec-zeroPF {h = h} {z = z} =
   PFEq.≈-trans
-    (PFEq.P-βᶜ SystemT.NatF-structural)
+    (PFEq.Pr-βᶜ SystemT.NatF-structural)
     (PFEq.≈-trans
       (PFEq.C-cong PFEq.≈-refl
         (PFEq.`#-cong paraZero-layer PFEq.≈-refl))
@@ -1067,12 +1067,12 @@ paraSuc-layer :
   {k : Γ PF.→ᴾ SystemT.Natᴴ} →
   PF.C
     (PF.fmapᶜ SystemT.NatF-structural
-      (PF.`# (PF.P step) PF.π₁))
+      (PF.`# (PF.Pr step) PF.π₁))
     (PF.C
       (PF.strengthᶜ {T = SystemT.Natᴴ} {U = Γ} SystemT.NatF-structural)
       (PF.`# (PF.C PF.ι₂ k) PF.id))
     PFEq.≈
-  PF.C PF.ι₂ (PF.`# (PF.C (PF.P step) (PF.`# k PF.id)) k)
+  PF.C PF.ι₂ (PF.`# (PF.C (PF.Pr step) (PF.`# k PF.id)) k)
 paraSuc-layer =
   PFEq.≈-trans
     (PFEq.C-cong PFEq.≈-refl strengthNat-suc)
@@ -1158,7 +1158,7 @@ prec-sucPF {h = h} {z = z} {k = k} =
     (PFEq.C-cong PFEq.≈-refl
       (PFEq.`#-cong suc-βPF PFEq.≈-refl))
     (PFEq.≈-trans
-      (PFEq.P-βᶜ SystemT.NatF-structural)
+      (PFEq.Pr-βᶜ SystemT.NatF-structural)
       (PFEq.≈-trans
         (PFEq.C-cong PFEq.≈-refl
           (PFEq.`#-cong paraSuc-layer PFEq.≈-refl))

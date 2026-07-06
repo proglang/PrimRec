@@ -123,7 +123,7 @@ structure = record
   ; fmapᴹ = fmapSem
   ; strengthᴹ = strengthSem
   ; conᴹ = conSem
-  ; Pᴹ = PSem
+  ; Prᴹ = PSem
   }
 
 interpret : ∀ {T U : TY HO} → T Syn.→ᴾ U → Sem T → Sem U

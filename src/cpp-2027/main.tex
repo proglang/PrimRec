@@ -32,8 +32,8 @@
 \newcommand{\PRNat}{\ensuremath{\mathsf{PR\mbox{-}NAT}}}
 \newcommand{\PRFO}{\ensuremath{\mathsf{PR\mbox{-}FO}}}
 \newcommand{\PRHO}{\ensuremath{\mathsf{PR\mbox{-}HO}}}
-\newcommand{\PRFOF}{\ensuremath{\mathsf{PR\mbox{-}FO_F}}}
-\newcommand{\PRHOF}{\ensuremath{\mathsf{PR\mbox{-}HO_F}}}
+\newcommand{\PRFOCt}{\ensuremath{\mathsf{PR\mbox{-}FO_{Ct}}}}
+\newcommand{\PRHOCt}{\ensuremath{\mathsf{PR\mbox{-}HO_{Ct}}}}
 \newcommand{\AgdaFile}[1]{\texttt{#1}}
 
 \begin{document}
@@ -74,7 +74,7 @@ and higher-order programs.  We present an Agda formalization of
 primitive recursion in categorical terms, using point-free first-order
 and higher-order calculi, together with equational theories, setoid
 models, interpretation soundness, verified translations between
-paramorphism-primitive and fold-primitive presentations, and
+paramorphism-primitive and catamorphism-primitive presentations, and
 representative instances for natural numbers, words, trees, and
 many-sorted signatures.
 
@@ -164,7 +164,7 @@ Mechanizing this account forces several choices that are easy to gloss
 over on paper.  Models must carry hom-setoid equality and prove the laws
 of the target calculus.  Primitive recursion can be presented either by
 paramorphisms, which expose the original subdata to the step, or by
-folds, which expose only recursive results.  First-order targets need
+catamorphisms, which expose only recursive results.  First-order targets need
 distributivity as an axiom, while in the higher-order target the
 canonical distributivity map is derivable from exponentials.  Concrete
 source languages compile into these targets and inherit semantic
@@ -175,7 +175,7 @@ The paper has three high-level conceptual contributions.
 \begin{enumerate}
 \item We define point-free categorical target calculi for primitive
   recursion: first-order and higher-order variants, each in
-  paramorphism-primitive and fold-primitive form, sharing one typed
+  paramorphism-primitive and catamorphism-primitive form, sharing one typed
   language of products, coproducts, polynomial inductive types, and
   closed-domain exponentials in the higher-order case.
 \item We give equational theories and law-bearing setoid models for the
@@ -190,7 +190,7 @@ The paper has three high-level conceptual contributions.
   applicable, source-equation preservation.
 \end{enumerate}
 Several subsidiary technical results support these contributions: formal
-translations between paramorphism-primitive and fold-primitive
+translations between paramorphism-primitive and catamorphism-primitive
 presentations preserve equations and round-trip up to the generated
 equational theory; contextual simply typed syntax is related to the
 point-free target by compile/reify translations; the first-order target
@@ -230,8 +230,8 @@ connect source evaluators to the executable set interpretation.
 \node[core] (types) at (0,0) {core type language\\\AgdaFile{Core.Types}};
 \node[core] (prfo) at (-2.25,-1.35) {\PRFO{}\\paramorphism primitive};
 \node[core] (prho) at (2.25,-1.35) {\PRHO{}\\paramorphism primitive};
-\node[core] (prfof) at (-2.25,-2.95) {\PRFOF{}\\fold primitive};
-\node[core] (prhof) at (2.25,-2.95) {\PRHOF{}\\fold primitive};
+\node[core] (prfof) at (-2.25,-2.95) {\PRFOCt{}\\catamorphism primitive};
+\node[core] (prhof) at (2.25,-2.95) {\PRHOCt{}\\catamorphism primitive};
 
 \node[inst] (instances) at (-6.65,-2.8) {instance layer\\Nat/PREC, words, trees,\\many-sorted signatures};
 \node[inst] (systemt) at (6.85,-2.8) {System T\\STLC + Nat recursor};
@@ -285,7 +285,7 @@ System~T translates to \PRHO{}.  Solid arrows indicate translations that
 preserve generated equations when source equations are present.  Dotted arrows abbreviate
 instance-specific semantic correctness theorems: interpreting the
 translated core term in a model agrees with the source denotation.  The
-fold-level FO-to-HO arrow is derived via the P/F equivalences.}
+catamorphism-level FO-to-HO arrow is derived via the Pr/Ct equivalences.}
 \Description{A diagram with a reusable core in the upper middle, a
 legend in the upper right aligned with the top of the core, ports and
 examples including Nat/PREC to the left of the core, a separate System T source box below
@@ -296,8 +296,8 @@ arrow to the model layer.  The System T box has a direct arrow into
 PR-HO and a dotted semantic-correctness arrow to the model layer.
 Solid, double, and dotted arrows distinguish equation-preserving
 translations, equivalences up to equations, and semantic correctness
-theorems.  The fold-level FO-to-HO arrow is derived by composing the
-paramorphism/fold equivalences with the first-order to higher-order
+theorems.  The catamorphism-level FO-to-HO arrow is derived by composing the
+paramorphism/catamorphism equivalences with the first-order to higher-order
 embedding.}
 \label{fig:contribution-overview}
 \end{figure*}
@@ -318,7 +318,7 @@ mingle syntax and semantics and avoid terms denoting functional objects.
 
 The source language \AgdaFile{PR-Nat} addresses these issues and
 formalizes a grammar for primitive recursive terms of arity $n$ as an
-Agda datatype \(\AgdaDatatype{PR}\ n\).  Its constructor \(P(g,h)\)
+Agda datatype \(\AgdaDatatype{PR}\ n\).  Its constructor \(Pr(g,h)\)
 builds a program of arity \(1+n\). 
 The first input is the induction argument; \(g\) handles the zero case
 using the remaining \(n\) parameters, and \(h\) handles the successor
@@ -337,7 +337,7 @@ the predecessor value in the step case:
 \[
   \mathsf{add}
   =
-  P(\pi^1_0,\; \mathsf{suc} \circ \pi^3_0)
+  Pr(\pi^1_0,\; \mathsf{suc} \circ \pi^3_0)
   \quad:\quad \mathbb{N}^2 \to \mathbb{N}.
 \]
 Here the first \(\pi^1_0\) selects the remaining argument \(y\) in the
@@ -396,7 +396,7 @@ examples.  Its types
 include finite products and coproducts together with inductive types
 \(\mu F\) for polynomial functors \(F\).  Its arrows are categorical
 combinators plus functorial action, strength, and either a primitive
-paramorphism \(P\) or a primitive fold \(F\).  An instance module is a
+paramorphism \(Pr\) or a primitive catamorphism \(Ct\).  An instance module is a
 checked translation from one concrete source language, such as
 \AgdaFile{PR-Nat} or the word and tree languages, into this core.  The
 translation shows that the concrete language is not a separate calculus:
@@ -428,10 +428,10 @@ Paper component & Agda modules \\
 Core type language & \AgdaFile{Core.Types} \\
 \PRFO{} syntax and equations & \AgdaFile{Core.PRFO}, \AgdaFile{Core.Equations.PRFO} \\
 \PRHO{} syntax and equations & \AgdaFile{Core.PRHO}, \AgdaFile{Core.Equations.PRHO} \\
-Fold-primitive presentations & \AgdaFile{Core.PRFOFold}, \AgdaFile{Core.PRHOFold} \\
+Catamorphism-primitive presentations & \AgdaFile{Core.PRFOCatamorphism}, \AgdaFile{Core.PRHOCatamorphism} \\
 Models and soundness & \AgdaFile{Core.Models.*} \\
 Hom-setoid packaging & \AgdaFile{Core.Models.Setoids.*} \\
-P/F interdefinability & \AgdaFile{Core.Translations.*ParamorphismFold} \\
+Pr/Ct interdefinability & \AgdaFile{Core.Translations.*ParamorphismCatamorphism} \\
 FO to HO translation & \AgdaFile{Core.Translations.PRFOToPRHO} \\
 System T to PR-HO & \AgdaFile{Core.Instances.SystemT},
   \AgdaFile{Core.Instances.Equations.SystemT} \\
@@ -447,22 +447,22 @@ Trusted entry point & \AgdaFile{Everything} \\
 \label{sec:core-calculi}
 
 The artifact is organized around four closely related point-free core
-calculi.  The first-order calculi, \PRFO{} and \PRFOF{}, have finite
+calculi.  The first-order calculi, \PRFO{} and \PRFOCt{}, have finite
 products, finite coproducts, polynomial inductive types, functorial
 action, strength, and an eliminator for inductive types.  The
-higher-order calculi, \PRHO{} and \PRHOF{}, extend the same syntax with
+higher-order calculi, \PRHO{} and \PRHOCt{}, extend the same syntax with
 exponentials.  The suffix-free calculi take paramorphism as primitive;
-the \(F\)-suffixed calculi take fold as primitive.
+the \(Ct\)-suffixed calculi take catamorphism as primitive.
 
 \subsection{Target Categories}
 \label{sec:target-categories}
 
 The target of compilation is not Agda's category of types.  Each core
 calculus presents a syntactic category.  Write
-\(\mathcal{C}_{\mathsf{FO}}^P\),
-\(\mathcal{C}_{\mathsf{FO}}^F\),
-\(\mathcal{C}_{\mathsf{HO}}^P\), and
-\(\mathcal{C}_{\mathsf{HO}}^F\) for the categories presented by the four
+\(\mathcal{C}_{\mathsf{FO}}^{Pr}\),
+\(\mathcal{C}_{\mathsf{FO}}^{Ct}\),
+\(\mathcal{C}_{\mathsf{HO}}^{Pr}\), and
+\(\mathcal{C}_{\mathsf{HO}}^{Ct}\) for the categories presented by the four
 calculi.  In each case, objects are closed type codes
 \(A : \AgdaDatatype{Ty}\ \AgdaBound{md}\ 0\).  Morphisms
 \(A \to B\) are arrows of the corresponding intrinsic syntax modulo the
@@ -470,13 +470,13 @@ generated equality relation described in
 Section~\ref{sec:equations-models}; in Agda, this quotient is represented
 as a hom-setoid rather than as a quotient type.
 
-Thus \(\mathcal{C}_{\mathsf{FO}}^P\) and
-\(\mathcal{C}_{\mathsf{FO}}^F\) are the first-order target categories:
+Thus \(\mathcal{C}_{\mathsf{FO}}^{Pr}\) and
+\(\mathcal{C}_{\mathsf{FO}}^{Ct}\) are the first-order target categories:
 they have finite products and coproducts, the type-code endofunctors with
 their functorial action and strength, chosen initial-algebra objects
-\(\mu G\), and either paramorphisms or folds satisfying their laws.
-Likewise, \(\mathcal{C}_{\mathsf{HO}}^P\) and
-\(\mathcal{C}_{\mathsf{HO}}^F\) add closed-domain exponentials and their
+\(\mu G\), and either paramorphisms or catamorphisms satisfying their laws.
+Likewise, \(\mathcal{C}_{\mathsf{HO}}^{Pr}\) and
+\(\mathcal{C}_{\mathsf{HO}}^{Ct}\) add closed-domain exponentials and their
 beta/eta laws.  The instance compilers land in these syntactic
 categories; the set interpreter and the model interfaces later in the
 paper are semantics of these categories, not the targets themselves.
@@ -522,7 +522,7 @@ first-order infrastructure, following the standard notion of a
 distributive category~\cite{cockett_1993}.  The constructors
 \AgdaInductiveConstructor{fmap} and \AgdaInductiveConstructor{strength}
 make polynomial functors available at the term level, and
-\AgdaInductiveConstructor{P} is the primitive paramorphism operator.  We
+\AgdaInductiveConstructor{Pr} is the primitive paramorphism operator.  We
 later require \AgdaInductiveConstructor{strength} to be natural in both
 arguments; the derived operation \AgdaFunction{pmap} below is precisely
 the composite of this right strength with functorial action.  We write
@@ -534,7 +534,7 @@ substituting \AgdaBound{T} for the bound type variable in
 \CorePRFOSyntax*
 }
 
-The type of \AgdaInductiveConstructor{P} is the categorical version of
+The type of \AgdaInductiveConstructor{Pr} is the categorical version of
 primitive recursion.  Given an input of type \AgdaDatatype{ind}
 \AgdaBound{G} and parameters \AgdaBound{U}, the step arrow receives the
 one-layer unconstructing of the inductive value where recursive positions
@@ -543,13 +543,13 @@ original substructure of type \AgdaDatatype{ind} \AgdaBound{G}.  This is
 the paramorphism distinction: a step can inspect the original recursive
 subdata as well as the induction hypotheses.
 
-The fold-primitive first-order calculus has the same categorical
-constructors, but replaces \AgdaInductiveConstructor{P} by
-\AgdaInductiveConstructor{F}.  Its step receives only the functorial
+The catamorphism-primitive first-order calculus has the same categorical
+constructors, but replaces \AgdaInductiveConstructor{Pr} by
+\AgdaInductiveConstructor{Ct}.  Its step receives only the functorial
 layer of already computed results, not the original substructures.
 
 {\small
-\CorePRFOFoldPrimitive*
+\CorePRFOCatamorphismPrimitive*
 }
 
 \subsection{Higher-Order Core}
@@ -601,7 +601,7 @@ paramorphism calculi; the higher-order version is:
 
 The remaining sections state equations for these constructors, interpret
 the syntax in setoid models, and prove that the paramorphism-primitive
-and fold-primitive presentations define the same theory up to the
+and catamorphism-primitive presentations define the same theory up to the
 generated equality.
 
 \section{Equational Theories and Setoid Models}
@@ -659,9 +659,9 @@ specified by an evaluator external to the syntax; it is specified by the
 equations that characterize the primitive arrow.
 
 Two derived PR-HO lemmas package common uses of these laws.  The theorem
-\(\AgdaFunction{P-βᶜ}\) specializes the paramorphism beta law to a
+\(\AgdaFunction{Pr-βᶜ}\) specializes the paramorphism beta law to a
 structural functor by first expanding \AgdaInductiveConstructor{fmap} and
-\AgdaInductiveConstructor{strength}; \(\AgdaFunction{P-parameterʳ}\)
+\AgdaInductiveConstructor{strength}; \(\AgdaFunction{Pr-parameterʳ}\)
 states that a map on the parameter object can be pushed through a
 paramorphism.  The System~T equation proof uses these lemmas to derive the
 zero and successor recursor equations from the generic \PRHO{} laws.
@@ -692,7 +692,7 @@ shape of the formalization.  It lets later developments reason about
 hom-objects extensionally, while the syntax remains available for
 structural recursion, translations between presentations, and generated
 proofs of equality preservation.  The same pattern is repeated for the
-fold-primitive variants and for the higher-order calculi; only the list
+catamorphism-primitive variants and for the higher-order calculi; only the list
 of primitive operations and laws changes.
 
 \section{Distributivity in \PRHO{} Models}
@@ -726,12 +726,12 @@ prove the beta/eta and recursion laws for that model.  Distributivity
 then follows from the generic theorem above, rather than from any
 set-specific calculation.
 
-\section{Paramorphisms and Folds}
-\label{sec:paramorphisms-folds}
+\section{Paramorphisms and Catamorphisms}
+\label{sec:paramorphisms-catamorphisms}
 
-The preceding sections treat \(P\) and \(F\) as two alternative primitive
-choices.  This section explains why the artifact contains both.  A fold,
-or catamorphism, is the simpler eliminator: its step is given a layer
+The preceding sections treat \(Pr\) and \(Ct\) as two alternative primitive
+choices.  This section explains why the artifact contains both.  A catamorphism
+is the simpler eliminator: its step is given a layer
 \(G[T]\) of recursive results and parameters \(U\), and returns a result
 of type \(T\)~\cite{DBLP:conf/fpca/MeijerFP91}.  A paramorphism is more
 informative: its step is given a layer \(G[T \times \mu G]\), so every
@@ -739,84 +739,84 @@ recursive position contains both the recursive result and the original
 substructure.  The paramorphism presentation is convenient for compiling
 primitive-recursion source languages, where successor and tree
 constructors often expose the predecessor or child in addition to the
-recursive value.  The fold presentation is convenient as a conventional
+recursive value.  The catamorphism presentation is convenient as a conventional
 categorical interface, including in higher-order settings with
 exponentials~\cite{DBLP:conf/fpca/MeijerH95}.
 
-The two presentations are nevertheless interdefinable.  If \(P\) is
-primitive, a fold is obtained by discarding the remembered original
-subterm before invoking \(P\).  The excerpt begins by opening
+The two presentations are nevertheless interdefinable.  If \(Pr\) is
+primitive, a catamorphism is obtained by discarding the remembered original
+subterm before invoking \(Pr\).  The excerpt begins by opening
 \path{Core.PRFO}; from that point on, unqualified names such as
-\AgdaInductiveConstructor{C}, \AgdaInductiveConstructor{P},
+\AgdaInductiveConstructor{C}, \AgdaInductiveConstructor{Pr},
 \AgdaInductiveConstructor{ind}, and \AgdaDatatype{→ᴾ} refer to the
 paramorphism-primitive first-order syntax.  Later excerpts use the same
 convention, with the fully qualified modules shown at the top of the
 snippet.
 
 {\small
-\CorePRFOParamorphismFoldDerivedP*
+\CorePRFOParamorphismCatamorphismDerivedP*
 }
 
-If \(F\) is primitive, a paramorphism is obtained by folding to pairs:
+If \(Ct\) is primitive, a paramorphism is obtained by applying a catamorphism to pairs:
 each recursive result is paired with the subterm rebuilt from the
 functor layer:
 
 {\small
-\CorePRFOParamorphismFoldDerivedF*
+\CorePRFOParamorphismCatamorphismDerivedCt*
 }
 
-The definition \AgdaFunction{Fᴾ} says that a fold algebra
+The definition \AgdaFunction{Ctᴾʳ} says that a catamorphism algebra
 \(G[T]\times U \to T\) can be run by first applying
 \AgdaFunction{dropSubtermᴾ}, which projects away the original subterm
-from the paramorphism layer.  Conversely, \AgdaFunction{Pᶠ} runs a fold
+from the paramorphism layer.  Conversely, \AgdaFunction{Prᶜ} runs a catamorphism
 whose intermediate result is a pair.  The auxiliary
-\AgdaFunction{rebuildᶠ} reconstructs the current substructure, while
-\AgdaFunction{rememberᶠ} pairs that substructure with the result computed
+\AgdaFunction{rebuildᶜ} reconstructs the current substructure, while
+\AgdaFunction{rememberᶜ} pairs that substructure with the result computed
 by the paramorphism step.
 
 The definitions alone are not enough: they must satisfy the laws expected
 of the primitive they define.  The formalization proves the beta and
-uniqueness principles in both directions.  For a fold encoded using
+uniqueness principles in both directions.  For a catamorphism encoded using
 paramorphisms, the laws are:
 
 {\small
-\CorePRFOParamorphismFoldLawsP*
+\CorePRFOParamorphismCatamorphismLawsP*
 }
 
-The first pair of statements shows that \AgdaFunction{Fᴾ} behaves like a
-fold: after one constructor step it applies its algebra to
-\AgdaFunction{foldArgsᴾ}, and any arrow satisfying the same equation is
-equal to \AgdaFunction{Fᴾ}.  Conversely, for a paramorphism encoded using
-folds, the checked laws are:
+The first pair of statements shows that \AgdaFunction{Ctᴾʳ} behaves like a
+catamorphism: after one constructor step it applies its algebra to
+\AgdaFunction{catamorphismArgsᴾ}, and any arrow satisfying the same equation is
+equal to \AgdaFunction{Ctᴾʳ}.  Conversely, for a paramorphism encoded using
+catamorphisms, the checked laws are:
 
 {\small
-\CorePRFOParamorphismFoldLawsF*
+\CorePRFOParamorphismCatamorphismLawsCt*
 }
 
-These statements say that \AgdaFunction{Pᶠ} satisfies the paramorphism
+These statements say that \AgdaFunction{Prᶜ} satisfies the paramorphism
 beta law and is unique among arrows satisfying that law.  The proofs are
 ordinary derivations in the generated equation layers.  For example, the
-proof of the fold beta law uses the paramorphism beta law,
+proof of the catamorphism beta law uses the paramorphism beta law,
 then proves that the extra subterm component prepared by
 \AgdaFunction{paraArgs} is eliminated by \AgdaFunction{dropSubtermᴾ}.
 
 The translations extend homomorphically over all non-recursive syntax.
-Only the recursive constructor changes: \(F\) is translated to
-\AgdaFunction{Fᴾ}, and \(P\) is translated to \AgdaFunction{Pᶠ}.  The
+Only the recursive constructor changes: \(Ct\) is translated to
+\AgdaFunction{Ctᴾʳ}, and \(Pr\) is translated to \AgdaFunction{Prᶜ}.  The
 translation theorems state two facts.  First, both translations preserve
 the generated equations.  Second, translating there and back yields an
 arrow equal to the original one in the appropriate equational theory:
 
 {\small
-\CorePRFOParamorphismFoldEquivalence*
+\CorePRFOParamorphismCatamorphismEquivalence*
 }
 
-These four theorems are the formal content of the \(P/F\) equivalence
+These four theorems are the formal content of the \(Pr/Ct\) equivalence
 arrows in Figure~\ref{fig:contribution-overview}.  They are proved
 separately for \PRFO{} and \PRHO{}.  The higher-order proof follows the
 same structure as the first-order proof, with additional cases for
 lambda abstraction, application, and the higher-order beta/eta laws.
-Thus the choice of taking \(P\) or \(F\) as primitive is not a semantic
+Thus the choice of taking \(Pr\) or \(Ct\) as primitive is not a semantic
 commitment: it is a presentation choice, and the artifact checks that the
 two presentations define the same theory up to their generated
 equalities.
@@ -858,7 +858,7 @@ language.  The target type is \(\mu X.\,1+X\), written
 followed by \AgdaInductiveConstructor{con}.  Composition compiles to
 categorical composition and tupling.  The two primitive-recursion
 constructors in the legacy source, one written as a paramorphism and one
-as a fold-style recursor, are both compiled to the paramorphism primitive
+as a catamorphism-style recursor, are both compiled to the paramorphism primitive
 of \PRFO{} by building the appropriate case handler over the one-step
 unfolding of natural numbers.  The theorem \AgdaFunction{preserves} in
 the nested \AgdaModule{Semantics} module states that interpretation of
@@ -1065,7 +1065,7 @@ well-formedness checks this condition recursively under nested
 boundaries instead of assuming that every raw code is productive.  The
 set interpretation maps type codes to indexed containers, and closed
 inductive types are interpreted by a W-style fixed point of those
-containers.  This gives executable constructor, destructor, fold, and paramorphism
+containers.  This gives executable constructor, destructor, catamorphism, and paramorphism
 operations without using termination or positivity pragmas.  The
 formalization also records which codes are polynomial: first-order codes
 are polynomial, while higher-order exponentials may introduce infinitely
@@ -1076,13 +1076,13 @@ constructions~\cite{DBLP:journals/apal/DybjerS03}, but it is not needed
 in the checked core presented here.
 
 \paragraph{Two primitive recursion presentations.}
-The artifact contains both paramorphism-primitive and fold-primitive
+The artifact contains both paramorphism-primitive and catamorphism-primitive
 calculi, rather than hiding the choice behind one overloaded interface.
 This creates some parallel definitions and proofs, but it makes the
 presentation-specific laws explicit and lets the translations of
-Section~\ref{sec:paramorphisms-folds} be stated as checked
+Section~\ref{sec:paramorphisms-catamorphisms} be stated as checked
 interdefinability theorems.  In particular, the first-order and
-higher-order P/F results are not informal meta-level observations: they
+higher-order Pr/Ct results are not informal meta-level observations: they
 are equation-preserving translations with round trips in the generated
 equational theories.
 
@@ -1113,10 +1113,10 @@ The historical baseline is the classical theory of primitive recursive
 and general recursive functions~\cite{skolem23,curry41:_formal_recur_arith,kleene36:_gener_recur_funct_natur_number}.
 Our first-order instances keep the ordinary textbook presentation of
 primitive recursion on natural numbers~\cite{martin2019logik,wiki:Primitive_recursive_function},
-but factor it through a typed categorical target.  The use of folds and
+but factor it through a typed categorical target.  The use of catamorphisms and
 related recursion schemes follows the categorical-programming line of
 work on catamorphisms and higher-order
-folds~\cite{DBLP:conf/fpca/MeijerFP91,DBLP:conf/fpca/MeijerH95}.
+catamorphisms~\cite{DBLP:conf/fpca/MeijerFP91,DBLP:conf/fpca/MeijerH95}.
 
 On the semantic side, the first-order core uses distributive categories
 in Cockett's sense~\cite{cockett_1993}, while the higher-order core uses
@@ -1134,7 +1134,7 @@ using Agda as introduced by Norell~\cite{DBLP:conf/afp/Norell08}.
 The mechanization establishes a small family of point-free categorical
 calculi for primitive recursion, their generated equational theories,
 law-bearing setoid models, interpretation soundness, translations between
-paramorphism-primitive and fold-primitive presentations, and verified
+paramorphism-primitive and catamorphism-primitive presentations, and verified
 source-language instances.  The instance layer now includes semantic
 correctness for the concrete sources, equation-preservation theorems for
 the generated source equalities, and a functorial bridge from

@@ -160,10 +160,10 @@ data Supported : ∀ {T U} → T →ᴾ U → Set where
            Flat G → Supported f → Supported (fmap G f)
   s-strength : ∀ {G T U} → Flat G → Supported (strength {T = T} {U = U} G)
   s-con : ∀ {G} → (p : Flat G) → Supported (con {G = G})
-  s-P : ∀ {T U} (G : Ty FO 1)
+  s-Pr : ∀ {T U} (G : Ty FO 1)
         {h : (G [ T `× ind G ]) `× U →ᴾ T} →
         (p : Flat G) → Supported h →
-        Supported (P {G = G} {T = T} {U = U} h)
+        Supported (Pr {G = G} {T = T} {U = U} h)
 
 eval : ∀ {T U} {f : T →ᴾ U} → Supported f → Sem T → Sem U
 eval s-id x = x
@@ -182,5 +182,5 @@ eval s-dist (inj₂ y , z) = inj₂ (y , z)
 eval (s-fmap p sf) x = fmapFlat p (eval sf) x
 eval (s-strength p) x = strengthFlat p x
 eval (s-con p) x = conFlat p x
-eval (s-P {T = T} {U = U} G p sh) x =
+eval (s-Pr {T = T} {U = U} G p sh) x =
   paraFlat {G = G} {T = T} {U = U} p (eval sh) x

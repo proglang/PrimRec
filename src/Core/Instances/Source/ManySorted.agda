@@ -28,7 +28,7 @@ data PR {S : Set} (Sig : Signature S) :
       PR Sig (ss , lookup ss i)
   C : ∀ {n m s} {ss : Vec S n} {us : Vec S m} →
       PR Sig (us , s) → PR* Sig (ss , us) → PR Sig (ss , s)
-  P : ∀ {n s₀} {ss : Vec S n} →
+  Pr : ∀ {n s₀} {ss : Vec S n} →
       (res : S → S) →
       ((a : Fin (count Sig)) →
         PR Sig ((map res (inputs Sig a) ++ inputs Sig a) ++ ss ,
@@ -122,7 +122,7 @@ eval* : ∀ {S n m} {Sig : Signature S}
 eval (σ a) values = con a (lookupEnv values)
 eval (π i) values = lookupEnv values i
 eval (C f fs) values = eval f (eval* fs values)
-eval {Sig = Sig} (P res steps) (tree ∷ parameters) =
+eval {Sig = Sig} (Pr res steps) (tree ∷ parameters) =
   para res algebra tree
   where
   algebra : (a : Fin (count Sig)) →
@@ -138,7 +138,7 @@ eval {Sig = Sig} (P res steps) (tree ∷ parameters) =
 eval* [] values = []
 eval* (p ∷ ps) values = eval p values ∷ eval* ps values
 
-eval-P-con : ∀ {S n} {Sig : Signature S} {ss : Vec S n}
+eval-Pr-con : ∀ {S n} {Sig : Signature S} {ss : Vec S n}
   (res : S → S)
   (steps : (a : Fin (count Sig)) →
     PR Sig ((map res (inputs Sig a) ++ inputs Sig a) ++ ss ,
@@ -147,17 +147,17 @@ eval-P-con : ∀ {S n} {Sig : Signature S} {ss : Vec S n}
   (children : (i : Fin (lookup (ranks Sig) a)) →
     Term Sig (lookup (inputs Sig a) i))
   (parameters : Env Sig ss) →
-  eval (P res steps) (con a children ∷ parameters) ≡
+  eval (Pr res steps) (con a children ∷ parameters) ≡
   eval (steps a)
     (appendEnv
       (appendEnv
         (tabulateMapEnv res (inputs Sig a)
-          (λ i → eval (P res steps) (children i ∷ parameters)))
+          (λ i → eval (Pr res steps) (children i ∷ parameters)))
         (tabulateEnv children))
       parameters)
-eval-P-con {Sig = Sig} res steps a children parameters =
+eval-Pr-con {Sig = Sig} res steps a children parameters =
   cong
     (λ pair → eval (steps a)
       (appendEnv (appendEnv (proj₁ pair) (proj₂ pair)) parameters))
     (splitChildren-tabulate res (inputs Sig a)
-      (λ i → eval (P res steps) (children i ∷ parameters)) children)
+      (λ i → eval (Pr res steps) (children i ∷ parameters)) children)

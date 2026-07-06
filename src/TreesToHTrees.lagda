@@ -78,7 +78,7 @@ lookup-alookup (suc i) (x ∷ v*) = lookup-alookup i v*
 ⟦ Trees.σ a ⟧ = HTrees.σ a
 ⟦ Trees.π i ⟧ = HTrees.π i
 ⟦ Trees.C f g* ⟧ = HTrees.C ⟦ f ⟧ ⟦ g* ⟧*
-⟦_⟧ {suc n} {R = R} (Trees.P h) = HTrees.P (const tt) λ a → subst (λ ss → HTrees.PR (make-sig R) ⟨ ss , tt ⟩) refl ⟦ h a ⟧
+⟦_⟧ {suc n} {R = R} (Trees.Pr h) = HTrees.Pr (const tt) λ a → subst (λ ss → HTrees.PR (make-sig R) ⟨ ss , tt ⟩) refl ⟦ h a ⟧
   -- above line requires: REWRITE ++-repeat map-repeat
   -- where
   --   eq-repeat : ∀ a →
@@ -112,17 +112,17 @@ sound (Trees.π i) v* = begin
                          HTrees.alookup ⟦ v* ⟧ⱽ* i
                        ∎
 sound (Trees.C f g*) v* rewrite sound f (Trees.eval* g* v*) | sound* g* v* = refl
-sound {n = n}{R = R} (Trees.P h) (Trees.con a x* ∷ v*)
-  -- rewrite sound (h a) ((map (λ x → Trees.eval (Trees.P h) (x ∷ v*)) x* ++ x*) ++ v*)
-  --       | sym (++-map ⟦_⟧ⱽ (map (λ x → Trees.eval (Trees.P h) (x ∷ v*)) x* ++ x*) v*)
+sound {n = n}{R = R} (Trees.Pr h) (Trees.con a x* ∷ v*)
+  -- rewrite sound (h a) ((map (λ x → Trees.eval (Trees.Pr h) (x ∷ v*)) x* ++ x*) ++ v*)
+  --       | sym (++-map ⟦_⟧ⱽ (map (λ x → Trees.eval (Trees.Pr h) (x ∷ v*)) x* ++ x*) v*)
   = begin
-      ⟦ Trees.eval (h a) ((map (λ x → Trees.eval (Trees.P h) (x ∷ v*)) x* ++ x*) ++ v*) ⟧ⱽ
-    ≡⟨ sound (h a) ((map (λ x → Trees.eval (Trees.P h) (x ∷ v*)) x* ++ x*) ++ v*) ⟩
-      HTrees.eval ⟦ h a ⟧ ⟦ (map (λ x → Trees.eval (Trees.P h) (x ∷ v*)) x* ++ x*) ++ v* ⟧ⱽ*
-    ≡⟨ cong (HTrees.eval ⟦ h a ⟧) (++-++ᴬ (map (λ x → Trees.eval (Trees.P h) (x ∷ v*)) x* ++ x*) v*) ⟩
-      HTrees.eval ⟦ h a ⟧ (⟦ map (λ x → Trees.eval (Trees.P h) (x ∷ v*)) x* ++ x* ⟧ⱽ* HTrees.++ᴬ ⟦ v* ⟧ⱽ*)
+      ⟦ Trees.eval (h a) ((map (λ x → Trees.eval (Trees.Pr h) (x ∷ v*)) x* ++ x*) ++ v*) ⟧ⱽ
+    ≡⟨ sound (h a) ((map (λ x → Trees.eval (Trees.Pr h) (x ∷ v*)) x* ++ x*) ++ v*) ⟩
+      HTrees.eval ⟦ h a ⟧ ⟦ (map (λ x → Trees.eval (Trees.Pr h) (x ∷ v*)) x* ++ x*) ++ v* ⟧ⱽ*
+    ≡⟨ cong (HTrees.eval ⟦ h a ⟧) (++-++ᴬ (map (λ x → Trees.eval (Trees.Pr h) (x ∷ v*)) x* ++ x*) v*) ⟩
+      HTrees.eval ⟦ h a ⟧ (⟦ map (λ x → Trees.eval (Trees.Pr h) (x ∷ v*)) x* ++ x* ⟧ⱽ* HTrees.++ᴬ ⟦ v* ⟧ⱽ*)
     ≡⟨ cong (λ VV → HTrees.eval ⟦ h a ⟧ (VV HTrees.++ᴬ ⟦ v* ⟧ⱽ*)) (++-++ᴬ _ x*) ⟩
-      HTrees.eval ⟦ h a ⟧ ((⟦ map (λ x → Trees.eval (Trees.P h) (x ∷ v*)) x* ⟧ⱽ* HTrees.++ᴬ ⟦ x* ⟧ⱽ*) HTrees.++ᴬ ⟦ v* ⟧ⱽ*)
+      HTrees.eval ⟦ h a ⟧ ((⟦ map (λ x → Trees.eval (Trees.Pr h) (x ∷ v*)) x* ⟧ⱽ* HTrees.++ᴬ ⟦ x* ⟧ⱽ*) HTrees.++ᴬ ⟦ v* ⟧ⱽ*)
     ≡⟨ cong
          (λ VV →
             HTrees.eval ⟦ h a ⟧ ((VV HTrees.++ᴬ ⟦ x* ⟧ⱽ*) HTrees.++ᴬ ⟦ v* ⟧ⱽ*))
@@ -130,7 +130,7 @@ sound {n = n}{R = R} (Trees.P h) (Trees.con a x* ∷ v*)
       HTrees.eval ⟦ h a ⟧
       ((HTrees.mapᴬ
         (λ i x →
-           HTrees.eval (HTrees.P (const tt) (λ a₁ → ⟦ h a₁ ⟧))
+           HTrees.eval (HTrees.Pr (const tt) (λ a₁ → ⟦ h a₁ ⟧))
            (x HTrees.∷ ⟦ v* ⟧ⱽ*))
         ⟦ x* ⟧ⱽ*
         HTrees.++ᴬ ⟦ x* ⟧ⱽ*)
@@ -138,11 +138,11 @@ sound {n = n}{R = R} (Trees.P h) (Trees.con a x* ∷ v*)
      ∎
   where
     eq : ∀ {k} (x* : Vec (Trees.Term R) k) →
-       ⟦ map (λ x → Trees.eval (Trees.P h) (x ∷ v*)) x* ⟧ⱽ*
-       ≡ HTrees.mapᴬ{ss = repeat tt k} (λ i x → HTrees.eval (HTrees.P (const tt) (λ a₁ → ⟦ h a₁ ⟧)) (x HTrees.∷ ⟦ v* ⟧ⱽ*)) ⟦ x* ⟧ⱽ*
+       ⟦ map (λ x → Trees.eval (Trees.Pr h) (x ∷ v*)) x* ⟧ⱽ*
+       ≡ HTrees.mapᴬ{ss = repeat tt k} (λ i x → HTrees.eval (HTrees.Pr (const tt) (λ a₁ → ⟦ h a₁ ⟧)) (x HTrees.∷ ⟦ v* ⟧ⱽ*)) ⟦ x* ⟧ⱽ*
     eq [] = refl
-    eq (x ∷ x*) rewrite sound (Trees.P h) (x ∷ v*) = cong
-                                                       (HTrees.eval (HTrees.P (λ _ → tt) (λ a₁ → ⟦ h a₁ ⟧))
+    eq (x ∷ x*) rewrite sound (Trees.Pr h) (x ∷ v*) = cong
+                                                       (HTrees.eval (HTrees.Pr (λ _ → tt) (λ a₁ → ⟦ h a₁ ⟧))
                                                         (⟦ x ⟧ⱽ HTrees.∷ ⟦ v* ⟧ⱽ*)
                                                         HTrees.∷_)
                                                        (eq x*)

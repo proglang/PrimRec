@@ -64,7 +64,7 @@ data PR : Type → Set where
 \end{code}
 }
 \begin{code}[hide]
-  F : (g : PR τ)                -- fold over nat, can be simulated with P
+  Ct : (g : PR τ)                -- catamorphism over nat, can be simulated with Pr
     → (h : PR (τ ⇒ τ))
     → PR (o ⇒ τ)
 
@@ -76,9 +76,9 @@ para : ∀ {B : Set} → B → (ℕ → B → B) → (ℕ → B)
 para g h zero = g
 para g h (suc x) = h x (para g h x)
 
-fold : ∀ {B : Set} → B → (B → B) → (ℕ → B)
-fold g h zero = g
-fold g h (suc i) = h (fold g h i)
+catamorphism : ∀ {B : Set} → B → (B → B) → (ℕ → B)
+catamorphism g h zero = g
+catamorphism g h (suc i) = h (catamorphism g h i)
 \end{code}
 \newcommand\PRNatFunEval{
 \begin{code}
@@ -89,7 +89,7 @@ eval (App f x) = eval f (eval x)
 eval K = const
 eval S = λ r s t → r t (s t)
 eval (R g h) = para (eval g) (eval h)
-eval (F g h) = fold (eval g) (eval h)
+eval (Ct g h) = catamorphism (eval g) (eval h)
 \end{code}
 }
 \begin{code}[hide]
@@ -206,8 +206,8 @@ apply-argumentsF : OpenF ρ n (nary m) → Vec (OpenF ρ n o) m → OpenF ρ n o
 apply-argumentsF {m = zero} p [] = p
 apply-argumentsF {m = suc m} p (x ∷ xs) = apply-argumentsF (p ·F x) xs
 
-compile-F-step : ∀ {n} → PR (nary (1 + n)) → PR (nary n ⇒ nary n)
-compile-F-step {n} h =
+compile-Ct-step : ∀ {n} → PR (nary (1 + n)) → PR (nary n ⇒ nary n)
+compile-Ct-step {n} h =
   abstract-free
     (subst (OpenF (nary n) zero) (arrows-nary n)
       (close-inputs
@@ -224,12 +224,12 @@ data OpenP (ρ υ : Type) (n : ℕ) : Type → Set where
 infixl 25 _·P_
 
 abstract-inputP : OpenP ρ υ (suc n) σ → OpenP ρ υ n (o ⇒ σ)
-abstract-inputP first = closedP K ·P first
-abstract-inputP second = closedP K ·P second
+abstract-inputP first = closedP K ·Pr first
+abstract-inputP second = closedP K ·Pr second
 abstract-inputP (inputP newest) = closedP I
-abstract-inputP (inputP (older i)) = closedP K ·P inputP i
+abstract-inputP (inputP (older i)) = closedP K ·Pr inputP i
 abstract-inputP (closedP p) = closedP (App K p)
-abstract-inputP (f ·P x) = (closedP S ·P abstract-inputP f) ·P abstract-inputP x
+abstract-inputP (f ·Pr x) = (closedP S ·Pr abstract-inputP f) ·Pr abstract-inputP x
 
 close-inputsP : OpenP ρ υ n σ → OpenP ρ υ zero (arrows n σ)
 close-inputsP {n = zero} p = p
@@ -242,21 +242,21 @@ abstract-second first = closedF K ·F free
 abstract-second second = closedF I
 abstract-second (inputP ())
 abstract-second (closedP p) = closedF (App K p)
-abstract-second (f ·P x) =
+abstract-second (f ·Pr x) =
   (closedF S ·F abstract-second f) ·F abstract-second x
 
 apply-inputsP : OpenP ρ υ n (nary m) → Vec (BVar n) m → OpenP ρ υ n o
 apply-inputsP {m = zero} p [] = p
-apply-inputsP {m = suc m} p (i ∷ is) = apply-inputsP (p ·P inputP i) is
+apply-inputsP {m = suc m} p (i ∷ is) = apply-inputsP (p ·Pr inputP i) is
 
 apply-argumentsP : OpenP ρ υ n (nary m) →
   Vec (OpenP ρ υ n o) m → OpenP ρ υ n o
 apply-argumentsP {m = zero} p [] = p
-apply-argumentsP {m = suc m} p (x ∷ xs) = apply-argumentsP (p ·P x) xs
+apply-argumentsP {m = suc m} p (x ∷ xs) = apply-argumentsP (p ·Pr x) xs
 
-compile-P-step : ∀ {n} →
+compile-Pr-step : ∀ {n} →
   PR (nary (2 + n)) → PR (o ⇒ nary n ⇒ nary n)
-compile-P-step {n} h =
+compile-Pr-step {n} h =
   abstract-free
     (abstract-second
       (subst (OpenP o (nary n) zero) (arrows-nary n)
@@ -279,8 +279,8 @@ translate-vector : Vec (PRN.PR n) m → Vec (PR (nary n)) m
 ⟦ PRN.σ ⟧ = +1
 ⟦ PRN.π i ⟧ = proj i
 ⟦ PRN.C p g* ⟧ =  ⟦ g* ⟧*  ⟦ p ⟧
-⟦ PRN.P g h ⟧ = R ⟦ g ⟧ (compile-P-step ⟦ h ⟧)
-⟦ PRN.F g h ⟧ = F ⟦ g ⟧ (compile-F-step ⟦ h ⟧)
+⟦ PRN.Pr g h ⟧ = R ⟦ g ⟧ (compile-Pr-step ⟦ h ⟧)
+⟦ PRN.Ct g h ⟧ = Ct ⟦ g ⟧ (compile-Ct-step ⟦ h ⟧)
 
 translate-vector [] = []
 translate-vector (g ∷ g*) = ⟦ g ⟧ ∷ translate-vector g*

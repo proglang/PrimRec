@@ -1,14 +1,14 @@
 {-# OPTIONS --safe #-}
 
-module Core.Models.PRFOFold where
+module Core.Models.PRFOCatamorphism where
 
 open import Level using (Level; suc)
 open import Core.Types
-import Core.PRFOFold as Syn
-import Core.Equations.PRFOFold as Eq
+import Core.PRFOCatamorphism as Syn
+import Core.Equations.PRFOCatamorphism as Eq
 
 ----------------------------------------------------------------------
--- Raw PR-FO fold-primitive structures over the object-language types
+-- Raw PR-FO catamorphism-primitive structures over the object-language types
 ----------------------------------------------------------------------
 
 record Structure (ℓ : Level) : Set (suc ℓ) where
@@ -36,7 +36,7 @@ record Structure (ℓ : Level) : Set (suc ℓ) where
     strengthᴹ : ∀ {T U} (G : Ty FO 1) → (G [ T ]) `× U ⇒ᴹ G [ T `× U ]
 
     conᴹ : ∀ {G : Ty FO 1} → G [ ind G ] ⇒ᴹ ind G
-    Fᴹ : ∀ {T U} {G : Ty FO 1}
+    Ctᴹ : ∀ {T U} {G : Ty FO 1}
       → ((G [ T ]) `× U ⇒ᴹ T)
       → (ind G `× U ⇒ᴹ T)
 
@@ -51,10 +51,10 @@ module _ {ℓ} (S : Structure ℓ) where
     → (T `× U ⇒ᴹ V) → ((G [ T ]) `× U ⇒ᴹ G [ V ])
   pmapᴹ G f = Cᴹ (fmapᴹ G f) (strengthᴹ G)
 
-  foldArgsᴹ : ∀ {T U} (G : Ty FO 1)
+  catamorphismArgsᴹ : ∀ {T U} (G : Ty FO 1)
     → (ind G `× U ⇒ᴹ T)
     → ((G [ ind G ]) `× U ⇒ᴹ (G [ T ]) `× U)
-  foldArgsᴹ G p = pairᴹ (pmapᴹ G p) π₂ᴹ
+  catamorphismArgsᴹ G p = pairᴹ (pmapᴹ G p) π₂ᴹ
 
   undistᴹ : ∀ {T U V} → (T `× V) `+ (U `× V) ⇒ᴹ (T `+ U) `× V
   undistᴹ = caseᴹ
@@ -62,7 +62,7 @@ module _ {ℓ} (S : Structure ℓ) where
     (pairᴹ (Cᴹ ι₂ᴹ π₁ᴹ) π₂ᴹ)
 
 ----------------------------------------------------------------------
--- Law-bearing PR-FO fold-primitive models
+-- Law-bearing PR-FO catamorphism-primitive models
 ----------------------------------------------------------------------
 
 record Model (ℓ : Level) : Set (suc ℓ) where
@@ -86,10 +86,10 @@ record Model (ℓ : Level) : Set (suc ℓ) where
       → f ≈ᴹ f′ → g ≈ᴹ g′ → caseᴹ f g ≈ᴹ caseᴹ f′ g′
     fmap-congᴹ : ∀ {A B} (G : Ty FO 1) {f f′ : A ⇒ᴹ B}
       → f ≈ᴹ f′ → fmapᴹ G f ≈ᴹ fmapᴹ G f′
-    F-congᴹ : ∀ {A B} {G : Ty FO 1}
+    Ct-congᴹ : ∀ {A B} {G : Ty FO 1}
       {h h′ : (G [ A ]) `× B ⇒ᴹ A}
       → h ≈ᴹ h′
-      → Fᴹ {T = A} {U = B} {G = G} h ≈ᴹ Fᴹ {T = A} {U = B} {G = G} h′
+      → Ctᴹ {T = A} {U = B} {G = G} h ≈ᴹ Ctᴹ {T = A} {U = B} {G = G} h′
 
     C-idˡᴹ : ∀ {A B} {f : A ⇒ᴹ B} → Cᴹ idᴹ f ≈ᴹ f
     C-idʳᴹ : ∀ {A B} {f : A ⇒ᴹ B} → Cᴹ f idᴹ ≈ᴹ f
@@ -124,13 +124,13 @@ record Model (ℓ : Level) : Set (suc ℓ) where
     dist-undistᴹ : ∀ {A B D} → Cᴹ (distᴹ {T = A} {U = B} {V = D}) (undistᴹ structure) ≈ᴹ idᴹ
     undist-distᴹ : ∀ {A B D} → Cᴹ (undistᴹ structure) (distᴹ {T = A} {U = B} {V = D}) ≈ᴹ idᴹ
 
-    F-βᴹ : ∀ {A B} {G : Ty FO 1} {h : (G [ A ]) `× B ⇒ᴹ A}
-      → Cᴹ (Fᴹ {T = A} {U = B} {G = G} h) (map-×ᴹ structure (conᴹ {G = G}) (idᴹ {T = B}))
-        ≈ᴹ Cᴹ h (foldArgsᴹ structure G (Fᴹ {T = A} {U = B} {G = G} h))
-    F-uniqueᴹ : ∀ {A B} {G : Ty FO 1} {h : (G [ A ]) `× B ⇒ᴹ A}
+    Ct-βᴹ : ∀ {A B} {G : Ty FO 1} {h : (G [ A ]) `× B ⇒ᴹ A}
+      → Cᴹ (Ctᴹ {T = A} {U = B} {G = G} h) (map-×ᴹ structure (conᴹ {G = G}) (idᴹ {T = B}))
+        ≈ᴹ Cᴹ h (catamorphismArgsᴹ structure G (Ctᴹ {T = A} {U = B} {G = G} h))
+    Ct-uniqueᴹ : ∀ {A B} {G : Ty FO 1} {h : (G [ A ]) `× B ⇒ᴹ A}
       {p : ind G `× B ⇒ᴹ A}
-      → Cᴹ p (map-×ᴹ structure (conᴹ {G = G}) (idᴹ {T = B})) ≈ᴹ Cᴹ h (foldArgsᴹ structure G p)
-      → p ≈ᴹ Fᴹ {T = A} {U = B} {G = G} h
+      → Cᴹ p (map-×ᴹ structure (conᴹ {G = G}) (idᴹ {T = B})) ≈ᴹ Cᴹ h (catamorphismArgsᴹ structure G p)
+      → p ≈ᴹ Ctᴹ {T = A} {U = B} {G = G} h
 
 ----------------------------------------------------------------------
 -- Interpretation and soundness
@@ -139,7 +139,7 @@ record Model (ℓ : Level) : Set (suc ℓ) where
 module _ {ℓ} (S : Structure ℓ) where
   open Structure S
 
-  interpret : ∀ {T U} → T Syn.→ᶠ U → T ⇒ᴹ U
+  interpret : ∀ {T U} → T Syn.→ᶜ U → T ⇒ᴹ U
   interpret Syn.id = idᴹ
   interpret (Syn.C f g) = Cᴹ (interpret f) (interpret g)
   interpret Syn.`⊤ = ⊤ᴹ
@@ -154,12 +154,12 @@ module _ {ℓ} (S : Structure ℓ) where
   interpret (Syn.fmap G f) = fmapᴹ G (interpret f)
   interpret (Syn.strength G) = strengthᴹ G
   interpret Syn.con = conᴹ
-  interpret (Syn.F h) = Fᴹ (interpret h)
+  interpret (Syn.Ct h) = Ctᴹ (interpret h)
 
 module _ {ℓ} (M : Model ℓ) where
   open Model M
 
-  sound : ∀ {T U} {f g : T Syn.→ᶠ U}
+  sound : ∀ {T U} {f g : T Syn.→ᶜ U}
     → f Eq.≈ g → interpret structure f ≈ᴹ interpret structure g
   sound Eq.≈-refl = ≈-reflᴹ
   sound (Eq.≈-sym p) = ≈-symᴹ (sound p)
@@ -168,7 +168,7 @@ module _ {ℓ} (M : Model ℓ) where
   sound (Eq.`#-cong p q) = pair-congᴹ (sound p) (sound q)
   sound (Eq.`case-cong p q) = case-congᴹ (sound p) (sound q)
   sound (Eq.fmap-cong G p) = fmap-congᴹ G (sound p)
-  sound (Eq.F-cong {A = A} {B = B} {H = H} p) = F-congᴹ {A = A} {B = B} {G = H} (sound p)
+  sound (Eq.Ct-cong {A = A} {B = B} {H = H} p) = Ct-congᴹ {A = A} {B = B} {G = H} (sound p)
   sound Eq.C-idˡ = C-idˡᴹ
   sound Eq.C-idʳ = C-idʳᴹ
   sound Eq.C-assoc = C-assocᴹ
@@ -187,5 +187,5 @@ module _ {ℓ} (M : Model ℓ) where
   sound Eq.+-η = +-ηᴹ
   sound Eq.dist-undist = dist-undistᴹ
   sound Eq.undist-dist = undist-distᴹ
-  sound Eq.F-β = F-βᴹ
-  sound (Eq.F-unique p) = F-uniqueᴹ (sound p)
+  sound Eq.Ct-β = Ct-βᴹ
+  sound (Eq.Ct-unique p) = Ct-uniqueᴹ (sound p)

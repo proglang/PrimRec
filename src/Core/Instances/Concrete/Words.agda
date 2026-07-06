@@ -180,8 +180,8 @@ supported Source.Z = supported-emptyCon
 supported (Source.σ a) = supported-letterCon a
 supported (Source.π i) = supported-lookup i
 supported (Source.C f fs) = s-C (supported f) (supported* fs)
-supported {k} {n = suc n} (Source.P g h) =
-  s-P (WordF k) (flatWordF k) (supported-wordParaHandler g h)
+supported {k} {n = suc n} (Source.Pr g h) =
+  s-Pr (WordF k) (flatWordF k) (supported-wordParaHandler g h)
 
 supported* [] = s-⊤
 supported* (p ∷ ps) = s-# (supported p) (supported* ps)
@@ -215,7 +215,7 @@ correct {k} Source.Z related-v[] = related-[] {k = k}
 correct (Source.σ a) (related-v∷ child related-v[]) = related-∷ child
 correct (Source.π i) related = lookup-related i related
 correct (Source.C f fs) related = correct f (correct* fs related)
-correct {k} {n = suc n} (Source.P g h)
+correct {k} {n = suc n} (Source.Pr g h)
   {values = tree , values} {xs = x ∷ xs}
   (related-v∷ first parameters) = go first
   where
@@ -229,12 +229,12 @@ correct {k} {n = suc n} (Source.P g h)
         (paraAlgebra {G = WordF k} {T = Word k} {U = vec (Word k) n}
           (flatWordF k) (eval handler) values)
         tree′ (λ ()))
-      (Source.eval (Source.P g h) (word ∷ xs))
+      (Source.eval (Source.Pr g h) (word ∷ xs))
   go related-[] = correct g parameters
   go (related-∷ {a = a} {child = childValue} {xs = childWord} child) =
     Eq.subst
       (λ target → Related target
-        (Source.eval (Source.P g h) ((a ∷ᴸ childWord) ∷ xs)))
+        (Source.eval (Source.Pr g h) ((a ∷ᴸ childWord) ∷ xs)))
       (Eq.sym (para-letter g h a childValue values))
       (correct (h a)
         (related-v∷ (go child) (related-v∷ child parameters)))
@@ -262,8 +262,8 @@ module ForFinite {A : Set} (finiteA : Finite A) where
   supportedFinite (Source.π i) = supported-lookup i
   supportedFinite (Source.C f fs) =
     s-C (supportedFinite f) (supportedFinite* fs)
-  supportedFinite (Source.P g h) =
-    s-P (WordF k) (flatWordF k)
+  supportedFinite (Source.Pr g h) =
+    s-Pr (WordF k) (flatWordF k)
       (supported-wordParaHandlerᴾ
         (supportedFinite g)
         (λ i → supportedFinite (h (decode finiteA i))))
@@ -308,7 +308,7 @@ module ForFinite {A : Set} (finiteA : Finite A) where
   correctFinite (Source.π i) related = finiteLookupRelated i related
   correctFinite (Source.C f fs) related =
     correctFinite f (correctFinite* fs related)
-  correctFinite {n = suc n} (Source.P g h)
+  correctFinite {n = suc n} (Source.Pr g h)
     {values = tree , values} {xs = x ∷ xs}
     (related-v∷ first parameters) = go first
     where
@@ -321,12 +321,12 @@ module ForFinite {A : Set} (finiteA : Finite A) where
           (paraAlgebra {G = WordF k} {T = Word k} {U = vec (Word k) n}
             (flatWordF k) (eval (supported-wordParaHandlerᴾ sg sh)) values)
           tree′ (λ ()))
-        (Source.eval (Source.P g h) (word ∷ xs))
+        (Source.eval (Source.Pr g h) (word ∷ xs))
     go related-[] = correctFinite g parameters
     go (related-∷ {a = a} {child = childValue} {xs = childWord} child) =
       Eq.subst
         (λ target → RelatedFinite target
-          (Source.eval (Source.P g h) ((a ∷ᴸ childWord) ∷ xs)))
+          (Source.eval (Source.Pr g h) ((a ∷ᴸ childWord) ∷ xs)))
         (Eq.sym
           (Eq.trans
             (para-letterᴾ sg sh (encode finiteA a) childValue values)

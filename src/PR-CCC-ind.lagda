@@ -493,10 +493,10 @@ data _→ᴾ_ : TY → TY → Set where
   apply : T `⇒ U `× T →ᴾ U
   -- inductive, introduction and elimination
   con : (G ⇐ ind G) →ᴾ ind G
-  P : (h : (G ⇐ (T `× ind G)) `× U →ᴾ T) → (ind G `× U →ᴾ T)
+  Pr : (h : (G ⇐ (T `× ind G)) `× U →ᴾ T) → (ind G `× U →ᴾ T)
 \end{code}}
 \begin{code}[hide]
-  F : (h : (G ⇐ T) `× U →ᴾ T) → (ind G `× U →ᴾ T)
+  Ct : (h : (G ⇐ T) `× U →ᴾ T) → (ind G `× U →ᴾ T)
 
 infix 6 _➙_
 _➙_ = _→ᴾ_
@@ -519,7 +519,7 @@ eval ι₁       = inj₁
 eval ι₂       = inj₂
 eval (`case f g) = λ{ (inj₁ x) → eval f x ; (inj₂ y) → eval g y}
 eval con     = con
-eval (P {G = G} h) = λ{ (con x , u) → eval h ((fmap G (λ v → (eval (P h) (v , u)) , v) x) , u)}
+eval (Pr {G = G} h) = λ{ (con x , u) → eval h ((fmap G (λ v → (eval (Pr h) (v , u)) , v) x) , u)}
 \end{code}
 }
 \newcommand\cccEvalExponential{%
@@ -528,7 +528,7 @@ eval (lam f)  = λ x y → eval f (x , y)
 eval apply    = λ{ (f , x) → f x }
 \end{code}}
 \begin{code}[hide]
-eval (F {G = G} h) = λ{ (con x , u) → eval h ((fmap G (λ v → eval (F h) (v , u)) x) , u) }
+eval (Ct {G = G} h) = λ{ (con x , u) → eval h ((fmap G (λ v → eval (Ct h) (v , u)) x) , u) }
 \end{code}
 \newcommand\cccFunVec{%
 \begin{code}
@@ -674,8 +674,8 @@ module FromNats where
   ⟦ Nats.σ ⟧      = C (C con ι₂) π₁
   ⟦ Nats.π i ⟧    = lookup i
   ⟦ Nats.C f g* ⟧ = C ⟦ f ⟧ ⟦ g* ⟧*
-  ⟦ Nats.P g h ⟧  = P (C (`case (C ⟦ g ⟧ π₂) (C ⟦ h ⟧ assoc-×)) dist-+-x)
-  ⟦ Nats.F g h ⟧  = F (C (`case (C ⟦ g ⟧ π₂) ⟦ h ⟧) dist-+-x)
+  ⟦ Nats.Pr g h ⟧  = Pr (C (`case (C ⟦ g ⟧ π₂) (C ⟦ h ⟧ assoc-×)) dist-+-x)
+  ⟦ Nats.Ct g h ⟧  = Ct (C (`case (C ⟦ g ⟧ π₂) ⟦ h ⟧) dist-+-x)
 
   ⟦ [] ⟧*         = `⊤
   ⟦ p ∷ p* ⟧*     = `# ⟦ p ⟧ ⟦ p* ⟧*
@@ -704,7 +704,7 @@ module FromWords where
   ⟦ Words.σ a ⟧ = C (C con (C ι₂ (`# (C ⟦ a ⟧ᴬ `⊤) id))) π₁
   ⟦ Words.π i ⟧ = lookup i
   ⟦ Words.C f g* ⟧ = C ⟦ f ⟧ ⟦ g* ⟧*
-  ⟦ Words.P g h ⟧ = P (C (`case (C ⟦ g ⟧ π₂) (C (C (C (`case (C ⟦ h (inj₁ tt) ⟧ assoc-×) (C ⟦ h (inj₂ tt) ⟧ assoc-×)) dist-+-x) (`# (C (`case (C ι₁ π₂) (C ι₂ π₂)) π₁) π₂)) (`# (C dist-+-x π₁) π₂))) dist-+-x)
+  ⟦ Words.Pr g h ⟧ = Pr (C (`case (C ⟦ g ⟧ π₂) (C (C (C (`case (C ⟦ h (inj₁ tt) ⟧ assoc-×) (C ⟦ h (inj₂ tt) ⟧ assoc-×)) dist-+-x) (`# (C (`case (C ι₁ π₂) (C ι₂ π₂)) π₁) π₂)) (`# (C dist-+-x π₁) π₂))) dist-+-x)
 
   ⟦ [] ⟧*         = `⊤
   ⟦ p ∷ p* ⟧*     = `# ⟦ p ⟧ ⟦ p* ⟧*
@@ -756,7 +756,7 @@ module FromTrees where
   ⟦ Trees.σ (inj₂ (tt , tt)) ⟧ = C con (C ι₂ (`# π₁ (C π₁ π₂)))
   ⟦ Trees.π i ⟧ = lookup i
   ⟦ Trees.C f g* ⟧ = C ⟦ f ⟧ ⟦ g* ⟧*
-  ⟦ Trees.P h ⟧ = P (C (`case (C ⟦ h (inj₁ tt) ⟧ π₂)
+  ⟦ Trees.Pr h ⟧ = Pr (C (`case (C ⟦ h (inj₁ tt) ⟧ π₂)
                               (C ⟦ h (inj₂ (tt , tt)) ⟧ (`# (C π₁ (C π₁ π₁)) (`# (C π₂ (C π₁ π₁)) (`# (C π₁ (C π₂ π₁)) (`# (C π₂ (C π₂ π₁)) π₂))))))
                        dist-+-x)
   

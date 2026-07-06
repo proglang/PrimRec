@@ -36,7 +36,7 @@ record Structure (ℓ : Level) : Set (suc ℓ) where
     strengthᴹ : ∀ {T U} (G : Ty FO 1) → (G [ T ]) `× U ⇒ᴹ G [ T `× U ]
 
     conᴹ : ∀ {G : Ty FO 1} → G [ ind G ] ⇒ᴹ ind G
-    Pᴹ : ∀ {T U} {G : Ty FO 1}
+    Prᴹ : ∀ {T U} {G : Ty FO 1}
       → ((G [ T `× ind G ]) `× U ⇒ᴹ T)
       → (ind G `× U ⇒ᴹ T)
 
@@ -86,10 +86,10 @@ record Model (ℓ : Level) : Set (suc ℓ) where
       → f ≈ᴹ f′ → g ≈ᴹ g′ → caseᴹ f g ≈ᴹ caseᴹ f′ g′
     fmap-congᴹ : ∀ {A B} (G : Ty FO 1) {f f′ : A ⇒ᴹ B}
       → f ≈ᴹ f′ → fmapᴹ G f ≈ᴹ fmapᴹ G f′
-    P-congᴹ : ∀ {A B} {G : Ty FO 1}
+    Pr-congᴹ : ∀ {A B} {G : Ty FO 1}
       {h h′ : (G [ A `× ind G ]) `× B ⇒ᴹ A}
       → h ≈ᴹ h′
-      → Pᴹ {T = A} {U = B} {G = G} h ≈ᴹ Pᴹ {T = A} {U = B} {G = G} h′
+      → Prᴹ {T = A} {U = B} {G = G} h ≈ᴹ Prᴹ {T = A} {U = B} {G = G} h′
 
     C-idˡᴹ : ∀ {A B} {f : A ⇒ᴹ B} → Cᴹ idᴹ f ≈ᴹ f
     C-idʳᴹ : ∀ {A B} {f : A ⇒ᴹ B} → Cᴹ f idᴹ ≈ᴹ f
@@ -124,13 +124,13 @@ record Model (ℓ : Level) : Set (suc ℓ) where
     dist-undistᴹ : ∀ {A B D} → Cᴹ (distᴹ {T = A} {U = B} {V = D}) (undistᴹ structure) ≈ᴹ idᴹ
     undist-distᴹ : ∀ {A B D} → Cᴹ (undistᴹ structure) (distᴹ {T = A} {U = B} {V = D}) ≈ᴹ idᴹ
 
-    P-βᴹ : ∀ {A B} {G : Ty FO 1} {h : (G [ A `× ind G ]) `× B ⇒ᴹ A}
-      → Cᴹ (Pᴹ {T = A} {U = B} {G = G} h) (map-×ᴹ structure (conᴹ {G = G}) (idᴹ {T = B}))
-        ≈ᴹ Cᴹ h (paraArgsᴹ structure G (Pᴹ {T = A} {U = B} {G = G} h))
-    P-uniqueᴹ : ∀ {A B} {G : Ty FO 1} {h : (G [ A `× ind G ]) `× B ⇒ᴹ A}
+    Pr-βᴹ : ∀ {A B} {G : Ty FO 1} {h : (G [ A `× ind G ]) `× B ⇒ᴹ A}
+      → Cᴹ (Prᴹ {T = A} {U = B} {G = G} h) (map-×ᴹ structure (conᴹ {G = G}) (idᴹ {T = B}))
+        ≈ᴹ Cᴹ h (paraArgsᴹ structure G (Prᴹ {T = A} {U = B} {G = G} h))
+    Pr-uniqueᴹ : ∀ {A B} {G : Ty FO 1} {h : (G [ A `× ind G ]) `× B ⇒ᴹ A}
       {p : ind G `× B ⇒ᴹ A}
       → Cᴹ p (map-×ᴹ structure (conᴹ {G = G}) (idᴹ {T = B})) ≈ᴹ Cᴹ h (paraArgsᴹ structure G p)
-      → p ≈ᴹ Pᴹ {T = A} {U = B} {G = G} h
+      → p ≈ᴹ Prᴹ {T = A} {U = B} {G = G} h
 
 ----------------------------------------------------------------------
 -- Interpretation and soundness
@@ -154,7 +154,7 @@ module _ {ℓ} (S : Structure ℓ) where
   interpret (Syn.fmap G f) = fmapᴹ G (interpret f)
   interpret (Syn.strength G) = strengthᴹ G
   interpret Syn.con = conᴹ
-  interpret (Syn.P h) = Pᴹ (interpret h)
+  interpret (Syn.Pr h) = Prᴹ (interpret h)
 
 module _ {ℓ} (M : Model ℓ) where
   open Model M
@@ -168,7 +168,7 @@ module _ {ℓ} (M : Model ℓ) where
   sound (Eq.`#-cong p q) = pair-congᴹ (sound p) (sound q)
   sound (Eq.`case-cong p q) = case-congᴹ (sound p) (sound q)
   sound (Eq.fmap-cong G p) = fmap-congᴹ G (sound p)
-  sound (Eq.P-cong {A = A} {B = B} {G = H} p) = P-congᴹ {A = A} {B = B} {G = H} (sound p)
+  sound (Eq.Pr-cong {A = A} {B = B} {G = H} p) = Pr-congᴹ {A = A} {B = B} {G = H} (sound p)
   sound Eq.C-idˡ = C-idˡᴹ
   sound Eq.C-idʳ = C-idʳᴹ
   sound Eq.C-assoc = C-assocᴹ
@@ -187,5 +187,5 @@ module _ {ℓ} (M : Model ℓ) where
   sound Eq.+-η = +-ηᴹ
   sound Eq.dist-undist = dist-undistᴹ
   sound Eq.undist-dist = undist-distᴹ
-  sound Eq.P-β = P-βᴹ
-  sound (Eq.P-unique p) = P-uniqueᴹ (sound p)
+  sound Eq.Pr-β = Pr-βᴹ
+  sound (Eq.Pr-unique p) = Pr-uniqueᴹ (sound p)

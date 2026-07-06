@@ -7,11 +7,11 @@ module Core.Translations where
 
 import Core.Types
 import Core.Equations.PRFO
-import Core.Equations.PRFOFold
+import Core.Equations.PRFOCatamorphism
 import Core.Equations.PRHO
-import Core.Equations.PRHOFold
-import Core.Translations.PRFOParamorphismFold
+import Core.Equations.PRHOCatamorphism
+import Core.Translations.PRFOParamorphismCatamorphism
 import Core.Translations.PRFOToPRHO
-import Core.Translations.PRHOParamorphismFold
+import Core.Translations.PRHOParamorphismCatamorphism
 import Core.Translations.ContextualPRFO
 import Core.Translations.ContextualPRHO

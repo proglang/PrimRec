@@ -37,8 +37,8 @@ supported-steps res steps a = supported (steps a)
 supported {Sig = Sig} (Source.σ a) = supported-con (Source.ranks Sig) a
 supported (Source.π i) = supported-lookup i
 supported (Source.C f fs) = s-C (supported f) (supported* fs)
-supported {Sig = Sig} (Source.P res steps) =
-  s-P (Branches (Source.ranks Sig)) (flatBranches (Source.ranks Sig))
+supported {Sig = Sig} (Source.Pr res steps) =
+  s-Pr (Branches (Source.ranks Sig)) (flatBranches (Source.ranks Sig))
     (supported-paraHandler (Source.ranks Sig) (supported-steps res steps))
 
 supported* Source.[] = s-⊤
@@ -122,7 +122,7 @@ correct {Sig = Sig} (Source.σ a) related =
     related-∷ x (tabulate-related xs)
 correct (Source.π i) related = lookup-related i related
 correct (Source.C f fs) related = correct f (correct* fs related)
-correct {n = suc n} {Sig = Sig} (Source.P res steps)
+correct {n = suc n} {Sig = Sig} (Source.Pr res steps)
   {values = tree , values} {env = term Source.∷ terms}
   (related-∷ first parameters) = go first
   where
@@ -138,12 +138,12 @@ correct {n = suc n} {Sig = Sig} (Source.P res steps)
           {U = vec (Target Sig) n} (flatBranches (Source.ranks Sig))
           (eval handler) values)
         tree′ (λ ()))
-      (Source.eval (Source.P res steps) (term′ Source.∷ terms))
+      (Source.eval (Source.Pr res steps) (term′ Source.∷ terms))
   go (related-con {a = a} {children = source-children}
       {values = child-values} child-rel) =
     subst
       (λ target → Related target
-        (Source.eval (Source.P res steps)
+        (Source.eval (Source.Pr res steps)
           (Source.con a source-children Source.∷ terms)))
       (sym (Trees.para-con (Source.ranks Sig)
         (λ i → compile (steps i)) (supported-steps res steps)
@@ -157,7 +157,7 @@ correct {n = suc n} {Sig = Sig} (Source.P res steps)
                   (lookup (Source.ranks Sig) a) child-values)
                 child-values , values)))
           source)
-        (sym (Source.eval-P-con res steps a source-children terms))
+        (sym (Source.eval-Pr-con res steps a source-children terms))
         (correct (steps a)
           (prepare-related
             (recurse (Source.inputs Sig a) source-children child-rel)
@@ -173,7 +173,7 @@ correct {n = suc n} {Sig = Sig} (Source.P res steps)
 
     source-recur : ∀ {s} → Source.Term Sig s → Source.Term Sig (res s)
     source-recur child =
-      Source.eval (Source.P res steps) (child Source.∷ terms)
+      Source.eval (Source.Pr res steps) (child Source.∷ terms)
 
     recurse : ∀ {r} (input-sorts : Vec _ r)
       (source-children : (i : Fin r) →

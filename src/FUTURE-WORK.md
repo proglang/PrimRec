@@ -53,15 +53,15 @@ implementation cleanup.  It would likely require:
   that exposes strength only for positive functors;
 - recursion, equations, models, and translations parameterized by the
   positive fragment of the mixed-variance syntax;
-- rechecking the P/F equivalence proofs against that more general
+- rechecking the Pr/Ct equivalence proofs against that more general
   interface.
 
-This direction also clarifies the generic P/F refactor.  The generic
+This direction also clarifies the generic Pr/Ct refactor.  The generic
 proof should abstract over the structure it really needs: a positive
 functorial action with strength, a constructor, and either primitive
-folds or primitive paramorphisms.  Mixed-variance bifunctors would then
+catamorphisms or primitive paramorphisms.  Mixed-variance bifunctors would then
 be one richer way to instantiate that interface, not something the core
-P/F proof should depend on directly.
+Pr/Ct proof should depend on directly.
 
 # Future Work: Algebraic Interfaces for Syntax and Models
 
@@ -81,7 +81,7 @@ that initial instance.  This could make the model infrastructure more
 uniform without replacing the raw syntax by a tagless-final
 presentation.  Law records could be factored along the categorical
 structure they express: cartesian structure, cocartesian structure,
-closed structure, functor/strength laws, and fold/paramorphism laws.
+closed structure, functor/strength laws, and catamorphism/paramorphism laws.
 
 This direction fits the simply typed CwF and bifunctorial future-work
 threads.  A CwF-style interface would organize contextual syntax, while
@@ -171,7 +171,7 @@ requirements include:
   comprehension category;
 - dependent versions of `fmap` and `strength`;
 - dependent initial algebras or W-types/inductive families;
-- fold and paramorphism laws stable under substitution;
+- catamorphism and paramorphism laws stable under substitution;
 - logical relations stated over dependent families.
 
 This is probably beyond the scope of the current paper.  The near-term

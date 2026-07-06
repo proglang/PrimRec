@@ -229,7 +229,7 @@ variable
 
 {-# NO_POSITIVITY_CHECK #-}
 data _→ᴾ_ : TY → TY → Set where
-  P : (h : `×× (sub₀ (`×× [ T , ind G ]) G ∷ U*) →ᴾ T)
+  Pr : (h : `×× (sub₀ (`×× [ T , ind G ]) G ∷ U*) →ᴾ T)
     → (`×× (ind G ∷ U*) →ᴾ T)
   con : sub₀ (ind G) G →ᴾ ind G
   --
@@ -325,21 +325,21 @@ inject {T* = T ∷ T*} zero t = inj₁ t
 inject {T* = T ∷ T*} (suc i) t = inj₂ (inject i t)
 
 {-# TERMINATING #-}
-eval-P-hard : ∀ {T}{G : Ty 1}{U* : Vec TY o}
+eval-Pr-hard : ∀ {T}{G : Ty 1}{U* : Vec TY o}
   → (p : `×× (sub₀ (`×× [ T , ind G ]) G ∷ U*) →ᴾ T)
   → ⟦ `×× (ind G ∷ U*) ⟧ᵀ → ⟦ T ⟧ᵀ
 product : ∀ {U* : Vec TY m} → foldr (const Set) (λ U → _×_ (T →ᴾ U)) ⊤ U* → ⟦ T ⟧ᵀ → ⟦ U* ⟧ᵀ×
 sum     : ∀ {U* : Vec TY m} → foldr (const Set) (λ U → _×_ (U →ᴾ T)) ⊤ U* → ⟦ U* ⟧ᵀ+ → ⟦ T ⟧ᵀ
 
 eval : (T →ᴾ U) → ⟦ T ⟧ᵀ → ⟦ U ⟧ᵀ
-eval-P-hard {T = T} {G = G} {U* = U*} p ⟨ con x , u* ⟩ =
+eval-Pr-hard {T = T} {G = G} {U* = U*} p ⟨ con x , u* ⟩ =
   eval p
     ⟨ fmap G
-        (λ v → ⟨ eval-P-hard p ⟨ v , u* ⟩ , ⟨ v , tt ⟩ ⟩)
+        (λ v → ⟨ eval-Pr-hard p ⟨ v , u* ⟩ , ⟨ v , tt ⟩ ⟩)
         x
     , u* ⟩
 
-eval (P p) = eval-P-hard p
+eval (Pr p) = eval-Pr-hard p
 
 eval con = con
 eval (C f g) = eval f ∘ eval g
@@ -362,8 +362,8 @@ sum {U* = U ∷ U*} ⟨ g , g* ⟩ (inj₂ y) = sum g* y
 
 -- {-# TERMINATING #-}
 -- eval : (T →ᴾ U) → ⟦ T ⟧ᵀ → ⟦ U ⟧ᵀ
--- eval (F {G = G} p) = λ{ (con x , u) → eval p ((fmap (λ v → eval (F p) (v , u)) G x) , (x , u))}
--- eval (P {G = G} p) = λ{ (con x , u) → eval p ((fmap′ (λ v → eval (P p) (v , u)) G x) , u)}
+-- eval (Ct {G = G} p) = λ{ (con x , u) → eval p ((fmap (λ v → eval (Ct p) (v , u)) G x) , (x , u))}
+-- eval (Pr {G = G} p) = λ{ (con x , u) → eval p ((fmap′ (λ v → eval (Pr p) (v , u)) G x) , u)}
 -- eval (C f g)  = eval f ∘ eval g
 -- eval con     = con
 -- eval `0       = const tt
@@ -427,10 +427,10 @@ module FromNats where
   ⟦ Nats.σ ⟧      = C con (C (ι (suc zero)) (π zero))
   ⟦ Nats.π i ⟧    = lookupᴾ i
   ⟦ Nats.C f g* ⟧ = C ⟦ f ⟧ ⟦ g* ⟧*
-  ⟦ Nats.P g h ⟧  = P (C
+  ⟦ Nats.Pr g h ⟧  = Pr (C
     (`case ⟨ C ⟦ g ⟧ tail , ⟨ C ⟦ h ⟧ assoc-× , tt ⟩ ⟩)
     dist-+-x)
-  ⟦ Nats.F g h ⟧  = P (C
+  ⟦ Nats.Ct g h ⟧  = Pr (C
     (`case ⟨ C ⟦ g ⟧ tail , ⟨ C ⟦ h ⟧ drop-counter , tt ⟩ ⟩)
     dist-+-x)
 
@@ -463,7 +463,7 @@ module FromWords where
     ⟨ C ⟦ a ⟧ᴬ tail , ⟨ π zero , tt ⟩ ⟩))
   ⟦ Words.π i ⟧ = lookupᴾ i
   ⟦ Words.C f g* ⟧ = C ⟦ f ⟧ ⟦ g* ⟧*
-  ⟦ Words.P g h ⟧ = P (C
+  ⟦ Words.Pr g h ⟧ = Pr (C
     (`case
       ⟨ C ⟦ g ⟧ tail
       , ⟨ C
@@ -582,7 +582,7 @@ module FromTrees where
   ⟦ Trees.σ (inj₂ (inj₂ ())) ⟧
   ⟦ Trees.π i ⟧ = lookupᴾ i
   ⟦ Trees.C f g* ⟧ = C ⟦ f ⟧ ⟦ g* ⟧*
-  ⟦ Trees.P h ⟧ = P (C
+  ⟦ Trees.Pr h ⟧ = Pr (C
     (`case
       ⟨ C ⟦ h (inj₁ tt) ⟧ tail
       , ⟨ C ⟦ h branch-symbol ⟧ tree-step , tt ⟩ ⟩)

@@ -30,7 +30,7 @@ compile Ctx.eval = PF.apply
 compile (Ctx.fmap G t) = PF.fmap G (compile t)
 compile (Ctx.strength G) = PF.strength G
 compile Ctx.con = PF.con
-compile (Ctx.prec h) = PF.P (compile h)
+compile (Ctx.prec h) = PF.Pr (compile h)
 
 reify : ∀ {Γ A} → Γ PF.→ᴾ A → Γ Ctx.⊢ A
 reify PF.id = Ctx.var
@@ -48,7 +48,7 @@ reify PF.apply = Ctx.eval
 reify (PF.fmap G f) = Ctx.fmap G (reify f)
 reify (PF.strength G) = Ctx.strength G
 reify PF.con = Ctx.con
-reify (PF.P h) = Ctx.prec (reify h)
+reify (PF.Pr h) = Ctx.prec (reify h)
 
 ----------------------------------------------------------------------
 -- The translations are mutually inverse on raw syntax.
@@ -70,7 +70,7 @@ compile-reify PF.apply = refl
 compile-reify (PF.fmap G f) = cong (PF.fmap G) (compile-reify f)
 compile-reify (PF.strength G) = refl
 compile-reify PF.con = refl
-compile-reify (PF.P h) = cong PF.P (compile-reify h)
+compile-reify (PF.Pr h) = cong PF.Pr (compile-reify h)
 
 reify-compile : ∀ {Γ A} (t : Γ Ctx.⊢ A) → reify (compile t) ≡ t
 reify-compile Ctx.var = refl
@@ -163,7 +163,7 @@ compile-sound (CtxEq.pair-cong p q) = PFEq.`#-cong (compile-sound p) (compile-so
 compile-sound (CtxEq.cases-cong p q) = PFEq.`case-cong (compile-sound p) (compile-sound q)
 compile-sound (CtxEq.curry-cong p) = PFEq.lam-cong (compile-sound p)
 compile-sound (CtxEq.fmap-cong G p) = PFEq.fmap-cong G (compile-sound p)
-compile-sound (CtxEq.prec-cong p) = PFEq.P-cong (compile-sound p)
+compile-sound (CtxEq.prec-cong p) = PFEq.Pr-cong (compile-sound p)
 compile-sound CtxEq.cut-varˡ = PFEq.C-idˡ
 compile-sound CtxEq.cut-varʳ = PFEq.C-idʳ
 compile-sound CtxEq.cut-assoc = PFEq.C-assoc
@@ -186,8 +186,8 @@ compile-sound CtxEq.+-β₂ = PFEq.+-β₂
 compile-sound CtxEq.+-η = PFEq.+-η
 compile-sound CtxEq.⇒-β = PFEq.⇒-β
 compile-sound CtxEq.⇒-η = PFEq.⇒-η
-compile-sound CtxEq.prec-β = PFEq.P-β
-compile-sound (CtxEq.prec-unique p) = PFEq.P-unique (compile-sound p)
+compile-sound CtxEq.prec-β = PFEq.Pr-β
+compile-sound (CtxEq.prec-unique p) = PFEq.Pr-unique (compile-sound p)
 
 reify-sound : ∀ {Γ A} {f g : Γ PF.→ᴾ A} → f PFEq.≈ g → reify f CtxEq.≈ reify g
 reify-sound PFEq.≈-refl = CtxEq.≈-refl
@@ -198,7 +198,7 @@ reify-sound (PFEq.`#-cong p q) = CtxEq.pair-cong (reify-sound p) (reify-sound q)
 reify-sound (PFEq.`case-cong p q) = CtxEq.cases-cong (reify-sound p) (reify-sound q)
 reify-sound (PFEq.lam-cong p) = CtxEq.curry-cong (reify-sound p)
 reify-sound (PFEq.fmap-cong G p) = CtxEq.fmap-cong G (reify-sound p)
-reify-sound (PFEq.P-cong p) = CtxEq.prec-cong (reify-sound p)
+reify-sound (PFEq.Pr-cong p) = CtxEq.prec-cong (reify-sound p)
 reify-sound PFEq.C-idˡ = CtxEq.cut-varˡ
 reify-sound PFEq.C-idʳ = CtxEq.cut-varʳ
 reify-sound PFEq.C-assoc = CtxEq.cut-assoc
@@ -221,5 +221,5 @@ reify-sound PFEq.+-β₂ = CtxEq.+-β₂
 reify-sound PFEq.+-η = CtxEq.+-η
 reify-sound PFEq.⇒-β = CtxEq.⇒-β
 reify-sound PFEq.⇒-η = CtxEq.⇒-η
-reify-sound PFEq.P-β = CtxEq.prec-β
-reify-sound (PFEq.P-unique p) = CtxEq.prec-unique (reify-sound p)
+reify-sound PFEq.Pr-β = CtxEq.prec-β
+reify-sound (PFEq.Pr-unique p) = CtxEq.prec-unique (reify-sound p)
