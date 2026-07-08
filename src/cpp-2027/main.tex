@@ -85,9 +85,13 @@ recursion computation and uniqueness principles.  Higher-order calculi
 add exponentials and their beta/eta laws.  We use setoids rather than
 quotients and keep categorical distributivity as
 primitive in the first-order presentation and derived from exponentials
-in the higher-order presentation.
+in the higher-order presentation.  The artifact also contains a
+separate extensional setoid-container model of \PRHO{}: arrows are
+extensional maps, closed inductive objects are W-types generated from
+positive container codes, and hom equality is pointwise.
 
-All definitions and proofs are checked by Agda using the safe fragment.
+The main development is checked by Agda using the safe fragment; the
+setoid-container model isolates its trusted boundary explicitly.
 \end{abstract}
 
 \begin{CCSXML}
@@ -182,7 +186,9 @@ The paper has three high-level conceptual contributions.
   calculi, together with interpretation soundness.  There is a
   model-level \PRHO{} distributivity theorem: every model satisfying the
   \PRHO{} interface validates the canonical distributivity isomorphism
-  derived from exponentials.
+  derived from exponentials.  The artifact also includes a concrete
+  setoid-container \PRHO{} model: arrows are extensional maps and
+  positive inductive type codes are interpreted by W-type fixed points.
 \item We verify that the targets host the motivating source languages:
   primitive recursion on natural numbers, words, ranked trees,
   many-sorted signatures, and a System~T fragment all compile to the
@@ -431,6 +437,7 @@ Core type language & \AgdaFile{Core.Types} \\
 Catamorphism-primitive presentations & \AgdaFile{Core.PRFOCatamorphism}, \AgdaFile{Core.PRHOCatamorphism} \\
 Models and soundness & \AgdaFile{Core.Models.*} \\
 Hom-setoid packaging & \AgdaFile{Core.Models.Setoids.*} \\
+\PRHO{} setoid-container model & \AgdaFile{Core.Models.PRHOSetoidContainer} \\
 Pr/Ct interdefinability & \AgdaFile{Core.Translations.*ParamorphismCatamorphism} \\
 FO to HO translation & \AgdaFile{Core.Translations.PRFOToPRHO} \\
 System T to PR-HO & \AgdaFile{Core.Instances.SystemT},
@@ -699,6 +706,20 @@ proofs of equality preservation.  The same pattern is repeated for the
 catamorphism-primitive variants and for the higher-order calculi; only the list
 of primitive operations and laws changes.
 
+The module \AgdaFile{Core.Models.PRHOSetoidContainer} gives a separate
+law-bearing instance of the higher-order interface.  Semantic objects are
+setoids and semantic arrows are extensional maps, not raw Agda
+functions.  The initial object is interpreted by the standard-library
+empty type \(\bot\) from \AgdaFile{Data.Empty},
+closed exponentials are extensional-map setoids, and positive
+one-variable higher-order type codes are translated to containers whose
+least fixed points are represented by W-types.  The model equality on
+homs is pointwise equality in the codomain setoid, so the \PRHO{} laws
+are proved as extensional equalities.  This module is deliberately kept
+separate from the safe entry point: its remaining trusted boundary is
+function extensionality for shape/function spaces and the associated
+termination annotations used for the substitution bridge.
+
 \section{Distributivity in \PRHO{} Models}
 \label{sec:prho-model-distributivity}
 
@@ -732,12 +753,12 @@ proofs are obtained by applying interpretation soundness to the syntactic
 \PRHO{} proofs \AgdaFunction{Core.Equations.PRHO.dist-undist} and
 \AgdaFunction{Core.Equations.PRHO.undist-dist}.  Thus the result applies
 to every structure packaged as a \PRHO{} model; the category of Agda
-types is only one instance of that interface.  For a nontrivial model,
-such as a functor-category model with more complicated exponentials, the
-remaining obligation is to instantiate the \PRHO{} model interface and
-prove the beta/eta and recursion laws for that model.  Distributivity
-then follows from the generic theorem above, rather than from any
-set-specific calculation.
+types is only one instance of that interface.  The setoid-container
+model described above is a nontrivial instance of this pattern: once
+extensional maps, W-type container semantics, functorial action,
+strength, constructors, and primitive recursion are packaged as a
+\PRHO{} model, distributivity follows from the generic theorem above
+rather than from any set-specific calculation.
 
 \section{Paramorphisms and Catamorphisms}
 \label{sec:paramorphisms-catamorphisms}
