@@ -1204,11 +1204,16 @@ Several natural extensions remain outside the checked claim.  The
 that every finite-\AgdaFunction{Nat} \PRFO{} arrow is represented by a
 \AgdaFile{PR-Nat} program.  The contextual calculi already look like a
 simply typed CwF fragment, but a reusable CwF interface and a genuinely
-dependent CwF account would require further refactoring.  Finally,
-mixed-variance bifunctor structure may be a better long-term basis for
-higher-order type operators than the current unary structural-functor
-interface, especially if the development is extended beyond the present
-closed-domain exponentials.
+dependent CwF account would require further refactoring.  On the
+semantic side, the setoid-container \PRHO{} model still uses raw Agda
+functions for some container shapes; a fully extensional variant would
+make containers themselves setoid-indexed and define W equality
+relationally, leaving function extensionality only for optional
+comparison with propositional Agda functions.  Finally, mixed-variance
+bifunctor structure may be a better long-term basis for higher-order type
+operators than the current unary structural-functor interface, especially
+if the development is extended beyond the present closed-domain
+exponentials.
 
 \begin{acks}
 % Acknowledgments are usually omitted or anonymized during review.

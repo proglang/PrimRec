@@ -63,6 +63,37 @@ catamorphisms or primitive paramorphisms.  Mixed-variance bifunctors would then
 be one richer way to instantiate that interface, not something the core
 Pr/Ct proof should depend on directly.
 
+# Future Work: Fully Extensional Setoid Containers
+
+The current setoid-container PR-HO model interprets semantic arrows as
+extensional maps and uses pointwise hom equality, but its container layer
+still represents shapes as raw Agda data.  In particular, exponential
+container shapes are raw functions between shape sets, and the W-type
+construction sometimes needs function extensionality to identify
+pointwise equal shape or child functions propositionally.
+
+A cleaner semantic layer would make containers themselves
+setoid-indexed.  Such a layer would likely package:
+
+- a setoid of shapes, rather than a bare `Shape : Set`;
+- positions indexed over shapes, with a notion of related positions
+  along shape equivalence;
+- container extension equality that relates equivalent shapes and
+  pointwise related hole values;
+- exponential shapes as extensional maps between shape setoids;
+- W-type equality as a bisimulation over equivalent node shapes and
+  related recursive positions.
+
+With this structure, the setoid-container model should no longer need a
+global function-extensionality postulate merely to build the model.
+Function extensionality would only reappear when deliberately comparing
+the extensional setoid semantics with raw Agda functions equipped with
+propositional equality.  This is conceptually straightforward, but it is
+not a local proof repair: the current `pack`/`unpack`, substitution, and
+primitive-recursion laws use propositional shape equality in many places,
+so the refactor should be treated as a separate proof-engineering
+project.
+
 # Future Work: Algebraic Interfaces for Syntax and Models
 
 The current raw calculi are inductive datatypes, which is useful for
