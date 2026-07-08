@@ -51,15 +51,6 @@ data _→ᴾ_ : TY HO → TY HO → Set where
 map-× : (U →ᴾ T) → (V →ᴾ W) → (U `× V →ᴾ T `× W)
 map-× f g = `# (C f π₁) (C g π₂)
 
-fmapᶜ : ∀ {T U G} → StructuralFunctor G → (T →ᴾ U) → (G [ T ] →ᴾ G [ U ])
-fmapᶜ sf-𝟘 f = id
-fmapᶜ sf-𝟙 f = id
-fmapᶜ sf-var f = f
-fmapᶜ (sf-× p q) f = map-× (fmapᶜ p f) (fmapᶜ q f)
-fmapᶜ (sf-+ p q) f =
-  `case (C ι₁ (fmapᶜ p f)) (C ι₂ (fmapᶜ q f))
-fmapᶜ (sf-⇒ A p) f = lam (C (fmapᶜ p f) apply)
-
 pmap : (G : Ty HO 1) → (T `× U →ᴾ V)
   → ((G [ T ]) `× U →ᴾ G [ V ])
 pmap G f = C (fmap G f) (strength G)
@@ -68,6 +59,16 @@ paraArgs : (G : Ty HO 1) → (ind G `× U →ᴾ T)
   → ((G [ ind G ]) `× U →ᴾ (G [ T `× ind G ]) `× U)
 paraArgs G p = `# (pmap G (`# p π₁)) π₂
 --! }
+
+fmapᶜ : ∀ {T U G} → StructuralFunctor G →
+  (T →ᴾ U) → (G [ T ] →ᴾ G [ U ])
+fmapᶜ sf-𝟘 f = id
+fmapᶜ sf-𝟙 f = id
+fmapᶜ sf-var f = f
+fmapᶜ (sf-× p q) f = map-× (fmapᶜ p f) (fmapᶜ q f)
+fmapᶜ (sf-+ p q) f =
+  `case (C ι₁ (fmapᶜ p f)) (C ι₂ (fmapᶜ q f))
+fmapᶜ (sf-⇒ A p) f = lam (C (fmapᶜ p f) apply)
 
 --! CorePRHODerivedDist {
 theta : (U →ᴾ V `⇒ T) → (U `× V →ᴾ T)

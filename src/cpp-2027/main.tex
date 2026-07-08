@@ -633,7 +633,11 @@ first-order calculus where distributivity is primitive; and the
 computation and uniqueness principles for primitive recursion.
 
 For structurally generated type operators, the higher-order theory also
-contains two computation laws.  The law \AgdaFunction{fmap-βᶜ} identifies
+contains two computation laws.  The predicate
+\AgdaDatatype{StructuralFunctor}\;\AgdaBound{G} is evidence that \(G\)
+is built from the empty type, unit, the distinguished variable,
+products, sums, and closed-domain exponentials; its constructors mirror
+exactly those type formers.  The law \AgdaFunction{fmap-βᶜ} identifies
 primitive \AgdaInductiveConstructor{fmap} with the derived structural
 operation \AgdaFunction{fmapᶜ}; \AgdaFunction{strength-βᶜ} does the same
 for \AgdaInductiveConstructor{strength} and
@@ -706,15 +710,24 @@ categorical operations, coproducts, products, exponentials with their
 beta/eta laws, functorial action, strength, and primitive recursion laws.
 Inside the module parameterized by an arbitrary \(M :
 \AgdaRecord{Model}\ \ell\), Agda states the result as follows:
-Here \AgdaField{structure} abbreviates the \AgdaRecord{Structure} field
-of the model \(M\).
 
 {\small
 \CorePRHOModelDistributivity*
 }
 
-The arrows \AgdaFunction{distᴹ} and \AgdaFunction{undistᴹ} are derived
-from the model structure, not supplied as fields of the model.  The two
+Concretely, a \PRHO{} model is a record whose first component is a raw
+\AgdaRecord{Structure}: this component contains the semantic hom-family
+\AgdaOperator{\AgdaField{\_⇒ᴹ\_}}, the categorical operations
+\AgdaFunction{idᴹ}, \AgdaFunction{Cᴹ}, products, coproducts,
+exponentials, \AgdaFunction{fmapᴹ}, \AgdaFunction{strengthᴹ},
+\AgdaFunction{conᴹ}, and \AgdaFunction{Prᴹ}.  The remaining model fields
+add the hom equality \(\AgdaOperator{\AgdaField{\_≈ᴹ\_}}\) and prove the
+equations for those operations.  Here \AgdaField{structure} is the
+projection from \(M\) to this raw component, so
+\AgdaFunction{distᴹ}\ \AgdaField{structure} and
+\AgdaFunction{undistᴹ}\ \AgdaField{structure} are semantic arrows
+derived from the operations in that component, not supplied as fields of
+the model.  The two
 proofs are obtained by applying interpretation soundness to the syntactic
 \PRHO{} proofs \AgdaFunction{Core.Equations.PRHO.dist-undist} and
 \AgdaFunction{Core.Equations.PRHO.undist-dist}.  Thus the result applies
@@ -811,15 +824,27 @@ arrow equal to the original one in the appropriate equational theory:
 \CorePRFOParamorphismCatamorphismEquivalence*
 }
 
-These four theorems are the formal content of the \(Pr/Ct\) equivalence
-arrows in Figure~\ref{fig:contribution-overview}.  They are proved
-separately for \PRFO{} and \PRHO{}.  The higher-order proof follows the
-same structure as the first-order proof, with additional cases for
-lambda abstraction, application, and the higher-order beta/eta laws.
-Thus the choice of taking \(Pr\) or \(Ct\) as primitive is not a semantic
-commitment: it is a presentation choice, and the artifact checks that the
-two presentations define the same theory up to their generated
-equalities.
+Categorically, these four theorems exhibit identity-on-objects
+isomorphisms of the generated syntactic categories
+\(\mathcal{C}_{\mathsf{FO}}^{Pr} \cong
+\mathcal{C}_{\mathsf{FO}}^{Ct}\) and
+\(\mathcal{C}_{\mathsf{HO}}^{Pr} \cong
+\mathcal{C}_{\mathsf{HO}}^{Ct}\).  The functors act on homs by
+\AgdaFunction{toCt} and \AgdaFunction{toPr}; equation preservation makes
+them well defined on the quotient categories, and the round-trip
+theorems state that the two composites are the identity on each hom.  In
+the Agda formalization this is expressed at the hom-setoid level rather
+than by constructing quotient categories explicitly.  These results are
+the formal content of the \(Pr/Ct\) equivalence arrows in
+Figure~\ref{fig:contribution-overview}.
+
+They are proved separately for \PRFO{} and \PRHO{}.  The higher-order
+proof follows the same structure as the first-order proof, with
+additional cases for lambda abstraction, application, and the
+higher-order beta/eta laws.  Thus the choice of taking \(Pr\) or \(Ct\)
+as primitive is not a semantic commitment: it is a presentation choice,
+and the artifact checks that the two presentations define isomorphic
+syntactic categories.
 
 \section{Instances}
 \label{sec:instances}
@@ -842,6 +867,18 @@ For a source program \(p\), the characteristic theorem has the shape
 Thus the compiler is not validated only by the executable Agda set
 semantics; it is validated parametrically for all models of the target
 calculus.
+
+The instance modules are written against the paramorphism-primitive
+targets \PRFO{} and \PRHO{}, but this is not a semantic restriction on
+the generated target categories.  By the identity-on-objects
+isomorphisms of Section~\ref{sec:paramorphisms-catamorphisms}, each
+compiler into \(\mathcal{C}^{Pr}\) postcomposes with
+\AgdaFunction{toCt} to give a compiler into the corresponding
+\(\mathcal{C}^{Ct}\), and the equation-preservation and round-trip
+theorems transport the target-side correctness facts.  Thus, for every
+instance discussed below, para vs.\ cata is an implementation choice for
+the target calculus.  The source calculi may still use whichever
+recursion principle gives the most direct syntax and computation laws.
 
 Several sources also carry an independently generated source equality.
 For these languages, the corresponding equation module proves a theorem
